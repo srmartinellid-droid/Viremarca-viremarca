@@ -4,22 +4,23 @@ import { Process } from "@/components/Process"
 import { About } from "@/components/About"
 import { Delivers } from "@/components/Delivers"
 import { ContactCTA } from "@/components/ContactCTA"
-import { getPublicProjects } from "@/lib/projects"
+import { getFeaturedProjects, getPublicProjects } from "@/lib/projects"
 import { getPublicSiteContent } from "@/lib/site-content"
 
 export default async function HomePage() {
-  const [projects, content] = await Promise.all([
+  const [projects, featuredProjects, content] = await Promise.all([
     getPublicProjects(),
+    getFeaturedProjects(),
     getPublicSiteContent(),
   ])
 
   return (
     <>
-      <Hero content={content} />
+      <Hero content={content} featuredProjects={featuredProjects} />
       <PortfolioShowcase projects={projects} />
-      <Process />
+      <Process items={content.process} />
       <About content={content} />
-      <Delivers />
+      <Delivers items={content.delivers} />
       <ContactCTA contact={content.contact} />
     </>
   )
