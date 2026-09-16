@@ -2,18 +2,19 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, ExternalLink } from "lucide-react"
-import { DEMO_PROJECTS } from "@/lib/demo-data"
+import { getProjectBySlug, getPublicProjects } from "@/lib/projects"
 import type { Metadata } from "next"
 
 type Props = { params: Promise<{ slug: string }> }
 
 export async function generateStaticParams() {
-  return DEMO_PROJECTS.map((p) => ({ slug: p.slug }))
+  const projects = await getPublicProjects()
+  return projects.map((p) => ({ slug: p.slug }))
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const project = DEMO_PROJECTS.find((p) => p.slug === slug)
+  const project = await getProjectBySlug(slug)
   if (!project) return { title: "Projeto" }
   return {
     title: project.title,
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PortfolioProjectPage({ params }: Props) {
   const { slug } = await params
-  const project = DEMO_PROJECTS.find((p) => p.slug === slug)
+  const project = await getProjectBySlug(slug)
   if (!project) notFound()
 
   return (
@@ -59,7 +60,6 @@ export default async function PortfolioProjectPage({ params }: Props) {
           )}
         </div>
 
-        {/* Preview frame */}
         <div className="rounded-2xl border border-vm-border overflow-hidden bg-vm-sand shadow-sm">
           {project.site_url ? (
             <div className="relative">
@@ -83,35 +83,17 @@ export default async function PortfolioProjectPage({ params }: Props) {
                   sandbox="allow-scripts allow-same-origin allow-forms"
                   loading="lazy"
                 />
-                {/* Fallback overlay note */}
-                <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-white/95 backdrop-blur border border-vm-border px-4 py-3 text-sm text-vm-muted shadow-sm">
-                  Se a visualização não carregar (bloqueio de iframe), use o botão{" "}
-                  <a
-                    href={project.site_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-vm-coral hover:underline"
-                  >
-                    Visitar site
-                  </a>
-                  .
-                </div>
               </div>
             </div>
           ) : (
             <div className="aspect-[16/10] flex flex-col items-center justify-center gap-4 p-8 text-center">
               {project.thumbnail && (
                 <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden border border-vm-border">
-                  <Image
-                    src={project.thumbnail}
-                    alt={project.title}
-                    fill
-                    className="object-cover"
-                  />
+                  <Image src={project.thumbnail} alt={project.title} fill className="object-cover" />
                 </div>
               )}
               <p className="text-vm-muted text-sm max-w-sm">
-                Este projeto é demonstrativo. Em produção, o site real ou um preview em iframe aparece aqui.
+                Preview em breve.
               </p>
             </div>
           )}
