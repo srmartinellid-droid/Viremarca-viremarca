@@ -63,19 +63,19 @@ export default async function PortfolioProjectPage({ params }: Props) {
         <div className="rounded-2xl border border-vm-border overflow-hidden bg-vm-sand shadow-sm">
           {project.site_url ? (
             <div className="relative">
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-vm-border bg-white">
-                <div className="flex gap-1.5">
+              <div className="flex items-center gap-2 px-3 py-3 md:px-4 border-b border-vm-border bg-white">
+                <div className="flex gap-1.5 shrink-0">
                   <span className="h-3 w-3 rounded-full bg-red-400/80" />
                   <span className="h-3 w-3 rounded-full bg-amber-400/80" />
                   <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
                 </div>
-                <div className="flex-1 mx-4">
-                  <div className="rounded-md bg-vm-bg px-3 py-1 text-xs text-vm-muted truncate text-center">
+                <div className="flex-1 mx-2 md:mx-4 min-w-0">
+                  <div className="rounded-md bg-vm-bg px-3 py-2 md:py-1 text-[11px] md:text-xs text-vm-muted truncate text-center">
                     {project.site_url}
                   </div>
                 </div>
               </div>
-              <div className="relative aspect-[16/10] bg-white">
+              <div className="relative aspect-[4/5] md:aspect-[16/10] bg-white">
                 <iframe
                   src={project.site_url}
                   title={project.title}
@@ -88,7 +88,7 @@ export default async function PortfolioProjectPage({ params }: Props) {
               </div>
             </div>
           ) : (
-            <div className="aspect-[16/10] flex flex-col items-center justify-center gap-4 p-8 text-center">
+            <div className="aspect-[4/5] md:aspect-[16/10] flex flex-col items-center justify-center gap-4 p-8 text-center">
               {project.thumbnail && (
                 <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden border border-vm-border">
                   <Image src={project.thumbnail} alt={project.title} fill className="object-cover" />
