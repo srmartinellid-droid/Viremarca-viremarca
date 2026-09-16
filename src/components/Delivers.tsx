@@ -1,89 +1,58 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
-import { DEMO_CONTENT } from "@/lib/demo-data"
+import { motion, AnimatePresence } from "framer-motion"
+import { Layout, User, Layers, Target, Image as ImageIcon, Settings, ArrowUpRight, X } from "lucide-react"
 import { Reveal, RevealStagger, revealItem } from "@/components/motion/Reveal"
-import { motion } from "framer-motion"
-import { Layout, User, Layers, Target, Image as ImageIcon, Settings, ArrowUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
+import type { DeliverItem } from "@/lib/site-content"
 
 const icons = [Layout, User, Layers, Target, ImageIcon, Settings]
-const visuals = [
-  "/portfolio/magia-glass.jpg",
-  "/portfolio/odonto.jpg",
-  "/portfolio/imoveis.jpg",
-  "/portfolio/advocacia.jpg",
-  "/portfolio/magia-glass.jpg",
-  "/portfolio/odonto.jpg",
-]
 
-export function Delivers() {
+export function Delivers({ items }: { items: DeliverItem[] }) {
+  const [open, setOpen] = useState<number | null>(null)
   const reduced = useReducedMotion()
-  const items = DEMO_CONTENT.delivers
 
   return (
-    <section className="py-28 md:py-36 bg-vm-bg relative overflow-hidden">
+    <section className="py-20 md:py-24 bg-vm-bg relative overflow-hidden">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-vm-border to-transparent" />
-
       <div className="mx-auto max-w-7xl px-5 sm:px-7 lg:px-10">
-        <Reveal className="max-w-3xl mb-16">
+        <Reveal className="max-w-3xl mb-11">
           <p className="vm-eyebrow mb-4">O que entregamos</p>
-          <h2 className="vm-display text-4xl md:text-5xl lg:text-[4rem] leading-[1.02] text-vm-ink tracking-[-0.035em]">
-            Não entregamos páginas.
-            <br />
-            <span className="text-vm-coral">Construímos presença.</span>
+          <h2 className="vm-display text-4xl md:text-5xl lg:text-[3.6rem] leading-[1.02] text-vm-ink tracking-[-0.035em]">
+            Não entregamos páginas.<br /><span className="text-vm-coral">Construímos presença.</span>
           </h2>
-          <p className="mt-6 text-lg text-vm-muted leading-relaxed max-w-2xl">
-            Cada projeto parte de uma base tecnológica comum e ganha direção visual, conteúdo e estrutura próprios para o segmento.
-          </p>
+          <p className="mt-5 text-lg text-vm-muted leading-relaxed max-w-2xl">Cada projeto recebe direção visual, conteúdo e estrutura próprios para o objetivo do negócio.</p>
         </Reveal>
 
-        <RevealStagger className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <RevealStagger className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {items.map((item, i) => {
             const Icon = icons[i % icons.length]
+            const isOpen = open === i
             return (
-              <motion.article
-                key={item.title}
-                variants={reduced ? undefined : revealItem}
-                className={cn(
-                  "group relative min-h-[390px] overflow-hidden rounded-[1.6rem] border border-vm-border bg-white",
-                  "transition-all duration-500 hover:-translate-y-1 hover:border-vm-coral/40 hover:shadow-[0_30px_70px_-35px_rgba(224,122,95,0.3)]"
-                )}
-              >
-                <div className="absolute inset-0">
-                  <Image
-                    src={visuals[i % visuals.length]}
-                    alt=""
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover opacity-0 scale-105 transition-all duration-700 group-hover:opacity-100 group-hover:scale-100"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/90 via-vm-ink/30 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <motion.article key={`${item.title}-${i}`} variants={reduced ? undefined : revealItem} className={cn("group relative overflow-hidden rounded-[1.5rem] border bg-white transition-all duration-400", isOpen ? "border-vm-coral/50 shadow-[0_25px_60px_-30px_rgba(224,122,95,0.35)]" : "border-vm-border hover:border-vm-coral/35")}>
+                <div className="relative aspect-[16/9] overflow-hidden bg-vm-sand">
+                  <Image src={item.image || "/portfolio/magia-glass.jpg"} alt={item.title} fill sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.04]" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/70 via-transparent to-transparent" />
+                  <span className="absolute left-5 bottom-4 text-[10px] font-semibold tracking-[0.18em] uppercase text-white/75">0{i + 1}</span>
                 </div>
-
-                <div className="relative z-10 flex h-full min-h-[390px] flex-col justify-between p-7 md:p-8">
-                  <div className="flex items-start justify-between">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-vm-coral/10 text-vm-coral transition-all duration-500 group-hover:bg-white/15 group-hover:text-white group-hover:backdrop-blur-md">
-                      <Icon size={20} />
-                    </div>
-                    <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-vm-muted transition-colors group-hover:text-white/65">
-                      0{i + 1}
-                    </span>
+                <div className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-vm-coral/10 text-vm-coral"><Icon size={18} /></div>
+                    <button type="button" onClick={() => setOpen(isOpen ? null : i)} className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-vm-coral hover:text-vm-coral-deep" aria-expanded={isOpen}>
+                      {isOpen ? "Fechar" : "Ver abordagem"}
+                      {isOpen ? <X size={14} /> : <ArrowUpRight size={14} />}
+                    </button>
                   </div>
-
-                  <div>
-                    <h3 className="text-2xl font-semibold tracking-tight text-vm-ink transition-colors group-hover:text-white">
-                      {item.title}
-                    </h3>
-                    <p className="mt-3 max-w-sm text-sm leading-relaxed text-vm-muted transition-colors group-hover:text-white/75">
-                      {item.desc}
-                    </p>
-                    <div className="mt-6 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-vm-coral opacity-0 translate-y-2 transition-all duration-400 group-hover:opacity-100 group-hover:translate-y-0 group-hover:text-white">
-                      Ver abordagem
-                      <ArrowUpRight size={14} />
-                    </div>
-                  </div>
+                  <h3 className="mt-5 text-xl font-semibold tracking-tight text-vm-ink">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-vm-muted">{item.desc}</p>
+                  <AnimatePresence initial={false}>
+                    {isOpen && <motion.div initial={reduced ? false : { height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={reduced ? undefined : { height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="overflow-hidden">
+                      <div className="mt-5 rounded-2xl bg-vm-bg p-4 text-sm leading-relaxed text-vm-muted border border-vm-border">{item.details || "Conteúdo desta abordagem ainda não foi configurado."}</div>
+                    </motion.div>}
+                  </AnimatePresence>
                 </div>
               </motion.article>
             )
