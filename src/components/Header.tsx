@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { Menu, X, CircleHalf } from "lucide-react"
+import { Menu, X, Contrast } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MagneticButton } from "@/components/motion/MagneticButton"
 
@@ -54,7 +54,7 @@ export function Header() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <button type="button" onClick={toggleMono} aria-pressed={mono} title={mono ? "Voltar às cores" : "Modo preto e branco"} className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full border transition-all", mono ? "border-vm-ink bg-vm-ink text-white" : "border-vm-border bg-white text-vm-muted hover:border-vm-ink hover:text-vm-ink")}><CircleHalf size={17} /></button>
+            <button type="button" onClick={toggleMono} aria-pressed={mono} title={mono ? "Voltar às cores" : "Modo preto e branco"} className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full border transition-all", mono ? "border-vm-ink bg-vm-ink text-white" : "border-vm-border bg-white text-vm-muted hover:border-vm-ink hover:text-vm-ink")}><Contrast size={17} /></button>
             <MagneticButton href="/#contato" variant="primary" className="!px-6 !py-3 text-sm">Quero criar meu site</MagneticButton>
           </div>
 
@@ -65,7 +65,7 @@ export function Header() {
       <div className={cn("md:hidden fixed inset-x-0 top-[6.5rem] bottom-0 bg-white transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]", open ? "translate-x-0" : "translate-x-full pointer-events-none")}>
         <nav className="flex flex-col px-6 py-8 gap-1">
           {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="rounded-xl px-4 py-3.5 text-lg font-medium text-vm-ink hover:bg-vm-sand transition-colors">{item.label}</Link>)}
-          <button type="button" onClick={toggleMono} className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-vm-border px-6 py-3.5 text-sm font-semibold text-vm-ink"><CircleHalf size={16} />{mono ? "Voltar às cores" : "Preto e branco"}</button>
+          <button type="button" onClick={toggleMono} className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-vm-border px-6 py-3.5 text-sm font-semibold text-vm-ink"><Contrast size={16} />{mono ? "Voltar às cores" : "Preto e branco"}</button>
           <Link href="/#contato" onClick={() => setOpen(false)} className="mt-3 inline-flex items-center justify-center rounded-full bg-vm-coral px-6 py-3.5 text-sm font-semibold text-white">Quero criar meu site</Link>
         </nav>
       </div>
