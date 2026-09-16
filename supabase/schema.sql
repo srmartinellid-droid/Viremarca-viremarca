@@ -44,7 +44,22 @@ alter table public.portfolio_projects enable row level security;
 alter table public.site_content enable row level security;
 alter table public.site_settings enable row level security;
 
+-- Strict administrator check. Editors must not be able to change roles/profiles.
 create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin'
+  );
+$$;
+
+-- Content/portfolio operators: admin or editor.
+create or replace function public.is_admin_or_editor()
 returns boolean
 language sql
 stable
@@ -60,51 +75,57 @@ $$;
 drop policy if exists "Users read own profile" on public.profiles;
 create policy "Users read own profile"
   on public.profiles for select
+  to authenticated
   using (auth.uid() = id or public.is_admin());
 
+-- Profiles are server-controlled. There is intentionally no self-update policy,
+-- preventing a normal user from changing their own role to admin/editor.
 drop policy if exists "Users update own profile" on public.profiles;
-create policy "Users update own profile"
-  on public.profiles for update
-  using (auth.uid() = id);
-
 drop policy if exists "Admin manage profiles" on public.profiles;
 create policy "Admin manage profiles"
   on public.profiles for all
+  to authenticated
   using (public.is_admin())
   with check (public.is_admin());
 
 drop policy if exists "Public read active projects" on public.portfolio_projects;
 create policy "Public read active projects"
   on public.portfolio_projects for select
-  using (active = true or public.is_admin());
+  to anon, authenticated
+  using (active = true or public.is_admin_or_editor());
 
 drop policy if exists "Admin full portfolio" on public.portfolio_projects;
 create policy "Admin full portfolio"
   on public.portfolio_projects for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  to authenticated
+  using (public.is_admin_or_editor())
+  with check (public.is_admin_or_editor());
 
 drop policy if exists "Public read content" on public.site_content;
 create policy "Public read content"
   on public.site_content for select
+  to anon, authenticated
   using (true);
 
 drop policy if exists "Admin full content" on public.site_content;
 create policy "Admin full content"
   on public.site_content for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  to authenticated
+  using (public.is_admin_or_editor())
+  with check (public.is_admin_or_editor());
 
 drop policy if exists "Public read settings" on public.site_settings;
 create policy "Public read settings"
   on public.site_settings for select
+  to anon, authenticated
   using (true);
 
 drop policy if exists "Admin full settings" on public.site_settings;
 create policy "Admin full settings"
   on public.site_settings for all
-  using (public.is_admin())
-  with check (public.is_admin());
+  to authenticated
+  using (public.is_admin_or_editor())
+  with check (public.is_admin_or_editor());
 
 create or replace function public.handle_new_user()
 returns trigger
