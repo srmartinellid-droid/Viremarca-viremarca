@@ -68,7 +68,7 @@ export function PortfolioShowcase({ projects }: Props) {
                     <div className={cn("absolute inset-0 bg-gradient-to-t from-vm-ink/50 via-transparent to-transparent transition-opacity", isActive ? "opacity-80" : "opacity-40")} />
                     <div className="absolute top-4 left-4"><span className="rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-[11px] font-medium text-vm-ink tracking-wide">{project.category}</span></div>
                     {project.featured && <div className="absolute top-4 right-4 rounded-full bg-vm-coral px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">Destaque</div>}
-                    {project.site_url && <div className={cn("absolute bottom-4 right-4 transition-all", isActive ? "opacity-100" : "opacity-0")}><span className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-vm-ink shadow-md"><ExternalLink size={14} /></span></div>}
+                    {project.site_url && <a href={project.site_url} target="_blank" rel="noopener noreferrer" aria-label={`Visitar ${project.title}`} className="absolute bottom-4 right-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-vm-ink shadow-md transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-vm-coral hover:scale-105"><ExternalLink size={16} /></a>}
                   </div>
                   <div className="p-5 md:p-6 bg-white">
                     <div className="flex items-start justify-between gap-3">
