@@ -4,12 +4,10 @@ import { Process } from "@/components/Process"
 import { About } from "@/components/About"
 import { Delivers } from "@/components/Delivers"
 import { ContactCTA } from "@/components/ContactCTA"
-import { DEMO_PROJECTS } from "@/lib/demo-data"
+import { getPublicProjects } from "@/lib/projects"
 
-export default function HomePage() {
-  const projects = DEMO_PROJECTS.filter((p) => p.active).sort(
-    (a, b) => a.display_order - b.display_order
-  )
+export default async function HomePage() {
+  const projects = await getPublicProjects()
 
   return (
     <>
