@@ -43,7 +43,7 @@ export function Header() {
 
   return (
     <header className={cn("fixed top-0 left-0 right-0 z-50 transition-all duration-500", scrolled ? "bg-white/92 backdrop-blur-2xl border-b border-vm-border/80 shadow-[0_10px_40px_-30px_rgba(0,0,0,0.2)]" : "bg-white/78 backdrop-blur-md")}>
-      <div className="mx-auto max-w-7xl px-5 sm:px-7 lg:px-10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-7 lg:px-10">
         <div className={cn("flex items-center justify-between transition-all duration-500", scrolled ? "h-[5rem]" : "h-[6.5rem]")}>
           <Link href="/" className="flex items-center shrink-0" aria-label="VireMarca, início">
             <Image src="/logo-wordmark.png" alt="VireMarca" width={360} height={92} className={cn("w-auto object-contain transition-all duration-500", scrolled ? "h-[3.05rem]" : "h-[3.6rem]")} priority />
@@ -58,15 +58,15 @@ export function Header() {
             <MagneticButton href="/#contato" variant="primary" className="!px-6 !py-3 text-sm">Quero criar meu site</MagneticButton>
           </div>
 
-          <button type="button" className="md:hidden p-2 text-vm-ink" onClick={() => setOpen(!open)} aria-label={open ? "Fechar menu" : "Abrir menu"} aria-expanded={open}>{open ? <X size={23} /> : <Menu size={23} />}</button>
+          <button type="button" className="md:hidden inline-flex h-12 w-12 items-center justify-center text-vm-ink rounded-xl" onClick={() => setOpen(!open)} aria-label={open ? "Fechar menu" : "Abrir menu"} aria-expanded={open}>{open ? <X size={28} strokeWidth={1.9} /> : <Menu size={28} strokeWidth={1.9} />}</button>
         </div>
       </div>
 
-      <div className={cn("md:hidden fixed inset-x-0 top-[6.5rem] bottom-0 bg-white transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]", open ? "translate-x-0" : "translate-x-full pointer-events-none")}>
-        <nav className="flex flex-col px-6 py-8 gap-1">
-          {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="rounded-xl px-4 py-3.5 text-lg font-medium text-vm-ink hover:bg-vm-sand transition-colors">{item.label}</Link>)}
-          <button type="button" onClick={toggleMono} className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-vm-border px-6 py-3.5 text-sm font-semibold text-vm-ink"><Contrast size={16} />{mono ? "Voltar às cores" : "Preto e branco"}</button>
-          <Link href="/#contato" onClick={() => setOpen(false)} className="mt-3 inline-flex items-center justify-center rounded-full bg-vm-coral px-6 py-3.5 text-sm font-semibold text-white">Quero criar meu site</Link>
+      <div className={cn("md:hidden fixed inset-x-0 top-[5rem] bottom-0 bg-white/98 backdrop-blur-xl border-t border-vm-border/70 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]", open ? "translate-x-0" : "translate-x-full pointer-events-none")}>
+        <nav className="flex flex-col px-5 sm:px-6 py-6 sm:py-8 gap-2">
+          {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="rounded-2xl px-5 py-4.5 text-[1.2rem] sm:text-xl leading-tight font-medium text-vm-ink hover:bg-vm-sand active:bg-vm-sand transition-colors min-h-[3.75rem] flex items-center">{item.label}</Link>)}
+          <button type="button" onClick={toggleMono} className="mt-4 min-h-[3.75rem] inline-flex items-center justify-center gap-2 rounded-full border border-vm-border px-6 py-4 text-base font-semibold text-vm-ink"><Contrast size={18} />{mono ? "Voltar às cores" : "Preto e branco"}</button>
+          <Link href="/#contato" onClick={() => setOpen(false)} className="mt-2 min-h-[3.75rem] inline-flex items-center justify-center rounded-full bg-vm-coral px-6 py-4 text-base font-semibold text-white">Quero criar meu site</Link>
         </nav>
       </div>
     </header>
