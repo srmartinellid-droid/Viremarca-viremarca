@@ -58,15 +58,15 @@ export function Header() {
             <MagneticButton href="/#contato" variant="primary" className="!px-6 !py-3 text-sm">Quero criar meu site</MagneticButton>
           </div>
 
-          <button type="button" className="md:hidden inline-flex h-12 w-12 items-center justify-center text-vm-ink rounded-xl" onClick={() => setOpen(!open)} aria-label={open ? "Fechar menu" : "Abrir menu"} aria-expanded={open}>{open ? <X size={28} strokeWidth={1.9} /> : <Menu size={28} strokeWidth={1.9} />}</button>
+          <button type="button" className="md:hidden inline-flex h-14 w-14 items-center justify-center text-vm-ink rounded-2xl" onClick={() => setOpen(!open)} aria-label={open ? "Fechar menu" : "Abrir menu"} aria-expanded={open}>{open ? <X size={31} strokeWidth={1.9} /> : <Menu size={31} strokeWidth={1.9} />}</button>
         </div>
       </div>
 
       <div className={cn("md:hidden fixed inset-x-0 bottom-0 bg-white/98 backdrop-blur-xl border-t border-vm-border/70 transition-[transform,top] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]", scrolled ? "top-[5rem]" : "top-[6.5rem]", open ? "translate-x-0" : "translate-x-full pointer-events-none")}>
         <nav className="flex flex-col px-5 sm:px-6 py-6 sm:py-8 gap-2">
-          {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="rounded-2xl px-5 py-4.5 text-[1.2rem] sm:text-xl leading-tight font-medium text-vm-ink hover:bg-vm-sand active:bg-vm-sand transition-colors min-h-[3.75rem] flex items-center">{item.label}</Link>)}
-          <button type="button" onClick={toggleMono} className="mt-4 min-h-[3.75rem] inline-flex items-center justify-center gap-2 rounded-full border border-vm-border px-6 py-4 text-base font-semibold text-vm-ink"><Contrast size={18} />{mono ? "Voltar às cores" : "Preto e branco"}</button>
-          <Link href="/#contato" onClick={() => setOpen(false)} className="mt-2 min-h-[3.75rem] inline-flex items-center justify-center rounded-full bg-vm-coral px-6 py-4 text-base font-semibold text-white">Quero criar meu site</Link>
+          {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="rounded-2xl px-5 py-5 text-[1.35rem] sm:text-xl leading-tight font-medium text-vm-ink hover:bg-vm-sand active:bg-vm-sand transition-colors min-h-[4.25rem] flex items-center">{item.label}</Link>)}
+          <button type="button" onClick={toggleMono} className="mt-4 min-h-[4.25rem] inline-flex items-center justify-center gap-2 rounded-full border border-vm-border px-6 py-4 text-lg font-semibold text-vm-ink"><Contrast size={20} />{mono ? "Voltar às cores" : "Preto e branco"}</button>
+          <Link href="/#contato" onClick={() => setOpen(false)} className="mt-2 min-h-[4.25rem] inline-flex items-center justify-center rounded-full bg-vm-coral px-6 py-4 text-lg font-semibold text-white">Quero criar meu site</Link>
         </nav>
       </div>
     </header>
