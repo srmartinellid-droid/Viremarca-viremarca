@@ -22,3 +22,7 @@ body { background-color: var(--color-vm-bg); color: var(--color-vm-ink); font-fa
 .vm-eyebrow { font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-vm-coral); }
 .vm-img-desat { filter: grayscale(1) brightness(0.92); transition: filter var(--motion-slow) var(--ease-standard), transform var(--motion-slow) var(--ease-standard); } .group:hover .vm-img-desat, .vm-img-desat.is-active { filter: grayscale(0) brightness(1); }
 .vm-reveal-mask { clip-path: inset(0 0 100% 0); transition: clip-path var(--motion-reveal) var(--ease-emphasized); } .vm-reveal-mask.is-visible { clip-path: inset(0 0 0% 0); }
+.vm-divider-organic { position: relative; height: 72px; overflow: hidden; }
+.vm-divider-organic::after { content: ""; position: absolute; left: -5%; right: -5%; bottom: -42px; height: 78px; border-radius: 50%; background: var(--color-vm-sand); border-top: 1px solid color-mix(in srgb, var(--color-vm-coral) 18%, transparent); }
+.vm-divider-diagonal { height: 64px; clip-path: polygon(0 45%, 100% 0, 100% 100%, 0 100%); background: var(--color-vm-sand); }
+.vm-divider-wave { height: 64px; background: radial-gradient(110% 90% at 50% 100%, var(--color-vm-sand) 0 58%, transparent 59%); }
