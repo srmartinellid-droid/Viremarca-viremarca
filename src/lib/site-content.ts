@@ -9,6 +9,10 @@ export type PublicSiteContent = {
   heroAccent: string
   heroSubtitle: string
   heroAccentIntensity: number
+  heroImage: string
+  heroMobileImage: string
+  heroOverlayIntensity: number
+  logo2: string
   aboutTitle: string
   aboutBody: string
   process: ProcessItem[]
@@ -33,6 +37,10 @@ export async function getPublicSiteContent(): Promise<PublicSiteContent> {
     heroAccent: "presença digital à altura.",
     heroSubtitle: DEMO_CONTENT.heroSubtitle,
     heroAccentIntensity: 100,
+    heroImage: "/portfolio/magia-glass.jpg",
+    heroMobileImage: "",
+    heroOverlayIntensity: 58,
+    logo2: "",
     aboutTitle: DEMO_CONTENT.aboutTitle,
     aboutBody: DEMO_CONTENT.aboutBody,
     process: fallbackProcess,
@@ -65,6 +73,10 @@ export async function getPublicSiteContent(): Promise<PublicSiteContent> {
       heroAccent: values.hero_accent || fallback.heroAccent,
       heroSubtitle: values.hero_subtitle || fallback.heroSubtitle,
       heroAccentIntensity: Math.min(100, Math.max(0, Number(config.hero_accent_intensity || fallback.heroAccentIntensity))),
+      heroImage: config.hero_image || fallback.heroImage,
+      heroMobileImage: config.hero_mobile_image || fallback.heroMobileImage,
+      heroOverlayIntensity: Math.min(100, Math.max(0, Number(config.hero_overlay_intensity ?? fallback.heroOverlayIntensity))),
+      logo2: config.logo2 || fallback.logo2,
       aboutTitle: values.about_title || fallback.aboutTitle,
       aboutBody: values.about_body || fallback.aboutBody,
       process,
