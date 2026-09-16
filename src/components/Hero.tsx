@@ -49,7 +49,9 @@ export function Hero({ content, featuredProjects }: Props) {
 
   const cards = cardIndexes.map((projectIndex) => projects[projectIndex]).filter(Boolean)
   const intensity = content.heroAccentIntensity / 100
-  const heroImage = cards[0]?.thumbnail || "/portfolio/magia-glass.jpg"
+  const overlay = content.heroOverlayIntensity / 100
+  const heroImage = content.heroImage || cards[0]?.thumbnail || "/portfolio/magia-glass.jpg"
+  const heroMobileImage = content.heroMobileImage || heroImage
 
   return (
     <section className="relative min-h-[84vh] flex items-center pt-28 pb-12 md:pt-32 md:pb-16 overflow-hidden">
@@ -82,9 +84,12 @@ export function Hero({ content, featuredProjects }: Props) {
 
           <motion.div initial={reduced ? false : { opacity: 0, x: 30, scale: 0.97 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ duration: 0.8, delay: 0.16, ease }} className="relative min-h-[430px] sm:min-h-[500px] lg:min-h-[540px]">
             <div className="absolute inset-[4%_0] overflow-hidden rounded-[2.25rem] border border-white/70 bg-vm-ink shadow-[0_45px_100px_-55px_rgba(0,0,0,0.45)]">
-              <Image src={heroImage} alt="Projeto em destaque da VireMarca" fill sizes="(max-width: 1024px) 100vw, 56vw" className="object-cover scale-[1.03]" priority />
-              <div className="absolute inset-0 bg-vm-ink" style={{ opacity: 0.68 - intensity * 0.38 }} />
-              <div className="absolute inset-0 bg-gradient-to-br from-vm-coral/20 via-transparent to-vm-ink/55" style={{ opacity: 0.45 + intensity * 0.35 }} />
+              <picture className="absolute inset-0 block">
+                <source media="(max-width: 767px)" srcSet={heroMobileImage} />
+                <Image src={heroImage} alt="Direção visual de um projeto VireMarca" fill sizes="(max-width: 767px) 100vw, 56vw" className="object-cover scale-[1.03]" priority />
+              </picture>
+              <div className="absolute inset-0 bg-vm-ink" style={{ opacity: 0.08 + overlay * 0.62 }} />
+              <div className="absolute inset-0 bg-gradient-to-br from-vm-coral/20 via-transparent to-vm-ink/55" style={{ opacity: 0.22 + overlay * 0.58 }} />
               <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/70 via-transparent to-vm-ink/10" />
               <div className="absolute left-6 top-6 md:left-8 md:top-8 max-w-xs text-white/90">
                 <p className="text-[10px] uppercase tracking-[0.22em] text-white/55">Direção visual</p>
