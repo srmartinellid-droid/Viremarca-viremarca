@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Image from "next/image"
 import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { DEMO_CONTENT } from "@/lib/demo-data"
 import { MagneticButton } from "@/components/motion/MagneticButton"
@@ -13,33 +14,30 @@ export function Hero() {
   const reduced = useReducedMotion()
 
   return (
-    <section className="relative min-h-[88vh] flex flex-col justify-end pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden">
-      {/* Atmosphere layers */}
+    <section className="relative min-h-[92vh] flex items-center pt-32 pb-16 md:pt-36 md:pb-24 overflow-hidden">
       <div className="absolute inset-0 -z-10" aria-hidden>
-        <div className="absolute inset-0 vm-grid-bg opacity-60" />
-        <div className="absolute top-[-10%] right-[-8%] w-[55vw] max-w-[640px] h-[55vw] max-h-[640px] rounded-full bg-vm-coral/[0.07] blur-[100px]" />
-        <div className="absolute bottom-[-15%] left-[-10%] w-[45vw] max-w-[480px] h-[45vw] max-h-[480px] rounded-full bg-vm-sand blur-[80px]" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[80%] h-[40%] bg-gradient-to-b from-transparent via-white/40 to-transparent blur-2xl" />
+        <div className="absolute inset-0 vm-grid-bg opacity-45" />
+        <div className="absolute top-[-12%] right-[-8%] w-[55vw] h-[55vw] max-w-[720px] max-h-[720px] rounded-full bg-vm-coral/[0.09] blur-[110px]" />
+        <div className="absolute bottom-[-18%] left-[-8%] w-[48vw] h-[48vw] max-w-[600px] max-h-[600px] rounded-full bg-vm-sand blur-[90px]" />
       </div>
 
-      <Spotlight className="mx-auto w-full max-w-6xl px-4 sm:px-6" size={520} intensity={0.1}>
-        <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-12 lg:gap-16 items-end">
-          {/* Copy column — entrance choreography */}
-          <div className="max-w-2xl">
+      <Spotlight className="mx-auto w-full max-w-7xl px-5 sm:px-7 lg:px-10" size={620} intensity={0.08}>
+        <div className="grid lg:grid-cols-[0.88fr_1.12fr] gap-12 xl:gap-20 items-center">
+          <div className="max-w-2xl relative z-10">
             <motion.p
               initial={reduced ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, delay: 0.05, ease }}
-              className="vm-eyebrow mb-5"
+              className="vm-eyebrow mb-6"
             >
               Sites profissionais por segmento
             </motion.p>
 
             <motion.h1
-              initial={reduced ? false : { opacity: 0, y: 28 }}
+              initial={reduced ? false : { opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.75, delay: 0.12, ease }}
-              className="vm-display text-[2.35rem] sm:text-5xl md:text-[3.4rem] lg:text-[3.65rem] text-vm-ink"
+              transition={{ duration: 0.8, delay: 0.12, ease }}
+              className="vm-display text-[3rem] sm:text-6xl md:text-[4.35rem] lg:text-[4.6rem] xl:text-[5rem] leading-[0.98] tracking-[-0.045em] text-vm-ink"
             >
               {DEMO_CONTENT.heroTitle}
             </motion.h1>
@@ -48,7 +46,7 @@ export function Hero() {
               initial={reduced ? false : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.65, delay: 0.28, ease }}
-              className="mt-6 text-lg md:text-xl text-vm-muted leading-relaxed max-w-xl"
+              className="mt-7 text-lg md:text-xl text-vm-muted leading-relaxed max-w-xl"
             >
               {DEMO_CONTENT.heroSubtitle}
             </motion.p>
@@ -68,78 +66,89 @@ export function Hero() {
                 <ArrowUpRight size={16} />
               </MagneticButton>
             </motion.div>
+
+            <motion.div
+              initial={reduced ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.62, ease }}
+              className="mt-12 flex items-center gap-4 text-xs text-vm-muted"
+            >
+              <span className="h-px w-10 bg-vm-coral" />
+              <span>Uma base. Muitos segmentos. Uma identidade para cada marca.</span>
+            </motion.div>
           </div>
 
-          {/* Visual column — asymmetric composition */}
           <motion.div
-            initial={reduced ? false : { opacity: 0, scale: 0.96, y: 24 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.85, delay: 0.25, ease }}
-            className="relative hidden lg:block"
+            initial={reduced ? false : { opacity: 0, x: 36, scale: 0.96 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ duration: 0.9, delay: 0.2, ease }}
+            className="relative min-h-[470px] sm:min-h-[560px] lg:min-h-[610px]"
           >
-            <div className="relative aspect-[4/5] max-h-[520px] rounded-[1.75rem] overflow-hidden border border-vm-border bg-vm-sand/60">
-              {/* Abstract brand composition — not a stock photo */}
-              <div className="absolute inset-0 flex flex-col justify-between p-7">
-                <div className="flex items-start justify-between">
-                  <span className="text-[10px] font-medium tracking-[0.18em] uppercase text-vm-muted">
-                    VireMarca · Core
-                  </span>
-                  <span className="h-2 w-2 rounded-full bg-vm-coral animate-pulse" />
-                </div>
+            <div className="absolute inset-0 rounded-[2.5rem] bg-vm-ink/[0.025] border border-vm-border/80" />
 
-                <div className="space-y-4">
-                  <div className="h-px w-full bg-vm-border" />
-                  <p className="text-2xl font-semibold tracking-tight text-vm-ink leading-snug">
-                    Design.
-                    <br />
-                    Performance.
-                    <br />
-                    <span className="text-vm-coral">Conversão.</span>
-                  </p>
-                  <div className="flex gap-2 pt-2">
-                    {["Nicho", "Template", "Cliente"].map((label) => (
-                      <span
-                        key={label}
-                        className="rounded-full border border-vm-border bg-white/80 px-3 py-1 text-[11px] font-medium text-vm-muted"
-                      >
-                        {label}
-                      </span>
-                    ))}
-                  </div>
+            <motion.div
+              animate={reduced ? undefined : { y: [0, -8, 0], rotate: [0, 0.25, 0] }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-[6%] left-[3%] w-[78%] overflow-hidden rounded-[1.5rem] border border-white/80 bg-white shadow-[0_35px_90px_-35px_rgba(0,0,0,0.35)]"
+            >
+              <div className="flex h-9 items-center gap-1.5 border-b border-vm-border bg-white px-4">
+                <span className="h-2 w-2 rounded-full bg-vm-coral/70" />
+                <span className="h-2 w-2 rounded-full bg-vm-border" />
+                <span className="h-2 w-2 rounded-full bg-vm-border" />
+                <span className="ml-3 h-2 w-24 rounded-full bg-vm-sand" />
+              </div>
+              <div className="relative aspect-[16/10] overflow-hidden bg-vm-sand">
+                <Image src="/portfolio/magia-glass.jpg" alt="Projeto Magia Glass" fill sizes="(max-width: 1024px) 75vw, 560px" className="object-cover" priority />
+                <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/55 via-transparent to-transparent" />
+                <div className="absolute left-5 bottom-5 text-white">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/70">Serviços · Vidraçaria</p>
+                  <p className="mt-1 text-xl font-semibold tracking-tight">Magia Glass</p>
                 </div>
               </div>
-
-              {/* Soft coral accent shape */}
-              <div
-                className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full opacity-40"
-                style={{
-                  background:
-                    "radial-gradient(circle, var(--color-vm-coral) 0%, transparent 70%)",
-                }}
-              />
-            </div>
-
-            {/* Floating meta card */}
-            <motion.div
-              initial={reduced ? false : { opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.7, duration: 0.6, ease }}
-              className="absolute -left-6 bottom-16 rounded-2xl border border-vm-border bg-white/95 backdrop-blur-sm px-4 py-3 shadow-lg shadow-black/[0.04]"
-            >
-              <p className="text-[10px] font-medium tracking-wider uppercase text-vm-muted mb-1">
-                Modelo
-              </p>
-              <p className="text-sm font-semibold text-vm-ink">Core → Template → Cliente</p>
             </motion.div>
+
+            <motion.div
+              animate={reduced ? undefined : { y: [0, 10, 0], rotate: [0, -0.4, 0] }}
+              transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+              className="absolute right-[2%] top-[25%] w-[52%] overflow-hidden rounded-[1.35rem] border border-white bg-white shadow-[0_30px_80px_-35px_rgba(0,0,0,0.4)]"
+            >
+              <div className="relative aspect-[4/5] overflow-hidden bg-vm-sand">
+                <Image src="/portfolio/odonto.jpg" alt="Projeto Clínica Horizonte" fill sizes="(max-width: 1024px) 45vw, 380px" className="object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/55 via-transparent to-transparent" />
+                <div className="absolute left-4 bottom-4 text-white">
+                  <p className="text-[9px] uppercase tracking-[0.18em] text-white/70">Odontologia</p>
+                  <p className="mt-1 text-lg font-semibold">Clínica Horizonte</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              animate={reduced ? undefined : { y: [0, -6, 0] }}
+              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
+              className="absolute left-[7%] bottom-[5%] w-[48%] overflow-hidden rounded-[1.25rem] border border-white bg-white shadow-[0_25px_70px_-30px_rgba(0,0,0,0.35)]"
+            >
+              <div className="relative aspect-[16/10] overflow-hidden bg-vm-sand">
+                <Image src="/portfolio/advocacia.jpg" alt="Projeto Lima & Kowalski Advocacia" fill sizes="(max-width: 1024px) 45vw, 350px" className="object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/60 via-transparent to-transparent" />
+                <div className="absolute left-4 bottom-4 text-white">
+                  <p className="text-[9px] uppercase tracking-[0.18em] text-white/70">Advocacia</p>
+                  <p className="mt-1 text-base font-semibold">Lima &amp; Kowalski</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <div className="absolute right-[7%] bottom-[7%] rounded-2xl border border-vm-border bg-white/92 backdrop-blur-xl px-4 py-3 shadow-xl shadow-black/[0.06]">
+              <p className="text-[9px] uppercase tracking-[0.18em] text-vm-muted">Sistema VireMarca</p>
+              <p className="mt-1 text-sm font-semibold text-vm-ink">Nicho → Design → Conversão</p>
+            </div>
           </motion.div>
         </div>
       </Spotlight>
 
-      {/* Scroll hint */}
       <motion.div
         initial={reduced ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.1, duration: 0.6 }}
+        transition={{ delay: 1.15, duration: 0.6 }}
         className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2"
       >
         <span className="text-[10px] tracking-[0.2em] uppercase text-vm-muted">Scroll</span>
