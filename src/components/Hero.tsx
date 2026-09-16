@@ -11,24 +11,59 @@ import type { PortfolioProject } from "@/types"
 import type { PublicSiteContent } from "@/lib/site-content"
 
 const ease = [0.22, 1, 0.36, 1] as const
+const CARD_INTERVALS = [6500, 8000, 9100] as const
 
 type Props = { content: PublicSiteContent; featuredProjects: PortfolioProject[] }
 
 export function Hero({ content, featuredProjects }: Props) {
   const reduced = useReducedMotion()
-  const [offset, setOffset] = useState(0)
   const projects = useMemo(() => featuredProjects.length ? featuredProjects : [], [featuredProjects])
+  const [cardIndexes, setCardIndexes] = useState<number[]>(() =>
+    projects.length ? Array.from({ length: Math.min(3, projects.length) }, (_, index) => index) : [],
+  )
 
   useEffect(() => {
-    if (reduced || projects.length < 2) return
-    const timer = window.setInterval(() => setOffset((value) => (value + 1) % projects.length), 4200)
-    return () => window.clearInterval(timer)
-  }, [projects.length, reduced])
+    if (!projects.length) {
+      setCardIndexes([])
+      return
+    }
 
-  const cards = Array.from({ length: Math.min(3, Math.max(projects.length, 1)) }, (_, index) => {
-    if (!projects.length) return null
-    return projects[(offset + index) % projects.length]
-  })
+    const cardCount = Math.min(3, projects.length)
+    setCardIndexes((current) => {
+      if (current.length === cardCount && current.every((index) => index >= 0 && index < projects.length)) return current
+      return Array.from({ length: cardCount }, (_, index) => index)
+    })
+  }, [projects.length])
+
+  useEffect(() => {
+    if (reduced || projects.length < 2 || cardIndexes.length < 3) return
+
+    const timers = CARD_INTERVALS.map((interval, cardIndex) =>
+      window.setInterval(() => {
+        setCardIndexes((current) => {
+          if (current.length < 3) return current
+
+          const occupied = new Set(current.filter((_, index) => index !== cardIndex))
+          const currentIndex = current[cardIndex]
+
+          for (let step = 1; step <= projects.length; step += 1) {
+            const nextIndex = (currentIndex + step) % projects.length
+            if (!occupied.has(nextIndex)) {
+              const next = [...current]
+              next[cardIndex] = nextIndex
+              return next
+            }
+          }
+
+          return current
+        })
+      }, interval),
+    )
+
+    return () => timers.forEach((timer) => window.clearInterval(timer))
+  }, [cardIndexes.length, projects.length, reduced])
+
+  const cards = cardIndexes.map((projectIndex) => projects[projectIndex]).filter(Boolean)
   const intensity = content.heroAccentIntensity / 100
 
   return (
