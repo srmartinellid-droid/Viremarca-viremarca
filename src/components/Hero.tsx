@@ -1,150 +1,117 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { useEffect, useMemo, useState } from "react"
+import { AnimatePresence, motion } from "framer-motion"
+import Image from "next/image"
 import { ArrowRight, ArrowUpRight } from "lucide-react"
-import { DEMO_CONTENT } from "@/lib/demo-data"
 import { MagneticButton } from "@/components/motion/MagneticButton"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { Spotlight } from "@/components/motion/Spotlight"
+import type { PortfolioProject } from "@/types"
+import type { PublicSiteContent } from "@/lib/site-content"
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-export function Hero() {
+type Props = { content: PublicSiteContent; featuredProjects: PortfolioProject[] }
+
+export function Hero({ content, featuredProjects }: Props) {
   const reduced = useReducedMotion()
+  const [offset, setOffset] = useState(0)
+  const projects = useMemo(() => featuredProjects.length ? featuredProjects : [], [featuredProjects])
+
+  useEffect(() => {
+    if (reduced || projects.length < 2) return
+    const timer = window.setInterval(() => setOffset((value) => (value + 1) % projects.length), 4200)
+    return () => window.clearInterval(timer)
+  }, [projects.length, reduced])
+
+  const cards = Array.from({ length: Math.min(3, Math.max(projects.length, 1)) }, (_, index) => {
+    if (!projects.length) return null
+    return projects[(offset + index) % projects.length]
+  })
+  const intensity = content.heroAccentIntensity / 100
 
   return (
-    <section className="relative min-h-[88vh] flex flex-col justify-end pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden">
-      {/* Atmosphere layers */}
+    <section className="relative min-h-[84vh] flex items-center pt-28 pb-12 md:pt-32 md:pb-16 overflow-hidden">
       <div className="absolute inset-0 -z-10" aria-hidden>
-        <div className="absolute inset-0 vm-grid-bg opacity-60" />
-        <div className="absolute top-[-10%] right-[-8%] w-[55vw] max-w-[640px] h-[55vw] max-h-[640px] rounded-full bg-vm-coral/[0.07] blur-[100px]" />
-        <div className="absolute bottom-[-15%] left-[-10%] w-[45vw] max-w-[480px] h-[45vw] max-h-[480px] rounded-full bg-vm-sand blur-[80px]" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[80%] h-[40%] bg-gradient-to-b from-transparent via-white/40 to-transparent blur-2xl" />
+        <div className="absolute inset-0 vm-grid-bg opacity-35" />
+        <div className="absolute top-[-12%] right-[-8%] w-[48vw] h-[48vw] max-w-[680px] max-h-[680px] rounded-full bg-vm-coral/[0.08] blur-[110px]" />
+        <div className="absolute bottom-[-20%] left-[-8%] w-[42vw] h-[42vw] max-w-[560px] max-h-[560px] rounded-full bg-vm-sand blur-[90px]" />
       </div>
 
-      <Spotlight className="mx-auto w-full max-w-6xl px-4 sm:px-6" size={520} intensity={0.1}>
-        <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-12 lg:gap-16 items-end">
-          {/* Copy column — entrance choreography */}
-          <div className="max-w-2xl">
-            <motion.p
-              initial={reduced ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.05, ease }}
-              className="vm-eyebrow mb-5"
-            >
+      <Spotlight className="mx-auto w-full max-w-7xl px-5 sm:px-7 lg:px-10" size={620} intensity={0.08}>
+        <div className="grid lg:grid-cols-[0.86fr_1.14fr] gap-10 xl:gap-14 items-center">
+          <div className="max-w-2xl relative z-10">
+            <motion.p initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05, ease }} className="vm-eyebrow mb-5">
               Sites profissionais por segmento
             </motion.p>
 
-            <motion.h1
-              initial={reduced ? false : { opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.75, delay: 0.12, ease }}
-              className="vm-display text-[2.35rem] sm:text-5xl md:text-[3.4rem] lg:text-[3.65rem] text-vm-ink"
-            >
-              {DEMO_CONTENT.heroTitle}
+            <motion.h1 initial={reduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.12, ease }} className="vm-display text-[2.85rem] sm:text-5xl md:text-[3.7rem] lg:text-[4rem] xl:text-[4.25rem] leading-[1.01] tracking-[-0.045em] text-vm-ink">
+              {content.heroTitle}{" "}
+              <span style={{ color: `color-mix(in srgb, var(--color-vm-coral) ${Math.round(intensity * 100)}%, var(--color-vm-ink))` }}>{content.heroAccent}</span>
             </motion.h1>
 
-            <motion.p
-              initial={reduced ? false : { opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, delay: 0.28, ease }}
-              className="mt-6 text-lg md:text-xl text-vm-muted leading-relaxed max-w-xl"
-            >
-              {DEMO_CONTENT.heroSubtitle}
+            <motion.p initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25, ease }} className="mt-6 text-base md:text-lg text-vm-muted leading-relaxed max-w-xl">
+              {content.heroSubtitle}
             </motion.p>
 
-            <motion.div
-              initial={reduced ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.42, ease }}
-              className="mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4"
-            >
-              <MagneticButton href="/#sites" variant="primary">
-                Conheça nossos sites
-                <ArrowRight size={16} />
-              </MagneticButton>
-              <MagneticButton href="/virelab" variant="secondary">
-                Experimentar VireLab
-                <ArrowUpRight size={16} />
-              </MagneticButton>
+            <motion.div initial={reduced ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.38, ease }} className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <MagneticButton href="/#sites" variant="primary">Conheça nossos sites<ArrowRight size={16} /></MagneticButton>
+              <MagneticButton href="/virelab" variant="secondary">Experimentar VireLab<ArrowUpRight size={16} /></MagneticButton>
+            </motion.div>
+
+            <motion.div initial={reduced ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.55, ease }} className="mt-8 flex items-center gap-4 text-xs text-vm-muted">
+              <span className="h-px w-10 bg-vm-coral" />
+              <span>Uma base. Muitos segmentos. Uma identidade para cada marca.</span>
             </motion.div>
           </div>
 
-          {/* Visual column — asymmetric composition */}
-          <motion.div
-            initial={reduced ? false : { opacity: 0, scale: 0.96, y: 24 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.85, delay: 0.25, ease }}
-            className="relative hidden lg:block"
-          >
-            <div className="relative aspect-[4/5] max-h-[520px] rounded-[1.75rem] overflow-hidden border border-vm-border bg-vm-sand/60">
-              {/* Abstract brand composition — not a stock photo */}
-              <div className="absolute inset-0 flex flex-col justify-between p-7">
-                <div className="flex items-start justify-between">
-                  <span className="text-[10px] font-medium tracking-[0.18em] uppercase text-vm-muted">
-                    VireMarca · Core
-                  </span>
-                  <span className="h-2 w-2 rounded-full bg-vm-coral animate-pulse" />
-                </div>
+          <motion.div initial={reduced ? false : { opacity: 0, x: 30, scale: 0.97 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ duration: 0.8, delay: 0.16, ease }} className="relative min-h-[430px] sm:min-h-[500px] lg:min-h-[540px]">
+            <div className="absolute inset-0 rounded-[2.25rem] bg-vm-ink/[0.018] border border-vm-border/70" />
 
-                <div className="space-y-4">
-                  <div className="h-px w-full bg-vm-border" />
-                  <p className="text-2xl font-semibold tracking-tight text-vm-ink leading-snug">
-                    Design.
-                    <br />
-                    Performance.
-                    <br />
-                    <span className="text-vm-coral">Conversão.</span>
-                  </p>
-                  <div className="flex gap-2 pt-2">
-                    {["Nicho", "Template", "Cliente"].map((label) => (
-                      <span
-                        key={label}
-                        className="rounded-full border border-vm-border bg-white/80 px-3 py-1 text-[11px] font-medium text-vm-muted"
+            {cards.map((project, index) => project && (
+              <motion.a
+                key={`hero-card-${index}`}
+                href={`/portfolio/${project.slug}`}
+                animate={reduced ? undefined : { y: [0, index === 1 ? 9 : -7, 0], rotate: [0, index === 1 ? -0.35 : 0.25, 0] }}
+                transition={{ duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.35 }}
+                className={index === 0
+                  ? "absolute top-[5%] left-[2%] w-[77%] overflow-hidden rounded-[1.45rem] border border-white bg-white shadow-[0_35px_90px_-35px_rgba(0,0,0,0.35)]"
+                  : index === 1
+                    ? "absolute right-[1%] top-[24%] w-[51%] overflow-hidden rounded-[1.35rem] border border-white bg-white shadow-[0_30px_80px_-35px_rgba(0,0,0,0.4)]"
+                    : "absolute left-[6%] bottom-[4%] w-[48%] overflow-hidden rounded-[1.25rem] border border-white bg-white shadow-[0_25px_70px_-30px_rgba(0,0,0,0.35)]"
+                }
+              >
+                <div className="flex h-8 items-center gap-1.5 border-b border-vm-border bg-white px-4"><span className="h-2 w-2 rounded-full bg-vm-coral/70" /><span className="h-2 w-2 rounded-full bg-vm-border" /><span className="h-2 w-2 rounded-full bg-vm-border" /></div>
+                <div className="relative aspect-[16/10] overflow-hidden bg-vm-sand">
+                  <AnimatePresence initial={false} mode="sync">
+                    <motion.div
+                      key={project.id}
+                      initial={reduced ? false : { opacity: 0, scale: 1.035, x: 18 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={reduced ? undefined : { opacity: 0, scale: 0.985, x: -18 }}
+                      transition={{ duration: 0.8, ease }}
+                      className="absolute inset-0"
+                    >
+                      <Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(max-width: 1024px) 55vw, 520px" className="object-cover" priority={index === 0} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/60 via-transparent to-transparent" />
+                      <motion.div
+                        initial={reduced ? false : { opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.55, delay: 0.12, ease }}
+                        className="absolute left-4 bottom-4 text-white"
                       >
-                        {label}
-                      </span>
-                    ))}
-                  </div>
+                        <p className="text-[9px] uppercase tracking-[0.18em] text-white/70">{project.category}</p>
+                        <p className="mt-1 text-lg font-semibold tracking-tight">{project.title}</p>
+                      </motion.div>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
-              </div>
-
-              {/* Soft coral accent shape */}
-              <div
-                className="absolute -bottom-12 -right-12 w-48 h-48 rounded-full opacity-40"
-                style={{
-                  background:
-                    "radial-gradient(circle, var(--color-vm-coral) 0%, transparent 70%)",
-                }}
-              />
-            </div>
-
-            {/* Floating meta card */}
-            <motion.div
-              initial={reduced ? false : { opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.7, duration: 0.6, ease }}
-              className="absolute -left-6 bottom-16 rounded-2xl border border-vm-border bg-white/95 backdrop-blur-sm px-4 py-3 shadow-lg shadow-black/[0.04]"
-            >
-              <p className="text-[10px] font-medium tracking-wider uppercase text-vm-muted mb-1">
-                Modelo
-              </p>
-              <p className="text-sm font-semibold text-vm-ink">Core → Template → Cliente</p>
-            </motion.div>
+              </motion.a>
+            ))}
           </motion.div>
         </div>
       </Spotlight>
-
-      {/* Scroll hint */}
-      <motion.div
-        initial={reduced ? false : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.1, duration: 0.6 }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-2"
-      >
-        <span className="text-[10px] tracking-[0.2em] uppercase text-vm-muted">Scroll</span>
-        <div className="h-8 w-px bg-gradient-to-b from-vm-coral/60 to-transparent" />
-      </motion.div>
     </section>
   )
 }
