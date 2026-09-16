@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { motion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import Image from "next/image"
 import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { MagneticButton } from "@/components/motion/MagneticButton"
@@ -71,7 +71,7 @@ export function Hero({ content, featuredProjects }: Props) {
 
             {cards.map((project, index) => project && (
               <motion.a
-                key={`${project.id}-${index}-${offset}`}
+                key={`hero-card-${index}`}
                 href={`/portfolio/${project.slug}`}
                 animate={reduced ? undefined : { y: [0, index === 1 ? 9 : -7, 0], rotate: [0, index === 1 ? -0.35 : 0.25, 0] }}
                 transition={{ duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.35 }}
@@ -84,12 +84,28 @@ export function Hero({ content, featuredProjects }: Props) {
               >
                 <div className="flex h-8 items-center gap-1.5 border-b border-vm-border bg-white px-4"><span className="h-2 w-2 rounded-full bg-vm-coral/70" /><span className="h-2 w-2 rounded-full bg-vm-border" /><span className="h-2 w-2 rounded-full bg-vm-border" /></div>
                 <div className="relative aspect-[16/10] overflow-hidden bg-vm-sand">
-                  <Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(max-width: 1024px) 55vw, 520px" className="object-cover" priority={index === 0} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/60 via-transparent to-transparent" />
-                  <div className="absolute left-4 bottom-4 text-white">
-                    <p className="text-[9px] uppercase tracking-[0.18em] text-white/70">{project.category}</p>
-                    <p className="mt-1 text-lg font-semibold tracking-tight">{project.title}</p>
-                  </div>
+                  <AnimatePresence initial={false} mode="sync">
+                    <motion.div
+                      key={project.id}
+                      initial={reduced ? false : { opacity: 0, scale: 1.035, x: 18 }}
+                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                      exit={reduced ? undefined : { opacity: 0, scale: 0.985, x: -18 }}
+                      transition={{ duration: 0.8, ease }}
+                      className="absolute inset-0"
+                    >
+                      <Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(max-width: 1024px) 55vw, 520px" className="object-cover" priority={index === 0} />
+                      <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/60 via-transparent to-transparent" />
+                      <motion.div
+                        initial={reduced ? false : { opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.55, delay: 0.12, ease }}
+                        className="absolute left-4 bottom-4 text-white"
+                      >
+                        <p className="text-[9px] uppercase tracking-[0.18em] text-white/70">{project.category}</p>
+                        <p className="mt-1 text-lg font-semibold tracking-tight">{project.title}</p>
+                      </motion.div>
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </motion.a>
             ))}
