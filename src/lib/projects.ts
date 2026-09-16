@@ -35,16 +35,18 @@ export async function getProjectBySlug(slug: string): Promise<PortfolioProject |
     const supabase = await createClientOptional()
     if (!supabase) return DEMO_PROJECTS.find((p) => p.slug === slug) ?? null
 
+    const decodedSlug = decodeURIComponent(slug)
     const { data, error } = await supabase
       .from("portfolio_projects")
       .select("*")
-      .eq("slug", slug)
       .eq("active", true)
+      .ilike("slug", decodedSlug)
       .maybeSingle()
 
-    if (error || !data) return DEMO_PROJECTS.find((p) => p.slug === slug) ?? null
+    if (error || !data) return DEMO_PROJECTS.find((p) => p.slug === decodedSlug) ?? null
     return data as PortfolioProject
   } catch {
-    return DEMO_PROJECTS.find((p) => p.slug === slug) ?? null
+    const decodedSlug = decodeURIComponent(slug)
+    return DEMO_PROJECTS.find((p) => p.slug === decodedSlug) ?? null
   }
 }
