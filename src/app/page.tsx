@@ -5,18 +5,22 @@ import { About } from "@/components/About"
 import { Delivers } from "@/components/Delivers"
 import { ContactCTA } from "@/components/ContactCTA"
 import { getPublicProjects } from "@/lib/projects"
+import { getPublicSiteContent } from "@/lib/site-content"
 
 export default async function HomePage() {
-  const projects = await getPublicProjects()
+  const [projects, content] = await Promise.all([
+    getPublicProjects(),
+    getPublicSiteContent(),
+  ])
 
   return (
     <>
-      <Hero />
+      <Hero content={content} />
       <PortfolioShowcase projects={projects} />
       <Process />
-      <About />
+      <About content={content} />
       <Delivers />
-      <ContactCTA />
+      <ContactCTA contact={content.contact} />
     </>
   )
 }
