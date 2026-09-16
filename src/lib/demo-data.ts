@@ -8,7 +8,7 @@ export const DEMO_PROJECTS: PortfolioProject[] = [
     category: "Serviços · Vidraçaria",
     description: "Site institucional e comercial para empresa de vidros e esquadrias, com portfólio de projetos e formulário de orçamento.",
     thumbnail: "/portfolio/magia-glass.jpg",
-    site_url: "https://magia-glass.vercel.app",
+    site_url: "https://viremarca-vidracaria-magiaglass.vercel.app/",
     display_order: 1,
     featured: true,
     active: true,
