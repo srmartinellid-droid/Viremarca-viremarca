@@ -75,7 +75,7 @@ export default async function PortfolioProjectPage({ params }: Props) {
                   </div>
                 </div>
               </div>
-              <div className="relative aspect-[16/10] bg-white">
+              <div className="relative aspect-[4/5] md:aspect-[16/10] bg-white">
                 <iframe
                   src={project.site_url}
                   title={project.title}
@@ -88,7 +88,7 @@ export default async function PortfolioProjectPage({ params }: Props) {
               </div>
             </div>
           ) : (
-            <div className="aspect-[16/10] flex flex-col items-center justify-center gap-4 p-8 text-center">
+            <div className="aspect-[4/5] md:aspect-[16/10] flex flex-col items-center justify-center gap-4 p-8 text-center">
               {project.thumbnail && (
                 <div className="relative w-full max-w-md aspect-video rounded-xl overflow-hidden border border-vm-border">
                   <Image src={project.thumbnail} alt={project.title} fill className="object-cover" />
