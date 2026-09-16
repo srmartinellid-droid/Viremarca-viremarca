@@ -62,7 +62,7 @@ export function Header() {
         </div>
       </div>
 
-      <div className={cn("md:hidden fixed inset-x-0 top-[5rem] bottom-0 bg-white/98 backdrop-blur-xl border-t border-vm-border/70 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]", open ? "translate-x-0" : "translate-x-full pointer-events-none")}>
+      <div className={cn("md:hidden fixed inset-x-0 bottom-0 bg-white/98 backdrop-blur-xl border-t border-vm-border/70 transition-[transform,top] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]", scrolled ? "top-[5rem]" : "top-[6.5rem]", open ? "translate-x-0" : "translate-x-full pointer-events-none")}>
         <nav className="flex flex-col px-5 sm:px-6 py-6 sm:py-8 gap-2">
           {nav.map((item) => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className="rounded-2xl px-5 py-4.5 text-[1.2rem] sm:text-xl leading-tight font-medium text-vm-ink hover:bg-vm-sand active:bg-vm-sand transition-colors min-h-[3.75rem] flex items-center">{item.label}</Link>)}
           <button type="button" onClick={toggleMono} className="mt-4 min-h-[3.75rem] inline-flex items-center justify-center gap-2 rounded-full border border-vm-border px-6 py-4 text-base font-semibold text-vm-ink"><Contrast size={18} />{mono ? "Voltar às cores" : "Preto e branco"}</button>
