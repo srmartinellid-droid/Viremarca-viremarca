@@ -44,7 +44,6 @@ alter table public.portfolio_projects enable row level security;
 alter table public.site_content enable row level security;
 alter table public.site_settings enable row level security;
 
--- Strict administrator check. Editors must not be able to change roles/profiles.
 create or replace function public.is_admin()
 returns boolean
 language sql
@@ -58,7 +57,6 @@ as $$
   );
 $$;
 
--- Content/portfolio operators: admin or editor.
 create or replace function public.is_admin_or_editor()
 returns boolean
 language sql
@@ -73,59 +71,25 @@ as $$
 $$;
 
 drop policy if exists "Users read own profile" on public.profiles;
-create policy "Users read own profile"
-  on public.profiles for select
-  to authenticated
-  using (auth.uid() = id or public.is_admin());
-
--- Profiles are server-controlled. There is intentionally no self-update policy,
--- preventing a normal user from changing their own role to admin/editor.
+create policy "Users read own profile" on public.profiles for select to authenticated using (auth.uid() = id or public.is_admin());
 drop policy if exists "Users update own profile" on public.profiles;
 drop policy if exists "Admin manage profiles" on public.profiles;
-create policy "Admin manage profiles"
-  on public.profiles for all
-  to authenticated
-  using (public.is_admin())
-  with check (public.is_admin());
+create policy "Admin manage profiles" on public.profiles for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists "Public read active projects" on public.portfolio_projects;
-create policy "Public read active projects"
-  on public.portfolio_projects for select
-  to anon, authenticated
-  using (active = true or public.is_admin_or_editor());
-
+create policy "Public read active projects" on public.portfolio_projects for select to anon, authenticated using (active = true or public.is_admin_or_editor());
 drop policy if exists "Admin full portfolio" on public.portfolio_projects;
-create policy "Admin full portfolio"
-  on public.portfolio_projects for all
-  to authenticated
-  using (public.is_admin_or_editor())
-  with check (public.is_admin_or_editor());
+create policy "Admin full portfolio" on public.portfolio_projects for all to authenticated using (public.is_admin_or_editor()) with check (public.is_admin_or_editor());
 
 drop policy if exists "Public read content" on public.site_content;
-create policy "Public read content"
-  on public.site_content for select
-  to anon, authenticated
-  using (true);
-
+create policy "Public read content" on public.site_content for select to anon, authenticated using (true);
 drop policy if exists "Admin full content" on public.site_content;
-create policy "Admin full content"
-  on public.site_content for all
-  to authenticated
-  using (public.is_admin_or_editor())
-  with check (public.is_admin_or_editor());
+create policy "Admin full content" on public.site_content for all to authenticated using (public.is_admin_or_editor()) with check (public.is_admin_or_editor());
 
 drop policy if exists "Public read settings" on public.site_settings;
-create policy "Public read settings"
-  on public.site_settings for select
-  to anon, authenticated
-  using (true);
-
+create policy "Public read settings" on public.site_settings for select to anon, authenticated using (true);
 drop policy if exists "Admin full settings" on public.site_settings;
-create policy "Admin full settings"
-  on public.site_settings for all
-  to authenticated
-  using (public.is_admin_or_editor())
-  with check (public.is_admin_or_editor());
+create policy "Admin full settings" on public.site_settings for all to authenticated using (public.is_admin_or_editor()) with check (public.is_admin_or_editor());
 
 create or replace function public.handle_new_user()
 returns trigger
@@ -142,9 +106,7 @@ end;
 $$;
 
 drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
+create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
 
 insert into public.site_content (key, value) values
   ('hero_title', 'Seu negócio merece uma presença digital à altura.'),
@@ -156,7 +118,12 @@ on conflict (key) do nothing;
 insert into public.site_settings (key, value) values
   ('whatsapp', '5548999999999'),
   ('email', 'contato@viremarca.com.br'),
-  ('instagram', 'viremarca')
+  ('instagram', 'viremarca'),
+  ('hero_accent_intensity', '100'),
+  ('hero_image', ''),
+  ('hero_mobile_image', ''),
+  ('hero_overlay_intensity', '58'),
+  ('logo2', '')
 on conflict (key) do nothing;
 
 -- Promote first admin after creating Auth user:
