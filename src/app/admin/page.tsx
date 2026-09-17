@@ -11,8 +11,9 @@ import { DEMO_CONTENT } from "@/lib/demo-data"
 import { cn } from "@/lib/utils"
 import { createProject, updateProject, deleteProject, toggleProjectActive } from "@/app/actions/portfolio"
 import { logoutAction } from "@/app/actions/auth"
+import { VisualSettings } from "@/components/VisualSettings"
 
-type Tab = "dashboard" | "portfolio" | "content" | "settings"
+type Tab = "dashboard" | "portfolio" | "content" | "settings" | "visual"
 type Notice = { type: "ok" | "err"; text: string }
 type SiteMap = Record<string, string>
 
@@ -33,6 +34,7 @@ const nav = [
   { id: "portfolio" as Tab, label: "Portfólio", icon: FolderKanban },
   { id: "content" as Tab, label: "Conteúdo", icon: FileText },
   { id: "settings" as Tab, label: "Configurações", icon: Settings },
+  { id: "visual" as Tab, label: "Hero & Visual", icon: Sparkles },
 ]
 
 function Field({ label, value, onChange, multiline = false, placeholder = "" }: { label: string; value: string; onChange: (value: string) => void; multiline?: boolean; placeholder?: string }) {
@@ -173,6 +175,8 @@ export default function AdminPage() {
           </div>}
 
           {tab === "settings" && <div className="max-w-4xl space-y-7"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-vm-coral">Configurações</p><h2 className="mt-2 text-2xl font-semibold text-vm-ink">Identidade e canais</h2><p className="mt-1 text-sm text-vm-muted">Ajustes sem precisar tocar no código.</p></div><section className="rounded-3xl border border-vm-border bg-white p-6 space-y-6"><div className="grid gap-5 md:grid-cols-2"><Field label="WhatsApp" value={settings.whatsapp} onChange={(v) => setSettings(s => ({ ...s, whatsapp: v }))} placeholder="5548999999999" /><Field label="E-mail" value={settings.email} onChange={(v) => setSettings(s => ({ ...s, email: v }))} /><Field label="Instagram" value={settings.instagram} onChange={(v) => setSettings(s => ({ ...s, instagram: v }))} /></div></section><section className="rounded-3xl border border-vm-border bg-white p-6"><div className="flex items-start justify-between gap-5"><div><h3 className="font-semibold text-vm-ink">Intensidade da cor da hero</h3><p className="mt-1 text-sm text-vm-muted">0 = quase neutro · 100 = coral máximo.</p></div><span className="text-2xl font-semibold text-vm-coral">{Number(settings.hero_accent_intensity || 100)}%</span></div><input type="range" min="0" max="100" value={Number(settings.hero_accent_intensity || 100)} onChange={(e) => setSettings(s => ({ ...s, hero_accent_intensity: e.target.value }))} className="mt-6 w-full accent-vm-coral" /><div className="mt-4 h-12 rounded-xl bg-vm-ink flex items-center px-5 text-xl font-semibold"><span className="text-white">Seu negócio merece uma&nbsp;</span><span style={{ color: `color-mix(in srgb, var(--color-vm-coral) ${Number(settings.hero_accent_intensity || 100)}%, white)` }}>presença digital.</span></div></section><div className="flex justify-end"><button type="button" disabled={savingSettings} onClick={saveSettings} className="inline-flex items-center gap-2 rounded-full bg-vm-coral px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"><Save size={16} />{savingSettings ? "Salvando…" : "Salvar configurações"}</button></div></div>}
+
+          {tab === "visual" && <VisualSettings />}
         </>}
       </main>
     </div>
