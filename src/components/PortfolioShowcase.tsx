@@ -85,7 +85,7 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
                   <div className="p-5 md:p-6 bg-white">
                     <div className="flex items-start justify-between gap-3">
                       <div><h3 className="text-lg font-semibold tracking-tight text-vm-ink group-hover:text-vm-coral transition-colors">{project.title}</h3><p className="mt-2 text-sm text-vm-muted leading-relaxed line-clamp-2">{project.description}</p></div>
-                      <Link href={`/portfolio/${project.slug}`} className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full border border-vm-border group-hover:border-vm-coral group-hover:bg-vm-coral group-hover:text-white transition-all" aria-label={`Ver ${project.title}`}><ArrowUpRight size={16} /></Link>
+                      <Link href={`/portfolio/${encodeURIComponent(project.slug)}`} className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-vm-border px-3.5 py-2 text-xs font-semibold text-vm-ink transition-all group-hover:border-vm-coral group-hover:bg-vm-coral group-hover:text-white" aria-label={`Ver detalhes de ${project.title}`}>Ver detalhes<ArrowUpRight size={14} /></Link>
                     </div>
                   </div>
                 </motion.article>
