@@ -110,11 +110,11 @@ export function Hero({ content, featuredProjects }: Props) {
 
           <div className="relative hidden min-h-[600px] lg:block" aria-label="Projetos em destaque">
             <div className="pointer-events-none absolute right-[8%] top-[7%] h-2 w-2 rounded-full bg-vm-coral shadow-[0_0_28px_rgba(224,122,95,0.9)]" aria-hidden />
-            {cards.map((project, index) => project && <HeroCard key={`hero-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} />)}
+            {cards.map((project, index) => project && <AnimatePresence key={`hero-card-slot-${index}`} initial={false} mode="wait"><HeroCard key={project.id} project={project} index={index} reduced={reduced} motionAmount={motionAmount} /></AnimatePresence>)}
           </div>
 
           <div className="-mx-5 flex flex-col gap-5 px-5 pb-4 lg:hidden" aria-label="Projetos em destaque">
-            {cards.map((project, index) => project && <HeroCard key={`hero-mobile-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} mobile />)}
+            {cards.map((project, index) => project && <AnimatePresence key={`hero-mobile-card-slot-${index}`} initial={false} mode="wait"><HeroCard key={project.id} project={project} index={index} reduced={reduced} motionAmount={motionAmount} mobile /></AnimatePresence>)}
           </div>
         </div>
       </motion.div>
