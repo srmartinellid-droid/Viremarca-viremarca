@@ -8,6 +8,7 @@ export type TitleStyle = {
 }
 
 export const DEFAULT_TITLE_STYLES: Record<string, TitleStyle> = {
+  hero: { text: "Seu negócio merece uma presença digital à altura.", highlight: "presença digital à altura.", textColor: "#FFFFFF", highlightColor: "#E07A5F", highlightStyle: "color", align: "left" },
   process: { text: "Como trabalhamos", highlight: "trabalhamos", textColor: "#FFFFFF", highlightColor: "#E07A5F", highlightStyle: "color" },
   about: { text: "Quem somos", highlight: "somos", textColor: "#171717", highlightColor: "#E07A5F", highlightStyle: "color" },
   delivers: { text: "Não entregamos páginas. Construímos presença.", highlight: "Construímos presença.", textColor: "#171717", highlightColor: "#E07A5F", highlightStyle: "color" },
