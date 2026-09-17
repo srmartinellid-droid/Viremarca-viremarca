@@ -87,7 +87,7 @@ export function VisualSettings() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <Link href="/admin" className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-vm-muted hover:text-vm-ink"><ArrowLeft size={14} />Admin</Link>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-vm-ink md:text-4xl">Identidade visual</h1>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-vm-ink md:text-4xl">Hero & identidade visual</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-vm-muted">Controle da imagem principal da hero, versão mobile, intensidade do overlay e Logo 2. Tudo persistido no Supabase.</p>
           </div>
           <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-full bg-vm-coral px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-vm-coral/20 disabled:opacity-60"><Save size={16} />{saving ? "Salvando…" : "Salvar alterações"}</button>
