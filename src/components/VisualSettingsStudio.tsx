@@ -14,7 +14,7 @@ const dividerDefaults: Record<string, DividerStyle> = {
   method: { label: "Método · Direção · Resultado", mode: "color", backgroundColor: "#F5F0E8", textColor: "#171717", overlay: 35, images: [], position: "center center", scale: 100 },
   presence: { label: "Uma marca que ganha presença", mode: "color", backgroundColor: "#171717", textColor: "#FFFFFF", overlay: 45, images: [], position: "center center", scale: 100 },
 }
-const titleLabels: Record<string, string> = { process: "Como trabalhamos", about: "Quem somos", delivers: "O que entregamos", contact: "Chamada final" }
+const titleLabels: Record<string, string> = { hero: "Título principal / Hero", process: "Como trabalhamos", about: "Quem somos", delivers: "O que entregamos", contact: "Chamada final" }
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"])
 
 function parseList(value: string) { try { const parsed = JSON.parse(value || "[]"); return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string" && !!x.trim()) : [] } catch { return value.trim() ? [value.trim()] : [] } }
