@@ -51,23 +51,50 @@ export function Hero({ content, featuredProjects }: Props) {
 
   useEffect(() => {
     if (reduced || projects.length < 2 || cardIndexes.length < 3) return
-    const timers = CARD_INTERVALS.map((interval, cardIndex) => window.setInterval(() => {
-      setCardIndexes((current) => {
-        if (current.length < 3) return current
-        const occupied = new Set(current.filter((_, index) => index !== cardIndex))
-        const currentIndex = current[cardIndex]
-        for (let step = 1; step <= projects.length; step += 1) {
-          const nextIndex = (currentIndex + step) % projects.length
-          if (!occupied.has(nextIndex)) {
-            const next = [...current]
-            next[cardIndex] = nextIndex
-            return next
+
+    let cancelled = false
+    const timers: number[] = []
+
+    const scheduleNext = (cardIndex: number, baseInterval: number) => {
+      const jitter = 0.84 + Math.random() * 0.32
+      const delay = Math.round(baseInterval * jitter)
+
+      const timer = window.setTimeout(() => {
+        if (cancelled) return
+
+        setCardIndexes((current) => {
+          if (current.length < 3) return current
+          const occupied = new Set(current.filter((_, index) => index !== cardIndex))
+          const currentIndex = current[cardIndex]
+
+          for (let step = 1; step <= projects.length; step += 1) {
+            const nextIndex = (currentIndex + step) % projects.length
+            if (!occupied.has(nextIndex)) {
+              const next = [...current]
+              next[cardIndex] = nextIndex
+              return next
+            }
           }
-        }
-        return current
-      })
-    }, interval))
-    return () => timers.forEach((timer) => window.clearInterval(timer))
+
+          return current
+        })
+
+        scheduleNext(cardIndex, baseInterval)
+      }, delay)
+
+      timers.push(timer)
+    }
+
+    CARD_INTERVALS.forEach((interval, cardIndex) => {
+      const initialStagger = Math.round(cardIndex * 850 + Math.random() * 900)
+      const timer = window.setTimeout(() => scheduleNext(cardIndex, interval), initialStagger)
+      timers.push(timer)
+    })
+
+    return () => {
+      cancelled = true
+      timers.forEach((timer) => window.clearTimeout(timer))
+    }
   }, [cardIndexes.length, projects.length, reduced])
 
   const cards = cardIndexes.map((projectIndex) => projects[projectIndex]).filter(Boolean)
@@ -133,8 +160,8 @@ function HeroCard({ project, index, reduced, motionAmount, mobile = false }: { p
     <motion.a href={`/portfolio/${project.slug}`} initial={reduced ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1, ease }} className="group relative w-full overflow-hidden rounded-[1.25rem] border border-white/70 bg-white shadow-[0_28px_70px_-35px_rgba(0,0,0,0.8)]">
       <div className="flex h-7 items-center gap-1.5 border-b border-black/10 bg-white px-3"><span className="h-1.5 w-1.5 rounded-full bg-vm-coral/75" /><span className="h-1.5 w-1.5 rounded-full bg-black/10" /><span className="h-1.5 w-1.5 rounded-full bg-black/10" /></div>
       <div className="relative aspect-[16/10] overflow-hidden">
-        <AnimatePresence initial={false} mode="wait">
-          <motion.div key={imageSrc} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }} transition={{ duration: 0.9, ease }} className="absolute inset-0">
+        <AnimatePresence initial={false} mode="sync">
+          <motion.div key={imageSrc} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }} transition={{ duration: 1.15, ease }} className="absolute inset-0">
             <Image src={imageSrc} alt={project.title} fill sizes="(max-width: 767px) 100vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
           </motion.div>
         </AnimatePresence>
