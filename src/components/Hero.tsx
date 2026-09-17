@@ -182,7 +182,7 @@ function HeroCard({ project, index, reduced, motionAmount, mobile = false }: { p
       <div className="flex h-8 items-center gap-1.5 border-b border-black/10 bg-white px-4"><span className="h-2 w-2 rounded-full bg-vm-coral/75" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="ml-auto text-[8px] font-medium uppercase tracking-[0.18em] text-black/30">VireMarca</span></div>
       <div className="relative aspect-[16/10] overflow-hidden">
         <AnimatePresence initial={false} mode="wait">
-          <motion.div key={imageSrc} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }} transition={{ duration: 0.9, ease }} className="absolute inset-0">
+          <motion.div key={imageSrc} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }} transition={{ duration: 1.15, ease }} className="absolute inset-0">
             <Image src={imageSrc} alt={project.title} fill sizes="(min-width: 1024px) 48vw, 100vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
           </motion.div>
         </AnimatePresence>
