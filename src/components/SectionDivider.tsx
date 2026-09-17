@@ -1,19 +1,16 @@
-type Props = { variant?: "light" | "dark" | "sand"; label?: string }
+"use client"
 
-export function SectionDivider({ variant = "light", label }: Props) {
-  const tones = {
-    light: "bg-white text-vm-ink/35 border-vm-border/70",
-    dark: "bg-vm-ink text-white/35 border-white/10",
-    sand: "bg-vm-sand text-vm-ink/35 border-vm-border/70",
-  }
+import { AnimatePresence, motion } from "framer-motion"
+import type { DividerStyle } from "@/lib/site-content"
+
+export function SectionDivider({ config }: { config: DividerStyle }) {
+  const image = config.images?.length ? config.images[0] : ""
   return (
-    <div className={`relative h-20 overflow-hidden border-y ${tones[variant]}`} aria-hidden={!label}>
-      <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(90deg,transparent_0%,currentColor_18%,transparent_36%,transparent_64%,currentColor_82%,transparent_100%)]" />
-      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center gap-3 whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.28em]">
-        <span className="h-px w-12 bg-current opacity-40" />
-        {label ?? "VireMarca"}
-        <span className="h-px w-12 bg-current opacity-40" />
-      </div>
+    <div className="relative h-24 overflow-hidden border-y border-black/10 md:h-28" style={{ backgroundColor: config.backgroundColor }} aria-label={config.label}>
+      <AnimatePresence initial={false} mode="sync">{image && config.mode === "image" && <motion.div key={image} initial={{ opacity: 0, scale: 1.04 }} animate={{ opacity: 1, scale: config.scale / 100 }} transition={{ duration: 1.1 }} className="absolute inset-[-3%] bg-cover" style={{ backgroundImage: `url(${image})`, backgroundPosition: config.position }} />}</AnimatePresence>
+      {image && config.mode === "image" && <div className="absolute inset-0" style={{ backgroundColor: "#171717", opacity: Math.max(0, Math.min(100, config.overlay)) / 100 }} />}
+      <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(90deg,transparent_0%,currentColor_18%,transparent_36%,transparent_64%,currentColor_82%,transparent_100%)]" style={{ color: config.textColor }} />
+      <div className="absolute inset-0 flex items-center justify-center"><div className="flex items-center gap-4 whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.28em] md:text-[10px]" style={{ color: config.textColor }}><span className="h-px w-12 bg-current opacity-50" />{config.label}<span className="h-px w-12 bg-current opacity-50" /></div></div>
     </div>
   )
 }
