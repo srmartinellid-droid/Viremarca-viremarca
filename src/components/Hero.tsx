@@ -1,30 +1,53 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion, useReducedMotion as useFramerReducedMotion, useScroll, useTransform } from "framer-motion"
 import Image from "next/image"
 import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { MagneticButton } from "@/components/motion/MagneticButton"
+import { renderTitleParts } from "@/components/TitleBlock"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
-import { Spotlight } from "@/components/motion/Spotlight"
 import type { PortfolioProject } from "@/types"
 import type { PublicSiteContent } from "@/lib/site-content"
 
 const ease = [0.22, 1, 0.36, 1] as const
 const CARD_INTERVALS = [6500, 8000, 9100] as const
+const HERO_IMAGE_INTERVAL = 6500
 
 type Props = { content: PublicSiteContent; featuredProjects: PortfolioProject[] }
 
 export function Hero({ content, featuredProjects }: Props) {
   const reduced = useReducedMotion()
+  const framerReduced = useFramerReducedMotion()
   const projects = useMemo(() => featuredProjects.length ? featuredProjects : [], [featuredProjects])
   const [cardIndexes, setCardIndexes] = useState<number[]>(() => projects.length ? Array.from({ length: Math.min(3, projects.length) }, (_, index) => index) : [])
+  const desktopImages = useMemo(() => content.heroBackgroundImages?.length ? content.heroBackgroundImages : [content.heroImage || cardsFallback(projects)], [content.heroBackgroundImages, content.heroImage, projects])
+  const mobileImages = useMemo(() => content.heroMobileBackgroundImages?.length ? content.heroMobileBackgroundImages : desktopImages, [content.heroMobileBackgroundImages, desktopImages])
+  const [backgroundIndex, setBackgroundIndex] = useState(0)
+  const { scrollY } = useScroll()
+  const baseScale = content.heroBackgroundScale / 100
+  const bgY = useTransform(scrollY, [0, 700], [0, 72])
+  const bgScale = useTransform(scrollY, [0, 700], [baseScale, baseScale + 0.055])
+  const contentY = useTransform(scrollY, [0, 650], [0, -28])
+  const heroStyle = content.titleStyles?.hero ?? { text: `${content.heroTitle} ${content.heroAccent}`, highlight: content.heroAccent, textColor: "#FFFFFF", highlightColor: "#E07A5F", highlightStyle: "color" as const, align: "left" as const }
+  const heroParts = renderTitleParts(heroStyle)
+  const heroHighlightClass = heroStyle.highlightStyle === "italic" ? "italic" : heroStyle.highlightStyle === "underline" ? "underline decoration-[0.08em] underline-offset-[0.14em]" : heroStyle.highlightStyle === "marker" ? "rounded-[0.12em] px-[0.08em]" : ""
 
   useEffect(() => {
     if (!projects.length) return setCardIndexes([])
     const cardCount = Math.min(3, projects.length)
     setCardIndexes((current) => current.length === cardCount && current.every((index) => index >= 0 && index < projects.length) ? current : Array.from({ length: cardCount }, (_, index) => index))
   }, [projects.length])
+
+  useEffect(() => {
+    if (reduced || desktopImages.length < 2) return
+    const timer = window.setInterval(() => setBackgroundIndex((current) => (current + 1) % desktopImages.length), HERO_IMAGE_INTERVAL)
+    return () => window.clearInterval(timer)
+  }, [desktopImages.length, reduced])
+
+  useEffect(() => {
+    setBackgroundIndex(0)
+  }, [desktopImages.length, mobileImages.length])
 
   useEffect(() => {
     if (reduced || projects.length < 2 || cardIndexes.length < 3) return
@@ -48,86 +71,74 @@ export function Hero({ content, featuredProjects }: Props) {
   }, [cardIndexes.length, projects.length, reduced])
 
   const cards = cardIndexes.map((projectIndex) => projects[projectIndex]).filter(Boolean)
-  const intensity = content.heroAccentIntensity / 100
   const overlay = content.heroOverlayIntensity / 100
-  const heroImage = content.heroImage || cards[0]?.thumbnail || "/portfolio/magia-glass.jpg"
-  const heroMobileImage = content.heroMobileImage || heroImage
+  const bgPosition = content.heroBackgroundPosition || "center center"
+  const motionAmount = content.heroCardsMotion / 100
+  const desktopImage = desktopImages[backgroundIndex % desktopImages.length] || "/portfolio/magia-glass.jpg"
+  const mobileImage = mobileImages[backgroundIndex % mobileImages.length] || desktopImage
 
   return (
-    <section className="relative min-h-[84vh] flex items-center pt-28 pb-12 md:pt-32 md:pb-16 overflow-hidden">
-      <div className="absolute inset-0 -z-10" aria-hidden>
-        <div className="absolute inset-0 vm-grid-bg opacity-30" />
-        <div className="absolute top-[-12%] right-[-8%] w-[48vw] h-[48vw] max-w-[680px] max-h-[680px] rounded-full bg-vm-coral/[0.08] blur-[110px]" />
-        <div className="absolute bottom-[-20%] left-[-8%] w-[42vw] h-[42vw] max-w-[560px] max-h-[560px] rounded-full bg-vm-sand blur-[90px]" />
-      </div>
+    <section className="relative min-h-[92svh] overflow-hidden bg-vm-ink text-white">
+      <motion.div className="absolute inset-[-5%]" style={{ y: framerReduced || reduced ? 0 : bgY, scale: framerReduced || reduced ? baseScale : bgScale }} aria-hidden>
+        <AnimatePresence initial={false} mode="sync">
+          <motion.div key={desktopImage} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }} transition={{ duration: 1.25, ease }} className="absolute inset-0">
+            <picture className="absolute inset-0 block">
+              <source media="(max-width: 767px)" srcSet={mobileImage} />
+              <Image src={desktopImage} alt="" fill priority sizes="100vw" className="object-cover" style={{ objectPosition: bgPosition }} />
+            </picture>
+          </motion.div>
+        </AnimatePresence>
+        <div className="absolute inset-0 bg-vm-ink" style={{ opacity: 0.3 + overlay * 0.44 }} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_42%,rgba(224,122,95,0.32),transparent_29%),linear-gradient(90deg,rgba(20,20,20,0.96)_0%,rgba(20,20,20,0.72)_34%,rgba(20,20,20,0.22)_70%,rgba(20,20,20,0.5)_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-vm-ink via-transparent to-vm-ink/35" />
+        <div className="absolute inset-0 vm-noise opacity-60" />
+      </motion.div>
 
-      <Spotlight className="mx-auto w-full max-w-7xl px-5 sm:px-7 lg:px-10" size={620} intensity={0.08}>
-        <div className="grid lg:grid-cols-[0.86fr_1.14fr] gap-10 xl:gap-14 items-center">
-          <div className="max-w-2xl relative z-10">
-            <motion.p initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05, ease }} className="vm-eyebrow mb-5">Sites profissionais por segmento</motion.p>
-            <motion.h1 initial={reduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.12, ease }} className="vm-display text-[2.85rem] sm:text-5xl md:text-[3.7rem] lg:text-[4rem] xl:text-[4.25rem] leading-[1.01] tracking-[-0.045em] text-vm-ink">
-              {content.heroTitle}{" "}
-              <span className="relative inline-block" style={{ color: `color-mix(in srgb, var(--color-vm-coral) ${Math.round(intensity * 100)}%, var(--color-vm-ink))` }}>
-                {content.heroAccent}
-                <motion.span initial={reduced ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.8, delay: 0.65, ease }} className="absolute left-0 right-[18%] -bottom-2 h-1 origin-left rounded-full bg-vm-coral/25" />
-              </span>
+      <div className="absolute inset-0 opacity-[0.14]" aria-hidden><div className="absolute inset-0 vm-grid-bg [filter:invert(1)]" /></div>
+
+      <motion.div style={{ y: framerReduced || reduced ? 0 : contentY }} className="relative z-10 mx-auto flex min-h-[92svh] max-w-[1400px] items-center px-5 pb-16 pt-28 sm:px-8 lg:px-12">
+        <div className="grid w-full gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-5 xl:grid-cols-[0.82fr_1.18fr]">
+          <div className="relative z-40 max-w-3xl">
+            <motion.p initial={reduced ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05, ease }} className="mb-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-vm-coral"><span className="h-px w-8 bg-vm-coral" />Sites profissionais por segmento</motion.p>
+            <motion.h1 initial={reduced ? false : { opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 0.12, ease }} className="vm-display max-w-3xl text-pretty text-[2.55rem] leading-[1.01] tracking-[-0.045em] sm:text-5xl md:text-[3.35rem] lg:text-[3.65rem] xl:text-[3.9rem]" style={{ color: heroStyle.textColor || "#FFFFFF" }}>
+              {heroParts.before}{heroParts.highlighted && <span className={`relative inline-block font-semibold drop-shadow-[0_10px_32px_rgba(224,122,95,0.18)] ${heroHighlightClass}`} style={{ color: heroStyle.highlightColor || heroStyle.textColor || "#FFFFFF", backgroundColor: heroStyle.highlightStyle === "marker" ? `${heroStyle.highlightColor || "#E07A5F"}20` : undefined }}>{heroParts.highlighted}<motion.span initial={reduced ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.85, delay: 0.68, ease }} className="absolute left-0 right-[18%] -bottom-2 h-1 origin-left rounded-full bg-vm-coral/70" /></span>}{heroParts.after}
             </motion.h1>
-            <motion.p initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25, ease }} className="mt-6 text-base md:text-lg text-vm-muted leading-relaxed max-w-xl">{content.heroSubtitle}</motion.p>
-            <motion.div initial={reduced ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.38, ease }} className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <MagneticButton href="/#sites" variant="primary">Conheça nossos sites<ArrowRight size={16} /></MagneticButton>
-              <MagneticButton href="/virelab" variant="secondary">Experimentar VireLab<ArrowUpRight size={16} /></MagneticButton>
-            </motion.div>
-            <motion.div initial={reduced ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.55, ease }} className="mt-8 flex items-center gap-4 text-xs text-vm-muted">
-              <span className="h-px w-10 bg-vm-coral" /><span>Uma base. Muitos segmentos. Uma identidade para cada marca.</span>
-            </motion.div>
+            <motion.p initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.28, ease }} className="mt-6 max-w-xl text-base leading-relaxed text-white/70 md:text-lg">{content.heroSubtitle}</motion.p>
+            <motion.div initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4, ease }} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"><MagneticButton href="/#sites" variant="primary">Conheça nossos sites<ArrowRight size={16} /></MagneticButton><MagneticButton href="/virelab" variant="secondary">Experimentar VireLab<ArrowUpRight size={16} /></MagneticButton></motion.div>
+            <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }} className="mt-8 flex max-w-xl items-center gap-3 text-xs text-white/45"><span className="h-px w-10 bg-white/25" />Uma base. Muitos segmentos. Uma identidade para cada marca.</motion.div>
           </div>
 
-          <motion.div initial={reduced ? false : { opacity: 0, x: 30, scale: 0.97 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ duration: 0.8, delay: 0.16, ease }} className="relative min-h-[430px] sm:min-h-[500px] lg:min-h-[540px]">
-            <div className="absolute inset-[4%_0] overflow-hidden rounded-[2.25rem] border border-white/70 bg-vm-ink shadow-[0_45px_100px_-55px_rgba(0,0,0,0.45)]">
-              <picture className="absolute inset-0 block">
-                <source media="(max-width: 767px)" srcSet={heroMobileImage} />
-                <Image src={heroImage} alt="Direção visual de um projeto VireMarca" fill sizes="(max-width: 767px) 100vw, 56vw" className="object-cover scale-[1.03]" priority />
-              </picture>
-              <div className="absolute inset-0 bg-vm-ink" style={{ opacity: 0.08 + overlay * 0.62 }} />
-              <div className="absolute inset-0 bg-gradient-to-br from-vm-coral/20 via-transparent to-vm-ink/55" style={{ opacity: 0.22 + overlay * 0.58 }} />
-              <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/70 via-transparent to-vm-ink/10" />
-              <div className="absolute left-6 top-6 md:left-8 md:top-8 max-w-xs text-white/90">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-white/55">Direção visual</p>
-                <p className="mt-2 text-sm md:text-base leading-relaxed text-white/75">Imagem, profundidade e movimento trabalhando juntos para apresentar a marca antes mesmo do primeiro clique.</p>
-              </div>
-              <div className="absolute right-6 bottom-6 h-20 w-20 rounded-full border border-white/20 bg-white/10 backdrop-blur-md" />
-              <div className="absolute right-10 bottom-10 h-3 w-3 rounded-full bg-vm-coral shadow-[0_0_30px_rgba(224,122,95,0.8)]" />
-            </div>
+          <div className="relative hidden min-h-[600px] lg:block" aria-label="Projetos em destaque">
+            <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.1, delay: 0.15 }} className="pointer-events-none absolute left-[12%] top-[15%] select-none" aria-hidden><span className="vm-display text-[clamp(5rem,11vw,10rem)] leading-none tracking-[-0.09em] text-white/[0.055]">SITES</span></motion.div>
+            <div className="pointer-events-none absolute bottom-[8%] left-[4%] h-px w-[44%] bg-gradient-to-r from-vm-coral/70 to-transparent" aria-hidden />
+            <div className="pointer-events-none absolute right-[8%] top-[7%] h-2 w-2 rounded-full bg-vm-coral shadow-[0_0_28px_rgba(224,122,95,0.9)]" aria-hidden />
+            {cards.map((project, index) => project && <HeroCard key={`hero-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} />)}
+          </div>
 
-            {cards.map((project, index) => project && (
-              <motion.a key={`hero-card-${index}`} href={`/portfolio/${project.slug}`} animate={reduced ? undefined : { y: [0, index === 1 ? 9 : -7, 0], rotate: [0, index === 1 ? -0.35 : 0.25, 0] }} transition={{ duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.35 }} className={cnCard(index)}>
-                <div className="flex h-8 items-center gap-1.5 border-b border-vm-border bg-white px-4"><span className="h-2 w-2 rounded-full bg-vm-coral/70" /><span className="h-2 w-2 rounded-full bg-vm-border" /><span className="h-2 w-2 rounded-full bg-vm-border" /></div>
-                <div className="relative aspect-[16/10] overflow-hidden bg-vm-sand">
-                  <AnimatePresence initial={false} mode="sync">
-                    <motion.div key={project.id} initial={reduced ? false : { opacity: 0, scale: 1.035, x: 18 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={reduced ? undefined : { opacity: 0, scale: 0.985, x: -18 }} transition={{ duration: 0.8 + index * 0.18, delay: index * 0.14, ease }} className="absolute inset-0">
-                      <Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(max-width: 1024px) 55vw, 520px" className="object-cover" priority={index === 0} />
-                      <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/60 via-transparent to-transparent" />
-                      <motion.div initial={reduced ? false : { opacity: 0, y: index === 1 ? 10 : 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 + index * 0.12, delay: 0.12 + index * 0.12, ease }} className="absolute left-4 bottom-4 text-white">
-                        <p className="text-[9px] uppercase tracking-[0.18em] text-white/70">{project.category}</p>
-                        <p className="mt-1 text-lg font-semibold tracking-tight">{project.title}</p>
-                      </motion.div>
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-              </motion.a>
-            ))}
-          </motion.div>
+          <div className="-mx-5 flex flex-col gap-5 px-5 pb-4 lg:hidden" aria-label="Projetos em destaque">
+            {cards.map((project, index) => project && <HeroCard key={`hero-mobile-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} mobile />)}
+          </div>
         </div>
-      </Spotlight>
-      <div className="absolute bottom-0 left-0 right-0 h-16 overflow-hidden" aria-hidden><div className="absolute inset-x-[-5%] bottom-[-42px] h-20 rounded-[50%] bg-vm-sand border-t border-vm-coral/15" /></div>
+      </motion.div>
     </section>
   )
 }
 
-function cnCard(index: number) {
-  return index === 0
-    ? "absolute top-[8%] left-[2%] w-[77%] overflow-hidden rounded-[1.45rem] border border-white bg-white shadow-[0_35px_90px_-35px_rgba(0,0,0,0.5)]"
-    : index === 1
-      ? "absolute right-[1%] top-[27%] w-[51%] overflow-hidden rounded-[1.35rem] border border-white bg-white shadow-[0_30px_80px_-35px_rgba(0,0,0,0.5)]"
-      : "absolute left-[6%] bottom-[7%] w-[48%] overflow-hidden rounded-[1.25rem] border border-white bg-white shadow-[0_25px_70px_-30px_rgba(0,0,0,0.45)]"
+function cardsFallback(projects: PortfolioProject[]) {
+  return projects[0]?.thumbnail || "/portfolio/magia-glass.jpg"
+}
+
+function HeroCard({ project, index, reduced, motionAmount, mobile = false }: { project: PortfolioProject; index: number; reduced: boolean; motionAmount: number; mobile?: boolean }) {
+  if (mobile) return <motion.a href={`/portfolio/${project.slug}`} initial={reduced ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1, ease }} className="group relative w-full overflow-hidden rounded-[1.25rem] border border-white/70 bg-white shadow-[0_28px_70px_-35px_rgba(0,0,0,0.8)]"><div className="flex h-7 items-center gap-1.5 border-b border-black/10 bg-white px-3"><span className="h-1.5 w-1.5 rounded-full bg-vm-coral/75" /><span className="h-1.5 w-1.5 rounded-full bg-black/10" /><span className="h-1.5 w-1.5 rounded-full bg-black/10" /></div><div className="relative aspect-[16/10] overflow-hidden"><Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(max-width: 767px) 100vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" /><div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" /><div className="absolute bottom-4 left-4 text-white"><p className="text-[9px] uppercase tracking-[0.2em] text-white/60">{project.category}</p><p className="mt-1 text-lg font-semibold">{project.title}</p></div></div></motion.a>
+
+  const positions = [
+    "absolute right-[8%] top-[8%] z-30 w-[68%]",
+    "absolute right-[-1%] top-[42%] z-40 w-[46%]",
+    "absolute left-[8%] bottom-[5%] z-50 w-[47%]",
+  ]
+
+  return <motion.a href={`/portfolio/${project.slug}`} initial={reduced ? false : { opacity: 0, y: 32, scale: 0.94, rotate: index === 1 ? 2.4 : index === 2 ? -2.2 : -1.2 }} animate={reduced ? undefined : { opacity: 1, y: [0, (index === 1 ? 9 : -7) * motionAmount, 0], rotate: [index === 1 ? 2.4 : index === 2 ? -2.2 : -1.2, index === 1 ? 1.7 : index === 2 ? -1.5 : -0.5, index === 1 ? 2.4 : index === 2 ? -2.2 : -1.2], scale: 1 }} transition={{ opacity: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, scale: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, y: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }, rotate: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 } }} className={`${positions[index] ?? positions[0]} group overflow-hidden rounded-[1.55rem] border border-white/75 bg-white shadow-[0_40px_100px_-45px_rgba(0,0,0,0.88)] transition-shadow duration-500 hover:shadow-[0_48px_110px_-42px_rgba(0,0,0,0.95)]`}>
+    <div className="flex h-8 items-center gap-1.5 border-b border-black/10 bg-white px-4"><span className="h-2 w-2 rounded-full bg-vm-coral/75" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="ml-auto text-[8px] font-medium uppercase tracking-[0.18em] text-black/30">VireMarca</span></div>
+    <div className="relative aspect-[16/10] overflow-hidden"><Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(min-width: 1024px) 48vw, 100vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" /><div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-transparent" /><div className="absolute inset-x-5 bottom-5 text-white"><p className="text-[9px] uppercase tracking-[0.22em] text-white/60">{project.category}</p><p className="mt-1 text-xl font-semibold tracking-tight">{project.title}</p></div></div>
+  </motion.a>
 }

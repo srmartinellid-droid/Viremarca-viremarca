@@ -2,7 +2,7 @@
 
 @theme {
   --color-vm-bg: #FAFAF9; --color-vm-surface: #FFFFFF; --color-vm-ink: #1A1A1A; --color-vm-muted: #6B6B6B; --color-vm-border: #E8E8E6; --color-vm-coral: #E07A5F; --color-vm-coral-soft: #F4A261; --color-vm-coral-deep: #C45C3E; --color-vm-sand: #F5F0EB; --color-vm-charcoal: #2D2D2D; --color-vm-ink-soft: #3A3A3A; --color-vm-glow: color-mix(in srgb, #E07A5F 35%, transparent);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif; --font-display: "Inter", ui-sans-serif, system-ui, sans-serif; --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif; --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif; --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --radius-sm: 0.5rem; --radius-md: 0.875rem; --radius-lg: 1.25rem; --radius-xl: 1.75rem; --radius-full: 9999px;
   --motion-fast: 160ms; --motion-base: 320ms; --motion-slow: 560ms; --motion-reveal: 800ms;
   --ease-standard: cubic-bezier(0.22, 1, 0.36, 1); --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1); --ease-enter: cubic-bezier(0.22, 1, 0.36, 1); --ease-exit: cubic-bezier(0.4, 0, 1, 1);
@@ -18,7 +18,7 @@ body { background-color: var(--color-vm-bg); color: var(--color-vm-ink); font-fa
 .vm-grid-bg { background-image: linear-gradient(to right, color-mix(in srgb, var(--color-vm-ink) 4%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--color-vm-ink) 4%, transparent) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 75%); }
 .vm-glow-coral { box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vm-coral) 25%, transparent), 0 8px 40px -8px color-mix(in srgb, var(--color-vm-coral) 35%, transparent); }
 :focus-visible { outline: 2px solid var(--color-vm-coral); outline-offset: 3px; }
-.vm-display { font-weight: 600; letter-spacing: -0.035em; line-height: 1.08; }
+.vm-display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.035em; line-height: 1.08; }
 .vm-eyebrow { font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-vm-coral); }
 .vm-img-desat { filter: grayscale(1) brightness(0.92); transition: filter var(--motion-slow) var(--ease-standard), transform var(--motion-slow) var(--ease-standard); } .group:hover .vm-img-desat, .vm-img-desat.is-active { filter: grayscale(0) brightness(1); }
 .vm-reveal-mask { clip-path: inset(0 0 100% 0); transition: clip-path var(--motion-reveal) var(--ease-emphasized); } .vm-reveal-mask.is-visible { clip-path: inset(0 0 0% 0); }

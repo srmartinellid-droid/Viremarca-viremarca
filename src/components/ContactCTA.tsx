@@ -4,25 +4,11 @@ import { MessageCircle, Mail, ArrowUpRight } from "lucide-react"
 import { Reveal } from "@/components/motion/Reveal"
 import { MagneticButton } from "@/components/motion/MagneticButton"
 import { Spotlight } from "@/components/motion/Spotlight"
+import { TitleBlock, type TitleStyle } from "@/components/TitleBlock"
 
-type Props = { contact: { whatsapp: string; email: string; instagram: string } }
-
-export function ContactCTA({ contact }: Props) {
+type Props = { contact: { whatsapp: string; email: string; instagram: string }; titleStyle?: TitleStyle }
+export function ContactCTA({ contact, titleStyle }: Props) {
   const wa = `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent("Olá! Quero criar um site com a VireMarca.")}`
-  return (
-    <section id="contato" className="py-20 md:py-24">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <Reveal><Spotlight className="relative overflow-hidden rounded-[1.75rem] bg-vm-charcoal px-8 py-14 md:px-16 md:py-20" size={600} intensity={0.14}>
-          <div className="absolute inset-0 -z-0 opacity-25 pointer-events-none" aria-hidden><div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-vm-coral blur-[120px]" /><div className="absolute bottom-0 left-1/4 w-48 h-48 rounded-full bg-vm-coral-soft blur-[80px]" /></div>
-          <div className="relative z-10 text-center max-w-2xl mx-auto">
-            <p className="text-[11px] font-medium tracking-[0.2em] uppercase text-vm-coral mb-5">Próximo passo</p>
-            <h2 className="vm-display text-3xl md:text-4xl lg:text-[2.75rem] text-white leading-[1.12]">Pronto para virar a marca do seu negócio?</h2>
-            <p className="mt-4 text-white/60 leading-relaxed text-lg">Conte um pouco sobre o seu segmento. Respondemos rápido e sem compromisso.</p>
-            <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-4"><MagneticButton href={wa} variant="primary" className="min-w-[200px]"><MessageCircle size={18} />Falar no WhatsApp</MagneticButton><a href={`mailto:${contact.email}`} className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors min-w-[200px]"><Mail size={18} />Enviar e-mail</a></div>
-            <div className="mt-8"><a href="/virelab" className="inline-flex items-center gap-1.5 text-sm text-white/50 hover:text-vm-coral transition-colors">Ou explore o VireLab primeiro<ArrowUpRight size={14} /></a></div>
-          </div>
-        </Spotlight></Reveal>
-      </div>
-    </section>
-  )
+  const title = titleStyle || { text: "Pronto para virar a marca do seu negócio?", highlight: "virar a marca", textColor: "#FFFFFF", highlightColor: "#E07A5F", highlightStyle: "color" as const }
+  return <section id="contato" className="py-20 md:py-24"><div className="mx-auto max-w-6xl px-4 sm:px-6"><Reveal><Spotlight className="relative overflow-hidden rounded-[1.75rem] bg-vm-charcoal px-8 py-14 md:px-16 md:py-20" size={600} intensity={0.14}><div className="pointer-events-none absolute inset-0 -z-0 opacity-25" aria-hidden><div className="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-vm-coral blur-[120px]" /><div className="absolute bottom-0 left-1/4 h-48 w-48 rounded-full bg-vm-coral-soft blur-[80px]" /></div><div className="relative z-10 mx-auto max-w-2xl text-center"><p className="mb-5 text-[11px] font-medium uppercase tracking-[0.2em] text-vm-coral">Próximo passo</p><TitleBlock style={{ ...title, align: "center" }} /><p className="mt-4 text-lg leading-relaxed text-white/60">Conte um pouco sobre o seu segmento. Respondemos rápido e sem compromisso.</p><div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row"><MagneticButton href={wa} variant="primary" className="min-w-[200px]"><MessageCircle size={18} />Falar no WhatsApp</MagneticButton><a href={`mailto:${contact.email}`} className="inline-flex min-w-[200px] items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-white/10"><Mail size={18} />Enviar e-mail</a></div><div className="mt-8"><a href="/virelab" className="inline-flex items-center gap-1.5 text-sm text-white/50 transition-colors hover:text-vm-coral">Ou explore o VireLab primeiro<ArrowUpRight size={14} /></a></div></div></Spotlight></Reveal></div></section>
 }
