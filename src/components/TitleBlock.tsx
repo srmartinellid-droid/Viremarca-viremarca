@@ -8,9 +8,13 @@ export { DEFAULT_TITLE_STYLES }
 
 export function renderTitleParts(style: TitleStyle) {
   const text = style.text || "", highlight = style.highlight || ""
-  if (!highlight || !text.includes(highlight)) return { before: text, highlighted: "", after: "" }
+  if (!highlight) return { before: text, highlighted: "", after: "" }
   const index = text.indexOf(highlight)
-  return { before: text.slice(0, index), highlighted: highlight, after: text.slice(index + highlight.length) }
+  if (index >= 0) return { before: text.slice(0, index), highlighted: highlight, after: text.slice(index + highlight.length) }
+  const lowerText = text.toLocaleLowerCase("pt-BR"), lowerHighlight = highlight.toLocaleLowerCase("pt-BR")
+  const insensitiveIndex = lowerText.indexOf(lowerHighlight)
+  if (insensitiveIndex >= 0) return { before: text.slice(0, insensitiveIndex), highlighted: text.slice(insensitiveIndex, insensitiveIndex + highlight.length), after: text.slice(insensitiveIndex + highlight.length) }
+  return { before: text, highlighted: "", after: "" }
 }
 
 export function TitleBlock({ style, className = "", size = "default" }: { style: TitleStyle; className?: string; size?: "default" | "large" }) {
