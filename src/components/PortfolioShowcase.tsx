@@ -6,13 +6,15 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import { ChevronLeft, ChevronRight, ArrowUpRight, ExternalLink } from "lucide-react"
 import type { PortfolioProject } from "@/types"
+import type { TitleStyle } from "@/lib/visual-defaults"
 import { cn } from "@/lib/utils"
 import { Reveal } from "@/components/motion/Reveal"
+import { TitleBlock } from "@/components/TitleBlock"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 
-type Props = { projects: PortfolioProject[] }
+type Props = { projects: PortfolioProject[]; titleStyle?: TitleStyle }
 
-export function PortfolioShowcase({ projects }: Props) {
+export function PortfolioShowcase({ projects, titleStyle }: Props) {
   const trackRef = useRef<HTMLDivElement>(null)
   const [canPrev, setCanPrev] = useState(false)
   const [canNext, setCanNext] = useState(true)
@@ -50,7 +52,7 @@ export function PortfolioShowcase({ projects }: Props) {
       <div className="mx-auto max-w-7xl px-5 sm:px-7 lg:px-10">
         <Reveal className="max-w-3xl mb-10">
           <p className="vm-eyebrow mb-3">Portfólio</p>
-          <h2 className="vm-display text-3xl md:text-4xl lg:text-[2.75rem] text-vm-ink">Veja a VireMarca em ação</h2>
+          <TitleBlock style={titleStyle || { text: "Veja a VireMarca em ação", highlight: "VireMarca em ação", textColor: "#171717", highlightColor: "#E07A5F", highlightStyle: "color", fontWeight: 600 }} className="!mx-0" />
           <p className="mt-3 text-vm-muted max-w-lg leading-relaxed">Sites reais, construídos com a mesma base tecnológica e uma identidade própria para cada negócio.</p>
         </Reveal>
 
