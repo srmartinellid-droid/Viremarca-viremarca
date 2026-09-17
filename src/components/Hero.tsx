@@ -82,7 +82,7 @@ export function Hero({ content, featuredProjects }: Props) {
             </motion.div>
           </div>
 
-          <motion.div initial={reduced ? false : { opacity: 0, x: 30, scale: 0.97 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ duration: 0.8, delay: 0.16, ease }} className="relative min-h-[430px] sm:min-h-[500px] lg:min-h-[540px]">
+          <motion.div initial={reduced ? false : { opacity: 0, x: 30, scale: 0.97 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ duration: 0.8, delay: 0.16, ease }} className="relative min-h-[640px] sm:min-h-[500px] lg:min-h-[540px]">
             <div className="absolute inset-[4%_0] overflow-hidden rounded-[2.25rem] border border-white/70 bg-vm-ink shadow-[0_45px_100px_-55px_rgba(0,0,0,0.45)]">
               <picture className="absolute inset-0 block">
                 <source media="(max-width: 767px)" srcSet={heroMobileImage} />
@@ -126,8 +126,8 @@ export function Hero({ content, featuredProjects }: Props) {
 
 function cnCard(index: number) {
   return index === 0
-    ? "absolute top-[8%] left-[2%] w-[77%] overflow-hidden rounded-[1.45rem] border border-white bg-white shadow-[0_35px_90px_-35px_rgba(0,0,0,0.5)]"
+    ? "absolute top-[8%] left-[8%] w-[84%] sm:left-[2%] sm:w-[77%] overflow-hidden rounded-[1.45rem] border border-white bg-white shadow-[0_35px_90px_-35px_rgba(0,0,0,0.5)]"
     : index === 1
-      ? "absolute right-[1%] top-[27%] w-[51%] overflow-hidden rounded-[1.35rem] border border-white bg-white shadow-[0_30px_80px_-35px_rgba(0,0,0,0.5)]"
-      : "absolute left-[6%] bottom-[7%] w-[48%] overflow-hidden rounded-[1.25rem] border border-white bg-white shadow-[0_25px_70px_-30px_rgba(0,0,0,0.45)]"
+      ? "absolute top-[31%] left-[8%] w-[84%] sm:right-[1%] sm:left-auto sm:top-[27%] sm:w-[51%] overflow-hidden rounded-[1.35rem] border border-white bg-white shadow-[0_30px_80px_-35px_rgba(0,0,0,0.5)]"
+      : "absolute top-[54%] left-[8%] w-[84%] sm:left-[6%] sm:top-auto sm:bottom-[7%] sm:w-[48%] overflow-hidden rounded-[1.25rem] border border-white bg-white shadow-[0_25px_70px_-30px_rgba(0,0,0,0.45)]"
 }

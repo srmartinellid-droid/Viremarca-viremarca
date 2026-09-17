@@ -17,6 +17,8 @@ export function PortfolioShowcase({ projects }: Props) {
   const [canPrev, setCanPrev] = useState(false)
   const [canNext, setCanNext] = useState(true)
   const [hovered, setHovered] = useState<string | null>(null)
+  const [mobileActive, setMobileActive] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
   const reduced = useReducedMotion()
 
   const updateButtons = () => {
@@ -37,6 +39,14 @@ export function PortfolioShowcase({ projects }: Props) {
       window.removeEventListener("resize", updateButtons)
     }
   }, [projects])
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)")
+    const update = () => setIsMobile(media.matches)
+    update()
+    media.addEventListener("change", update)
+    return () => media.removeEventListener("change", update)
+  }, [])
 
   const scroll = (dir: "prev" | "next") => {
     const el = trackRef.current
@@ -60,17 +70,19 @@ export function PortfolioShowcase({ projects }: Props) {
 
           <div ref={trackRef} className="flex gap-5 md:gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-5 -mx-5 px-5 md:-mx-1 md:px-1">
             {projects.map((project, i) => {
-              const isActive = hovered === project.id
+              const isDesktopActive = hovered === project.id
+              const isMobileActive = mobileActive === project.id
+              const isActive = isMobile ? isMobileActive : isDesktopActive
               return (
                 <motion.article
                   key={project.id}
                   initial={reduced ? false : { opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-5%" }}
+                  onViewportEnter={() => setMobileActive(project.id)}
                   transition={{ delay: i * 0.07, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
                   onMouseEnter={() => setHovered(project.id)}
                   onMouseLeave={() => setHovered(null)}
-                  onClick={() => setHovered(project.id)}
                   className={cn("group relative flex-shrink-0 w-[min(82vw,350px)] md:w-[360px] snap-start rounded-2xl overflow-hidden border transition-all duration-500", isActive ? "border-vm-coral/40 shadow-[0_20px_50px_-20px_rgba(224,122,95,0.25)]" : "border-vm-border shadow-sm")}
                 >
                   <div className="relative aspect-[4/3] overflow-hidden bg-vm-sand">
