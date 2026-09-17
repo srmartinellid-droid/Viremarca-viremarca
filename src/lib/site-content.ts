@@ -12,6 +12,9 @@ export type PublicSiteContent = {
   heroImage: string
   heroMobileImage: string
   heroOverlayIntensity: number
+  heroBackgroundPosition: string
+  heroBackgroundScale: number
+  heroCardsMotion: number
   logo2: string
   aboutTitle: string
   aboutBody: string
@@ -40,6 +43,9 @@ export async function getPublicSiteContent(): Promise<PublicSiteContent> {
     heroImage: "/portfolio/magia-glass.jpg",
     heroMobileImage: "",
     heroOverlayIntensity: 58,
+    heroBackgroundPosition: "center center",
+    heroBackgroundScale: 103,
+    heroCardsMotion: 100,
     logo2: "",
     aboutTitle: DEMO_CONTENT.aboutTitle,
     aboutBody: DEMO_CONTENT.aboutBody,
@@ -76,6 +82,9 @@ export async function getPublicSiteContent(): Promise<PublicSiteContent> {
       heroImage: config.hero_image || fallback.heroImage,
       heroMobileImage: config.hero_mobile_image || fallback.heroMobileImage,
       heroOverlayIntensity: Math.min(100, Math.max(0, Number(config.hero_overlay_intensity ?? fallback.heroOverlayIntensity))),
+      heroBackgroundPosition: config.hero_background_position || fallback.heroBackgroundPosition,
+      heroBackgroundScale: Math.min(120, Math.max(100, Number(config.hero_background_scale ?? fallback.heroBackgroundScale))),
+      heroCardsMotion: Math.min(100, Math.max(0, Number(config.hero_cards_motion ?? fallback.heroCardsMotion))),
       logo2: config.logo2 || fallback.logo2,
       aboutTitle: values.about_title || fallback.aboutTitle,
       aboutBody: values.about_body || fallback.aboutBody,
