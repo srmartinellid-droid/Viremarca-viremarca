@@ -1,7 +1,5 @@
-import { requireAdmin } from "@/lib/auth"
-import { VisualSettingsStudio } from "@/components/VisualSettingsStudio"
+import { VisualSettingsStudioV2 } from "@/components/VisualSettingsStudioV2"
 
-export default async function AdminVisualPage() {
-  await requireAdmin()
-  return <VisualSettingsStudio />
+export default function VisualSettingsPage() {
+  return <VisualSettingsStudioV2 />
 }
