@@ -9,20 +9,15 @@ import { getFeaturedProjects, getPublicProjects } from "@/lib/projects"
 import { getPublicSiteContent } from "@/lib/site-content"
 
 export default async function HomePage() {
-  const [projects, featuredProjects, content] = await Promise.all([
-    getPublicProjects(),
-    getFeaturedProjects(),
-    getPublicSiteContent(),
-  ])
-
+  const [projects, featuredProjects, content] = await Promise.all([getPublicProjects(), getFeaturedProjects(), getPublicSiteContent()])
   return (
     <>
       <Hero content={content} featuredProjects={featuredProjects} />
-      <SectionDivider variant="dark" label="Projetos em destaque" />
+      <SectionDivider config={content.dividerStyles.projects} />
       <PortfolioShowcase projects={projects} />
-      <SectionDivider variant="light" label="Método · Direção · Resultado" />
-      <Process items={content.process} />
-      <SectionDivider variant="dark" label="Uma marca que ganha presença" />
+      <SectionDivider config={content.dividerStyles.method} />
+      <Process items={content.process} titleStyle={content.titleStyles.process} />
+      <SectionDivider config={content.dividerStyles.presence} />
       <About content={content} />
       <Delivers items={content.delivers} />
       <ContactCTA contact={content.contact} />
