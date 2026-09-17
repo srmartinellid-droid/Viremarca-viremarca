@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, CheckCircle2, ImagePlus, Save, Upload } from "lucide-react"
+import { ArrowLeft, CheckCircle2, ImagePlus, Save, Trash2, Upload } from "lucide-react"
 import { createClientOptional } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
 const defaults: Record<string, string> = {
   hero_image: "",
   hero_mobile_image: "",
+  hero_background_images: "[]",
+  hero_mobile_background_images: "[]",
   hero_overlay_intensity: "58",
   hero_background_position: "center center",
   hero_background_scale: "103",
@@ -18,6 +20,16 @@ const defaults: Record<string, string> = {
 }
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"])
+
+function parseList(value: string, fallback: string[] = []) {
+  try {
+    const parsed = JSON.parse(value || "[]")
+    if (Array.isArray(parsed)) return parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+  } catch {
+    if (value.trim()) return [value.trim()]
+  }
+  return fallback
+}
 
 export function VisualSettings() {
   const [settings, setSettings] = useState(defaults)
@@ -39,34 +51,55 @@ export function VisualSettings() {
     }
     const next = { ...defaults }
     for (const row of data ?? []) next[row.key as keyof typeof defaults] = row.value
+    if (!next.hero_background_images || next.hero_background_images === "[]") {
+      next.hero_background_images = JSON.stringify(next.hero_image ? [next.hero_image] : [])
+    }
+    if (!next.hero_mobile_background_images || next.hero_mobile_background_images === "[]") {
+      next.hero_mobile_background_images = JSON.stringify(next.hero_mobile_image ? [next.hero_mobile_image] : [])
+    }
     setSettings(next)
     setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  const upload = async (key: "hero_image" | "hero_mobile_image" | "logo2", file: File) => {
+  const uploadFiles = async (key: "hero_background_images" | "hero_mobile_background_images" | "logo2", files: File[]) => {
     const supabase = createClientOptional()
-    if (!supabase) return
-    if (!allowedTypes.has(file.type)) return setNotice("Use JPEG, PNG, WebP ou AVIF.")
-    if (file.size > 10 * 1024 * 1024) return setNotice("A imagem deve ter no máximo 10 MB.")
+    if (!supabase || !files.length) return
+    for (const file of files) {
+      if (!allowedTypes.has(file.type)) return setNotice("Use JPEG, PNG, WebP ou AVIF.")
+      if (file.size > 10 * 1024 * 1024) return setNotice("Cada imagem deve ter no máximo 10 MB.")
+    }
     setUploading(key)
     setNotice(null)
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg"
-      const path = `identity/${key}-${crypto.randomUUID()}.${ext}`
-      const { error } = await supabase.storage.from("site-media").upload(path, file, {
-        contentType: file.type,
-        upsert: false,
-        cacheControl: "31536000",
-      })
-      if (error) throw error
-      const url = supabase.storage.from("site-media").getPublicUrl(path).data.publicUrl
-      setSettings((current) => ({ ...current, [key]: url }))
-      setNotice("Imagem carregada. Clique em salvar para publicar a alteração.")
+      const uploaded: string[] = []
+      for (const file of files) {
+        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg"
+        const path = `identity/${key}-${crypto.randomUUID()}.${ext}`
+        const { error } = await supabase.storage.from("site-media").upload(path, file, {
+          contentType: file.type,
+          upsert: false,
+          cacheControl: "31536000",
+        })
+        if (error) throw error
+        uploaded.push(supabase.storage.from("site-media").getPublicUrl(path).data.publicUrl)
+      }
+      if (key === "logo2") {
+        setSettings((current) => ({ ...current, logo2: uploaded[0] || current.logo2 }))
+      } else {
+        setSettings((current) => ({ ...current, [key]: JSON.stringify([...parseList(current[key]), ...uploaded]) }))
+      }
+      setNotice(`${uploaded.length} imagem(ns) carregada(s). Clique em salvar para publicar.`)
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Não foi possível carregar a imagem.")
     } finally { setUploading(null) }
+  }
+
+  const removeImage = (key: "hero_background_images" | "hero_mobile_background_images", index: number) => {
+    const images = parseList(settings[key])
+    images.splice(index, 1)
+    setSettings((current) => ({ ...current, [key]: JSON.stringify(images) }))
   }
 
   const save = async () => {
@@ -74,15 +107,28 @@ export function VisualSettings() {
     if (!supabase) return
     setSaving(true)
     setNotice(null)
-    const rows = Object.entries(settings).map(([key, value]) => ({ key, value }))
+    const desktop = parseList(settings.hero_background_images)
+    const mobile = parseList(settings.hero_mobile_background_images)
+    const next = {
+      ...settings,
+      hero_image: desktop[0] || "",
+      hero_mobile_image: mobile[0] || "",
+      hero_background_images: JSON.stringify(desktop),
+      hero_mobile_background_images: JSON.stringify(mobile),
+    }
+    setSettings(next)
+    const rows = Object.entries(next).map(([key, value]) => ({ key, value }))
     const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" })
     setSaving(false)
-    setNotice(error ? error.message : "Direção visual salva. O site já pode consumir as novas configurações.")
+    setNotice(error ? error.message : "Direção visual salva. A galeria da Hero já está disponível no site.")
   }
 
   const set = (key: string, value: string) => setSettings((current) => ({ ...current, [key]: value }))
 
   if (loading) return <div className="min-h-screen bg-vm-bg p-8 text-sm text-vm-muted">Carregando identidade visual…</div>
+
+  const desktopImages = parseList(settings.hero_background_images)
+  const mobileImages = parseList(settings.hero_mobile_background_images)
 
   return (
     <main className="min-h-screen bg-vm-bg">
@@ -91,20 +137,20 @@ export function VisualSettings() {
           <div>
             <Link href="/admin" className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-vm-muted hover:text-vm-ink"><ArrowLeft size={14} />Admin</Link>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-vm-ink md:text-4xl">Hero & direção visual</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-vm-muted">Controle a imagem de fundo, enquadramento, contraste e comportamento dos projetos. Tudo persiste no Supabase, sem novo deploy para trocar assets.</p>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-vm-muted">Defina uma sequência de imagens para o fundo da Hero. O site faz a transição automaticamente, enquanto os cards de projetos continuam independentes sobre a composição.</p>
           </div>
           <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-full bg-vm-coral px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-vm-coral/20 disabled:opacity-60"><Save size={16} />{saving ? "Salvando…" : "Salvar alterações"}</button>
         </div>
 
-        {notice && <div className="mt-6 flex items-center gap-3 rounded-2xl border border-vm-coral/20 bg-white px-4 py-3 text-sm text-vm-ink"><CheckCircle2 size={17} className="text-vm-coral" />{notice}</div>}
+        {notice && <div className="mt-6 flex items-center gap-3 rounded-2xl border border-vm-coral/20 bg-white px-4 py-3 text-sm text-vm-ink"><CheckCircle2 size={17} className="shrink-0 text-vm-coral" />{notice}</div>}
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-[2rem] border border-vm-border bg-white p-6 md:p-8">
-            <div className="flex items-center gap-3"><div className="rounded-2xl bg-vm-sand p-3 text-vm-coral"><ImagePlus size={20} /></div><div><h2 className="font-semibold text-vm-ink">Hero</h2><p className="text-xs text-vm-muted">A imagem pública agora ocupa a seção inteira e recebe os projetos como elementos flutuantes.</p></div></div>
-            <div className="mt-7 grid gap-5 md:grid-cols-2">
-              <AssetCard label="Imagem desktop" value={settings.hero_image} busy={uploading === "hero_image"} onUpload={(file) => upload("hero_image", file)} />
-              <AssetCard label="Imagem mobile" value={settings.hero_mobile_image} busy={uploading === "hero_mobile_image"} onUpload={(file) => upload("hero_mobile_image", file)} />
-            </div>
+            <div className="flex items-center gap-3"><div className="rounded-2xl bg-vm-sand p-3 text-vm-coral"><ImagePlus size={20} /></div><div><h2 className="font-semibold text-vm-ink">Galeria de fundo</h2><p className="text-xs text-vm-muted">As imagens passam em crossfade. A primeira imagem é usada como fallback e também mantém compatibilidade com a configuração antiga.</p></div></div>
+
+            <Gallery label="Desktop" images={desktopImages} busy={uploading === "hero_background_images"} onUpload={(files) => uploadFiles("hero_background_images", files)} onRemove={(index) => removeImage("hero_background_images", index)} />
+            <Gallery label="Mobile" images={mobileImages} busy={uploading === "hero_mobile_background_images"} onUpload={(files) => uploadFiles("hero_mobile_background_images", files)} onRemove={(index) => removeImage("hero_mobile_background_images", index)} optionalHint="Se ficar vazia, a galeria desktop será usada no celular." />
+
             <div className="mt-8 grid gap-6 md:grid-cols-2">
               <RangeField label="Overlay" value={settings.hero_overlay_intensity} min="0" max="100" suffix="%" onChange={(value) => set("hero_overlay_intensity", value)} left="Imagem livre" right="Mais contraste" />
               <RangeField label="Escala do fundo" value={settings.hero_background_scale} min="100" max="120" suffix="%" onChange={(value) => set("hero_background_scale", value)} left="Enquadramento natural" right="Mais imersão" />
@@ -117,8 +163,8 @@ export function VisualSettings() {
 
           <section className="rounded-[2rem] border border-vm-border bg-white p-6 md:p-8">
             <div className="flex items-center gap-3"><div className="rounded-2xl bg-vm-sand p-3 text-vm-coral"><Upload size={20} /></div><div><h2 className="font-semibold text-vm-ink">Logo 2</h2><p className="text-xs text-vm-muted">Versão alternativa da marca, usada no rodapé quando configurada.</p></div></div>
-            <div className="mt-7"><AssetCard label="Logo 2 / transparente" value={settings.logo2} busy={uploading === "logo2"} onUpload={(file) => upload("logo2", file)} compact /></div>
-            <div className="mt-6 rounded-2xl bg-vm-sand p-4 text-xs leading-relaxed text-vm-muted">Os arquivos ficam no bucket <code>site-media</code> e as URLs ficam em <code>site_settings</code>. Futuras trocas não exigem novo deploy.</div>
+            <div className="mt-7"><AssetCard label="Logo 2 / transparente" value={settings.logo2} busy={uploading === "logo2"} onUpload={(files) => uploadFiles("logo2", files)} compact /></div>
+            <div className="mt-6 rounded-2xl bg-vm-sand p-4 text-xs leading-relaxed text-vm-muted">Os arquivos ficam no bucket <code>site-media</code> e as URLs ficam em <code>site_settings</code>. Trocar as imagens da galeria não exige novo deploy.</div>
           </section>
         </div>
       </div>
@@ -126,15 +172,22 @@ export function VisualSettings() {
   )
 }
 
+function Gallery({ label, images, busy, onUpload, onRemove, optionalHint }: { label: string; images: string[]; busy: boolean; onUpload: (files: File[]) => void; onRemove: (index: number) => void; optionalHint?: string }) {
+  return <div className="mt-7 rounded-2xl border border-vm-border bg-vm-bg p-4 md:p-5">
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-vm-ink">Fundo {label}</h3><p className="mt-1 text-xs text-vm-muted">{optionalHint || `${images.length} imagem(ns) na sequência`}</p></div><label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-vm-border bg-white px-3 py-2 text-[11px] font-semibold text-vm-ink hover:border-vm-coral"><Upload size={13} />{busy ? "Enviando…" : "Adicionar imagens"}<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/avif" className="sr-only" disabled={busy} onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length) onUpload(files); e.currentTarget.value = "" }} /></label></div>
+    {images.length ? <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">{images.map((image, index) => <div key={`${image}-${index}`} className="group relative overflow-hidden rounded-xl border border-vm-border bg-white"><div className="relative aspect-[16/9]"><Image src={image} alt={`Fundo ${label} ${index + 1}`} fill sizes="(max-width: 640px) 50vw, 220px" className="object-cover" unoptimized /></div><div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-white">{index + 1}</div><button type="button" onClick={() => onRemove(index)} className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-vm-ink opacity-100 shadow-sm transition md:opacity-0 md:group-hover:opacity-100 hover:text-vm-coral" aria-label={`Remover fundo ${label} ${index + 1}`}><Trash2 size={14} /></button></div>)}</div> : <div className="mt-4 rounded-xl border border-dashed border-vm-border bg-white px-4 py-8 text-center text-xs text-vm-muted">Nenhuma imagem configurada.</div>}
+  </div>
+}
+
 function RangeField({ label, value, min, max, suffix, left, right, onChange }: { label: string; value: string; min: string; max: string; suffix: string; left: string; right: string; onChange: (value: string) => void }) {
   return <label className="block"><div className="flex items-center justify-between gap-4"><span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">{label}</span><span className="rounded-full bg-vm-sand px-3 py-1 text-xs font-semibold text-vm-ink">{value}{suffix}</span></div><input type="range" min={min} max={max} value={value} onChange={(e) => onChange(e.target.value)} className="mt-4 w-full accent-[var(--color-vm-coral)]" /><div className="mt-2 flex justify-between text-[10px] uppercase tracking-wider text-vm-muted"><span>{left}</span><span>{right}</span></div></label>
 }
 
-function AssetCard({ label, value, busy, compact = false, onUpload }: { label: string; value: string; busy: boolean; compact?: boolean; onUpload: (file: File) => void }) {
+function AssetCard({ label, value, busy, compact = false, onUpload }: { label: string; value: string; busy: boolean; compact?: boolean; onUpload: (files: File[]) => void }) {
   return <div className={cn("rounded-2xl border border-vm-border bg-vm-bg p-3", compact && "max-w-xl")}>
     <div className={cn("relative overflow-hidden rounded-xl bg-vm-sand", compact ? "h-40" : "aspect-[16/10]")}>
       {value ? <Image src={value} alt={label} fill sizes="(max-width: 768px) 100vw, 480px" className="object-contain p-5" unoptimized /> : <div className="absolute inset-0 grid place-items-center text-xs text-vm-muted">Nenhuma imagem configurada</div>}
     </div>
-    <div className="mt-3 flex items-center justify-between gap-3"><span className="text-xs font-semibold text-vm-ink">{label}</span><label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-vm-border bg-white px-3 py-2 text-[11px] font-semibold text-vm-ink hover:border-vm-coral"><Upload size={13} />{busy ? "Enviando…" : "Trocar"}<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="sr-only" disabled={busy} onChange={(e) => { const file = e.target.files?.[0]; if (file) onUpload(file); e.currentTarget.value = "" }} /></label></div>
+    <div className="mt-3 flex items-center justify-between gap-3"><span className="text-xs font-semibold text-vm-ink">{label}</span><label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-vm-border bg-white px-3 py-2 text-[11px] font-semibold text-vm-ink hover:border-vm-coral"><Upload size={13} />{busy ? "Enviando…" : "Trocar"}<input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="sr-only" disabled={busy} onChange={(e) => { const file = e.target.files?.[0]; if (file) onUpload([file]); e.currentTarget.value = "" }} /></label></div>
   </div>
 }
