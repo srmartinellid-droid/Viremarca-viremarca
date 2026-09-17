@@ -63,16 +63,12 @@ export function Hero({ content, featuredProjects }: Props) {
   return (
     <section className="relative min-h-[92svh] overflow-hidden bg-vm-ink text-white">
       <motion.div className="absolute inset-0" style={{ y: framerReduced || reduced ? 0 : bgY, scale: framerReduced || reduced ? baseScale : bgScale }} aria-hidden>
-        <picture className="absolute inset-0 block">
-          <source media="(max-width: 767px)" srcSet={heroMobileImage} />
-          <Image src={heroImage} alt="" fill priority sizes="100vw" className="object-cover" style={{ objectPosition: bgPosition }} />
-        </picture>
+        <picture className="absolute inset-0 block"><source media="(max-width: 767px)" srcSet={heroMobileImage} /><Image src={heroImage} alt="" fill priority sizes="100vw" className="object-cover" style={{ objectPosition: bgPosition }} /></picture>
         <div className="absolute inset-0 bg-vm-ink/60" style={{ opacity: 0.34 + overlay * 0.4 }} />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_42%,rgba(224,122,95,0.28),transparent_30%),linear-gradient(90deg,rgba(26,26,26,0.94)_0%,rgba(26,26,26,0.68)_38%,rgba(26,26,26,0.18)_72%,rgba(26,26,26,0.5)_100%)]" />
         <div className="absolute inset-0 bg-gradient-to-t from-vm-ink via-transparent to-vm-ink/35" />
         <div className="absolute inset-0 vm-noise opacity-60" />
       </motion.div>
-
       <div className="absolute inset-0 opacity-20" aria-hidden><div className="absolute inset-0 vm-grid-bg [filter:invert(1)]" /></div>
 
       <motion.div style={{ y: framerReduced || reduced ? 0 : contentY }} className="relative z-10 mx-auto flex min-h-[92svh] max-w-[1400px] items-center px-5 pb-20 pt-32 sm:px-8 lg:px-12">
@@ -89,12 +85,11 @@ export function Hero({ content, featuredProjects }: Props) {
 
           <div className="relative hidden min-h-[560px] lg:block" aria-label="Projetos em destaque">
             <motion.div initial={reduced ? false : { opacity: 0, scale: 0.96, x: 28 }} animate={{ opacity: 1, scale: 1, x: 0 }} transition={{ duration: 0.9, delay: 0.18, ease }} className="absolute inset-0"><div className="absolute right-[2%] top-[3%] h-[88%] w-[74%] rounded-[2.2rem] border border-white/20 bg-white/[0.06] shadow-[0_50px_140px_-60px_rgba(0,0,0,0.8)] backdrop-blur-[2px]" /></motion.div>
-            {cards.map((project, index) => project && (
-              <motion.a key={`hero-card-${index}`} href={`/portfolio/${project.slug}`} initial={reduced ? false : { opacity: 0, y: 30, scale: 0.94, rotate: index === 1 ? 2 : index === 2 ? -2 : -1 }} animate={reduced ? undefined : { opacity: 1, y: [0, (index === 1 ? 10 : -7) * motionAmount, 0], rotate: [index === 1 ? 2 : index === 2 ? -2 : -1, index === 1 ? 1.4 : index === 2 ? -1.4 : -0.4, index === 1 ? 2 : index === 2 ? -2 : -1], scale: 1 }} transition={{ opacity: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, scale: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, y: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }, rotate: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 } }} className={cnCard(index)}>
-                <div className="flex h-8 items-center gap-1.5 border-b border-black/10 bg-white px-4"><span className="h-2 w-2 rounded-full bg-vm-coral/75" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="ml-auto text-[8px] font-medium uppercase tracking-[0.18em] text-black/30">VireMarca</span></div>
-                <div className="relative aspect-[16/10] overflow-hidden bg-vm-sand"><AnimatePresence initial={false} mode="sync"><motion.div key={project.id} initial={reduced ? false : { opacity: 0, scale: 1.04, x: 18 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={reduced ? undefined : { opacity: 0, scale: 0.985, x: -18 }} transition={{ duration: 0.75 + index * 0.16, delay: index * 0.12, ease }} className="absolute inset-0"><Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(max-width: 1024px) 45vw, 520px" className="object-cover" priority={index === 0} /><div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" /><div className="absolute bottom-4 left-4 text-white"><p className="text-[9px] uppercase tracking-[0.2em] text-white/60">{project.category}</p><p className="mt-1 text-lg font-semibold tracking-tight">{project.title}</p></div></motion.div></AnimatePresence></div>
-              </motion.a>
-            ))}
+            {cards.map((project, index) => project && <HeroCard key={`hero-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} />)}
+          </div>
+
+          <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-4 scrollbar-hide lg:hidden" aria-label="Projetos em destaque">
+            {cards.map((project, index) => project && <HeroCard key={`hero-mobile-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} mobile />)}
           </div>
         </div>
       </motion.div>
@@ -102,6 +97,12 @@ export function Hero({ content, featuredProjects }: Props) {
       <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-white/10 bg-vm-ink/55 backdrop-blur-xl" aria-hidden><div className="mx-auto flex max-w-[1400px] items-center justify-between gap-6 px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40 sm:px-8 lg:px-12"><span>Design · Performance · Conversão</span><span className="hidden sm:inline-flex items-center gap-2"><ArrowDown size={13} /> Role para explorar</span><span>VireMarca®</span></div></div>
     </section>
   )
+}
+
+function HeroCard({ project, index, reduced, motionAmount, mobile = false }: { project: PortfolioProject; index: number; reduced: boolean; motionAmount: number; mobile?: boolean }) {
+  if (mobile) return <motion.a href={`/portfolio/${project.slug}`} initial={reduced ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1, ease }} className="group relative w-[78vw] max-w-[390px] flex-shrink-0 overflow-hidden rounded-[1.25rem] border border-white/70 bg-white shadow-[0_28px_70px_-35px_rgba(0,0,0,0.8)]"><div className="flex h-7 items-center gap-1.5 border-b border-black/10 bg-white px-3"><span className="h-1.5 w-1.5 rounded-full bg-vm-coral/75" /><span className="h-1.5 w-1.5 rounded-full bg-black/10" /><span className="h-1.5 w-1.5 rounded-full bg-black/10" /></div><div className="relative aspect-[16/10] overflow-hidden"><Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="78vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" /><div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" /><div className="absolute bottom-4 left-4 text-white"><p className="text-[9px] uppercase tracking-[0.2em] text-white/60">{project.category}</p><p className="mt-1 text-lg font-semibold">{project.title}</p></div></div></motion.a>
+
+  return <motion.a href={`/portfolio/${project.slug}`} initial={reduced ? false : { opacity: 0, y: 30, scale: 0.94, rotate: index === 1 ? 2 : index === 2 ? -2 : -1 }} animate={reduced ? undefined : { opacity: 1, y: [0, (index === 1 ? 10 : -7) * motionAmount, 0], rotate: [index === 1 ? 2 : index === 2 ? -2 : -1, index === 1 ? 1.4 : index === 2 ? -1.4 : -0.4, index === 1 ? 2 : index === 2 ? -2 : -1], scale: 1 }} transition={{ opacity: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, scale: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, y: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }, rotate: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 } }} className={cnCard(index)}><div className="flex h-8 items-center gap-1.5 border-b border-black/10 bg-white px-4"><span className="h-2 w-2 rounded-full bg-vm-coral/75" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="ml-auto text-[8px] font-medium uppercase tracking-[0.18em] text-black/30">VireMarca</span></div><div className="relative aspect-[16/10] overflow-hidden bg-vm-sand"><AnimatePresence initial={false} mode="sync"><motion.div key={project.id} initial={reduced ? false : { opacity: 0, scale: 1.04, x: 18 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={reduced ? undefined : { opacity: 0, scale: 0.985, x: -18 }} transition={{ duration: 0.75 + index * 0.16, delay: index * 0.12, ease }} className="absolute inset-0"><Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="45vw" className="object-cover" priority={index === 0} /><div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" /><div className="absolute bottom-4 left-4 text-white"><p className="text-[9px] uppercase tracking-[0.2em] text-white/60">{project.category}</p><p className="mt-1 text-lg font-semibold tracking-tight">{project.title}</p></div></motion.div></AnimatePresence></div></motion.a>
 }
 
 function cnCard(index: number) {
