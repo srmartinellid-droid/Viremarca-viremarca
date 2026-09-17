@@ -21,9 +21,9 @@ export function Hero({ content, featuredProjects }: Props) {
   const [cardIndexes, setCardIndexes] = useState<number[]>(() => projects.length ? Array.from({ length: Math.min(3, projects.length) }, (_, index) => index) : [])
   const { scrollY } = useScroll()
   const baseScale = content.heroBackgroundScale / 100
-  const bgY = useTransform(scrollY, [0, 700], [0, 70])
-  const bgScale = useTransform(scrollY, [0, 700], [baseScale, baseScale + 0.06])
-  const contentY = useTransform(scrollY, [0, 650], [0, -34])
+  const bgY = useTransform(scrollY, [0, 700], [0, 72])
+  const bgScale = useTransform(scrollY, [0, 700], [baseScale, baseScale + 0.055])
+  const contentY = useTransform(scrollY, [0, 650], [0, -28])
 
   useEffect(() => {
     if (!projects.length) return setCardIndexes([])
@@ -62,18 +62,24 @@ export function Hero({ content, featuredProjects }: Props) {
 
   return (
     <section className="relative min-h-[92svh] overflow-hidden bg-vm-ink text-white">
-      <motion.div className="absolute inset-0" style={{ y: framerReduced || reduced ? 0 : bgY, scale: framerReduced || reduced ? baseScale : bgScale }} aria-hidden>
-        <picture className="absolute inset-0 block"><source media="(max-width: 767px)" srcSet={heroMobileImage} /><Image src={heroImage} alt="" fill priority sizes="100vw" className="object-cover" style={{ objectPosition: bgPosition }} /></picture>
-        <div className="absolute inset-0 bg-vm-ink/60" style={{ opacity: 0.34 + overlay * 0.4 }} />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_42%,rgba(224,122,95,0.28),transparent_30%),linear-gradient(90deg,rgba(26,26,26,0.94)_0%,rgba(26,26,26,0.68)_38%,rgba(26,26,26,0.18)_72%,rgba(26,26,26,0.5)_100%)]" />
+      <motion.div className="absolute inset-[-5%]" style={{ y: framerReduced || reduced ? 0 : bgY, scale: framerReduced || reduced ? baseScale : bgScale }} aria-hidden>
+        <picture className="absolute inset-0 block">
+          <source media="(max-width: 767px)" srcSet={heroMobileImage} />
+          <Image src={heroImage} alt="" fill priority sizes="100vw" className="object-cover" style={{ objectPosition: bgPosition }} />
+        </picture>
+        <div className="absolute inset-0 bg-vm-ink" style={{ opacity: 0.3 + overlay * 0.44 }} />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_42%,rgba(224,122,95,0.32),transparent_29%),linear-gradient(90deg,rgba(20,20,20,0.96)_0%,rgba(20,20,20,0.72)_34%,rgba(20,20,20,0.22)_70%,rgba(20,20,20,0.5)_100%)]" />
         <div className="absolute inset-0 bg-gradient-to-t from-vm-ink via-transparent to-vm-ink/35" />
         <div className="absolute inset-0 vm-noise opacity-60" />
       </motion.div>
-      <div className="absolute inset-0 opacity-20" aria-hidden><div className="absolute inset-0 vm-grid-bg [filter:invert(1)]" /></div>
+
+      <div className="absolute inset-0 opacity-[0.14]" aria-hidden>
+        <div className="absolute inset-0 vm-grid-bg [filter:invert(1)]" />
+      </div>
 
       <motion.div style={{ y: framerReduced || reduced ? 0 : contentY }} className="relative z-10 mx-auto flex min-h-[92svh] max-w-[1400px] items-center px-5 pb-20 pt-32 sm:px-8 lg:px-12">
-        <div className="grid w-full gap-12 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-8 xl:grid-cols-[0.86fr_1.14fr]">
-          <div className="relative z-20 max-w-3xl">
+        <div className="grid w-full gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-5 xl:grid-cols-[0.82fr_1.18fr]">
+          <div className="relative z-40 max-w-3xl">
             <motion.p initial={reduced ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05, ease }} className="mb-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-vm-coral"><span className="h-px w-8 bg-vm-coral" />Sites profissionais por segmento</motion.p>
             <motion.h1 initial={reduced ? false : { opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.12, ease }} className="vm-display max-w-3xl text-[3.15rem] leading-[0.94] tracking-[-0.055em] text-white sm:text-6xl md:text-[4.8rem] lg:text-[4.8rem] xl:text-[5.65rem]">
               {content.heroTitle}{" "}<span className="relative inline-block" style={{ color: `color-mix(in srgb, var(--color-vm-coral) ${Math.round(intensity * 100)}%, white)` }}>{content.heroAccent}<motion.span initial={reduced ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.9, delay: 0.75, ease }} className="absolute left-0 right-[14%] -bottom-3 h-1 origin-left rounded-full bg-vm-coral/70" /></span>
@@ -83,8 +89,12 @@ export function Hero({ content, featuredProjects }: Props) {
             <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }} className="mt-8 flex max-w-xl items-center gap-3 text-xs text-white/45"><span className="h-px w-10 bg-white/25" />Uma base. Muitos segmentos. Uma identidade para cada marca.</motion.div>
           </div>
 
-          <div className="relative hidden min-h-[560px] lg:block" aria-label="Projetos em destaque">
-            <motion.div initial={reduced ? false : { opacity: 0, scale: 0.96, x: 28 }} animate={{ opacity: 1, scale: 1, x: 0 }} transition={{ duration: 0.9, delay: 0.18, ease }} className="absolute inset-0"><div className="absolute right-[2%] top-[3%] h-[88%] w-[74%] rounded-[2.2rem] border border-white/20 bg-white/[0.06] shadow-[0_50px_140px_-60px_rgba(0,0,0,0.8)] backdrop-blur-[2px]" /></motion.div>
+          <div className="relative hidden min-h-[600px] lg:block" aria-label="Projetos em destaque">
+            <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.1, delay: 0.15 }} className="pointer-events-none absolute left-[12%] top-[15%] select-none" aria-hidden>
+              <span className="vm-display text-[clamp(5rem,11vw,10rem)] leading-none tracking-[-0.09em] text-white/[0.055]">SITES</span>
+            </motion.div>
+            <div className="pointer-events-none absolute bottom-[8%] left-[4%] h-px w-[44%] bg-gradient-to-r from-vm-coral/70 to-transparent" aria-hidden />
+            <div className="pointer-events-none absolute right-[8%] top-[7%] h-2 w-2 rounded-full bg-vm-coral shadow-[0_0_28px_rgba(224,122,95,0.9)]" aria-hidden />
             {cards.map((project, index) => project && <HeroCard key={`hero-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} />)}
           </div>
 
@@ -94,7 +104,7 @@ export function Hero({ content, featuredProjects }: Props) {
         </div>
       </motion.div>
 
-      <div className="absolute bottom-0 left-0 right-0 z-20 border-t border-white/10 bg-vm-ink/55 backdrop-blur-xl" aria-hidden><div className="mx-auto flex max-w-[1400px] items-center justify-between gap-6 px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40 sm:px-8 lg:px-12"><span>Design · Performance · Conversão</span><span className="hidden sm:inline-flex items-center gap-2"><ArrowDown size={13} /> Role para explorar</span><span>VireMarca®</span></div></div>
+      <div className="absolute bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-vm-ink/55 backdrop-blur-xl" aria-hidden><div className="mx-auto flex max-w-[1400px] items-center justify-between gap-6 px-5 py-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40 sm:px-8 lg:px-12"><span>Design · Performance · Conversão</span><span className="hidden sm:inline-flex items-center gap-2"><ArrowDown size={13} /> Role para explorar</span><span>VireMarca®</span></div></div>
     </section>
   )
 }
@@ -102,9 +112,16 @@ export function Hero({ content, featuredProjects }: Props) {
 function HeroCard({ project, index, reduced, motionAmount, mobile = false }: { project: PortfolioProject; index: number; reduced: boolean; motionAmount: number; mobile?: boolean }) {
   if (mobile) return <motion.a href={`/portfolio/${project.slug}`} initial={reduced ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1, ease }} className="group relative w-[78vw] max-w-[390px] flex-shrink-0 overflow-hidden rounded-[1.25rem] border border-white/70 bg-white shadow-[0_28px_70px_-35px_rgba(0,0,0,0.8)]"><div className="flex h-7 items-center gap-1.5 border-b border-black/10 bg-white px-3"><span className="h-1.5 w-1.5 rounded-full bg-vm-coral/75" /><span className="h-1.5 w-1.5 rounded-full bg-black/10" /><span className="h-1.5 w-1.5 rounded-full bg-black/10" /></div><div className="relative aspect-[16/10] overflow-hidden"><Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="78vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" /><div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" /><div className="absolute bottom-4 left-4 text-white"><p className="text-[9px] uppercase tracking-[0.2em] text-white/60">{project.category}</p><p className="mt-1 text-lg font-semibold">{project.title}</p></div></div></motion.a>
 
-  return <motion.a href={`/portfolio/${project.slug}`} initial={reduced ? false : { opacity: 0, y: 30, scale: 0.94, rotate: index === 1 ? 2 : index === 2 ? -2 : -1 }} animate={reduced ? undefined : { opacity: 1, y: [0, (index === 1 ? 10 : -7) * motionAmount, 0], rotate: [index === 1 ? 2 : index === 2 ? -2 : -1, index === 1 ? 1.4 : index === 2 ? -1.4 : -0.4, index === 1 ? 2 : index === 2 ? -2 : -1], scale: 1 }} transition={{ opacity: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, scale: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, y: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }, rotate: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 } }} className={cnCard(index)}><div className="flex h-8 items-center gap-1.5 border-b border-black/10 bg-white px-4"><span className="h-2 w-2 rounded-full bg-vm-coral/75" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="ml-auto text-[8px] font-medium uppercase tracking-[0.18em] text-black/30">VireMarca</span></div><div className="relative aspect-[16/10] overflow-hidden bg-vm-sand"><AnimatePresence initial={false} mode="sync"><motion.div key={project.id} initial={reduced ? false : { opacity: 0, scale: 1.04, x: 18 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={reduced ? undefined : { opacity: 0, scale: 0.985, x: -18 }} transition={{ duration: 0.75 + index * 0.16, delay: index * 0.12, ease }} className="absolute inset-0"><Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="45vw" className="object-cover" priority={index === 0} /><div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" /><div className="absolute bottom-4 left-4 text-white"><p className="text-[9px] uppercase tracking-[0.2em] text-white/60">{project.category}</p><p className="mt-1 text-lg font-semibold tracking-tight">{project.title}</p></div></motion.div></AnimatePresence></div></motion.a>
-}
+  const positions = [
+    "absolute right-[8%] top-[8%] z-30 w-[68%]",
+    "absolute right-[-1%] top-[42%] z-40 w-[46%]",
+    "absolute left-[8%] bottom-[5%] z-50 w-[47%]",
+  ]
 
-function cnCard(index: number) {
-  return index === 0 ? "absolute right-[9%] top-[8%] z-10 w-[70%] overflow-hidden rounded-[1.55rem] border border-white/70 bg-white shadow-[0_40px_100px_-45px_rgba(0,0,0,0.8)]" : index === 1 ? "absolute right-[-1%] top-[37%] z-20 w-[49%] overflow-hidden rounded-[1.35rem] border border-white/70 bg-white shadow-[0_35px_90px_-45px_rgba(0,0,0,0.8)]" : "absolute left-[9%] bottom-[4%] z-30 w-[48%] overflow-hidden rounded-[1.3rem] border border-white/70 bg-white shadow-[0_30px_80px_-40px_rgba(0,0,0,0.8)]"
+  return <motion.a href={`/portfolio/${project.slug}`} initial={reduced ? false : { opacity: 0, y: 32, scale: 0.94, rotate: index === 1 ? 2.4 : index === 2 ? -2.2 : -1.2 }} animate={reduced ? undefined : { opacity: 1, y: [0, (index === 1 ? 9 : -7) * motionAmount, 0], rotate: [index === 1 ? 2.4 : index === 2 ? -2.2 : -1.2, index === 1 ? 1.7 : index === 2 ? -1.5 : -0.5, index === 1 ? 2.4 : index === 2 ? -2.2 : -1.2], scale: 1 }} transition={{ opacity: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, scale: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, y: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }, rotate: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 } }} className={`${positions[index] ?? positions[0]} group overflow-hidden rounded-[1.55rem] border border-white/75 bg-white shadow-[0_40px_100px_-45px_rgba(0,0,0,0.88)] transition-shadow duration-500 hover:shadow-[0_48px_110px_-42px_rgba(0,0,0,0.95)]`}>
+    <div className="flex h-8 items-center gap-1.5 border-b border-black/10 bg-white px-4"><span className="h-2 w-2 rounded-full bg-vm-coral/75" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="ml-auto text-[8px] font-medium uppercase tracking-[0.18em] text-black/30">VireMarca</span></div>
+    <div className="relative aspect-[16/10] overflow-hidden bg-vm-sand">
+      <AnimatePresence initial={false} mode="sync"><motion.div key={project.id} initial={reduced ? false : { opacity: 0, scale: 1.04, x: 18 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={reduced ? undefined : { opacity: 0, scale: 0.985, x: -18 }} transition={{ duration: 0.75 + index * 0.16, delay: index * 0.12, ease }} className="absolute inset-0"><Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="45vw" className="object-cover" priority={index === 0} /><div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" /><div className="absolute bottom-4 left-4 text-white"><p className="text-[9px] uppercase tracking-[0.2em] text-white/60">{project.category}</p><p className="mt-1 text-lg font-semibold tracking-tight">{project.title}</p></div></motion.div></AnimatePresence>
+    </div>
+  </motion.a>
 }
