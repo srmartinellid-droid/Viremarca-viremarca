@@ -53,7 +53,7 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
         <Reveal className="max-w-3xl mb-10">
           <p className="vm-eyebrow mb-3">Portfólio</p>
           <TitleBlock style={titleStyle || { text: "Veja a VireMarca em ação", highlight: "VireMarca em ação", textColor: "#171717", highlightColor: "#E07A5F", highlightStyle: "color", fontWeight: 600 }} className="!mx-0" />
-          <p className="mt-3 text-vm-muted max-w-lg leading-relaxed">Sites reais, construídos com a mesma base tecnológica e uma identidade própria para cada negócio.</p>
+          <p className="mt-3 text-vm-muted max-w-lg leading-relaxed">Aqui entram os projetos da VireMarca: a imagem é a captura do próprio site, e cada projeto leva para sua página de detalhes ou para a versão publicada quando disponível.</p>
         </Reveal>
 
         <div className="relative">
@@ -78,13 +78,13 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
                   <div className="relative aspect-[4/3] overflow-hidden bg-vm-sand">
                     {project.thumbnail ? <Image src={project.thumbnail} alt={project.title} fill sizes="(max-width: 768px) 82vw, 360px" className={cn("object-cover transition-all duration-700", reduced ? "" : "grayscale brightness-[0.9] md:group-hover:grayscale-0 md:group-hover:brightness-100 md:group-hover:scale-[1.05]", isActive ? "grayscale-0 brightness-100 scale-[1.03]" : "")} /> : <div className="absolute inset-0 flex items-center justify-center text-vm-muted text-sm">Preview</div>}
                     <div className={cn("absolute inset-0 bg-gradient-to-t from-vm-ink/50 via-transparent to-transparent transition-opacity", isActive ? "opacity-80" : "opacity-40")} />
-                    <div className="absolute top-4 left-4"><span className="rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-[11px] font-medium text-vm-ink tracking-wide">{project.category}</span></div>
+                    <div className="absolute top-4 left-4 flex flex-wrap gap-2"><span className="rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-[11px] font-medium text-vm-ink tracking-wide">{project.category}</span><span className="rounded-full border border-white/40 bg-black/30 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm">Captura do site</span></div>
                     {project.featured && <div className="absolute top-4 right-4 rounded-full bg-vm-coral px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">Destaque</div>}
                     {project.site_url && <a href={project.site_url} target="_blank" rel="noopener noreferrer" aria-label={`Visitar ${project.title}`} className="absolute bottom-4 right-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-vm-ink shadow-md transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-vm-coral hover:scale-105"><ExternalLink size={16} /></a>}
                   </div>
                   <div className="p-5 md:p-6 bg-white">
                     <div className="flex items-start justify-between gap-3">
-                      <div><h3 className="text-lg font-semibold tracking-tight text-vm-ink group-hover:text-vm-coral transition-colors">{project.title}</h3><p className="mt-2 text-sm text-vm-muted leading-relaxed line-clamp-2">{project.description}</p></div>
+                      <div><h3 className="text-lg font-semibold tracking-tight text-vm-ink group-hover:text-vm-coral transition-colors">{project.title}</h3><p className="mt-2 text-sm text-vm-muted leading-relaxed line-clamp-2">{project.description}</p><p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-vm-coral">Ver projeto e contexto</p></div>
                       <Link href={`/portfolio/${project.slug}`} className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full border border-vm-border group-hover:border-vm-coral group-hover:bg-vm-coral group-hover:text-white transition-all" aria-label={`Ver ${project.title}`}><ArrowUpRight size={16} /></Link>
                     </div>
                   </div>
