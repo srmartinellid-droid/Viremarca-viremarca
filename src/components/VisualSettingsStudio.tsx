@@ -17,7 +17,7 @@ const dividerDefaults: Record<string, DividerStyle> = {
 const titleLabels: Record<string, string> = { process: "Como trabalhamos", about: "Quem somos", delivers: "O que entregamos", contact: "Chamada final" }
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"])
 
-function parseList(value: string) { try { const parsed = JSON.parse(value || "[]"); return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string" && x.trim()) : [] } catch { return value.trim() ? [value.trim()] : [] } }
+function parseList(value: string) { try { const parsed = JSON.parse(value || "[]"); return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string" && !!x.trim()) : [] } catch { return value.trim() ? [value.trim()] : [] } }
 function parseObject<T>(value: string | undefined, fallback: T): T { try { return value ? JSON.parse(value) as T : fallback } catch { return fallback } }
 
 export function VisualSettingsStudio() {
