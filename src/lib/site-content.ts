@@ -11,6 +11,8 @@ export type PublicSiteContent = {
   heroAccentIntensity: number
   heroImage: string
   heroMobileImage: string
+  heroBackgroundImages: string[]
+  heroMobileBackgroundImages: string[]
   heroOverlayIntensity: number
   heroBackgroundPosition: string
   heroBackgroundScale: number
@@ -35,13 +37,16 @@ const fallbackDelivers: DeliverItem[] = DEMO_CONTENT.delivers.map((item, index) 
 }))
 
 export async function getPublicSiteContent(): Promise<PublicSiteContent> {
+  const fallbackImages = ["/portfolio/magia-glass.jpg"]
   const fallback: PublicSiteContent = {
     heroTitle: "Seu negócio merece uma",
     heroAccent: "presença digital à altura.",
     heroSubtitle: DEMO_CONTENT.heroSubtitle,
     heroAccentIntensity: 100,
-    heroImage: "/portfolio/magia-glass.jpg",
+    heroImage: fallbackImages[0],
     heroMobileImage: "",
+    heroBackgroundImages: fallbackImages,
+    heroMobileBackgroundImages: [],
     heroOverlayIntensity: 58,
     heroBackgroundPosition: "center center",
     heroBackgroundScale: 103,
@@ -74,13 +79,32 @@ export async function getPublicSiteContent(): Promise<PublicSiteContent> {
       delivers = fallback.delivers
     }
 
+    const parseImages = (value: string | undefined, fallbackValue: string[]) => {
+      if (!value) return fallbackValue
+      try {
+        const parsed = JSON.parse(value)
+        if (Array.isArray(parsed)) {
+          const images = parsed.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+          if (images.length) return images
+        }
+      } catch {
+        if (value.trim()) return [value.trim()]
+      }
+      return fallbackValue
+    }
+
+    const heroBackgroundImages = parseImages(config.hero_background_images, config.hero_image ? [config.hero_image] : fallback.heroBackgroundImages)
+    const heroMobileBackgroundImages = parseImages(config.hero_mobile_background_images, config.hero_mobile_image ? [config.hero_mobile_image] : fallback.heroMobileBackgroundImages)
+
     return {
       heroTitle: values.hero_title || fallback.heroTitle,
       heroAccent: values.hero_accent || fallback.heroAccent,
       heroSubtitle: values.hero_subtitle || fallback.heroSubtitle,
       heroAccentIntensity: Math.min(100, Math.max(0, Number(config.hero_accent_intensity || fallback.heroAccentIntensity))),
-      heroImage: config.hero_image || fallback.heroImage,
-      heroMobileImage: config.hero_mobile_image || fallback.heroMobileImage,
+      heroImage: config.hero_image || heroBackgroundImages[0] || fallback.heroImage,
+      heroMobileImage: config.hero_mobile_image || heroMobileBackgroundImages[0] || fallback.heroMobileImage,
+      heroBackgroundImages,
+      heroMobileBackgroundImages,
       heroOverlayIntensity: Math.min(100, Math.max(0, Number(config.hero_overlay_intensity ?? fallback.heroOverlayIntensity))),
       heroBackgroundPosition: config.hero_background_position || fallback.heroBackgroundPosition,
       heroBackgroundScale: Math.min(120, Math.max(100, Number(config.hero_background_scale ?? fallback.heroBackgroundScale))),
