@@ -15,7 +15,7 @@ export function About({ content }: Props) {
           <Reveal>
             <div className="sticky top-28">
               <p className="vm-eyebrow mb-5 flex items-center gap-3"><span className="text-vm-ink/25">02</span> Quem somos</p>
-              <h2 className="vm-display max-w-md text-4xl leading-[0.96] tracking-[-0.055em] md:text-6xl lg:text-[5.2rem]">{content.aboutTitle}</h2>
+              <h2 className="vm-display max-w-md text-3xl leading-[1.04] tracking-[-0.045em] md:text-4xl lg:text-[2.75rem]">{content.aboutTitle}</h2>
               <div className="mt-10 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-vm-muted"><span className="h-2 w-2 rounded-full bg-vm-coral" />VireMarca®</div>
             </div>
           </Reveal>
