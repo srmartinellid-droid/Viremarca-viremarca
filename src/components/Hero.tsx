@@ -109,8 +109,6 @@ export function Hero({ content, featuredProjects }: Props) {
           </div>
 
           <div className="relative hidden min-h-[600px] lg:block" aria-label="Projetos em destaque">
-            <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.1, delay: 0.15 }} className="pointer-events-none absolute left-[12%] top-[15%] select-none" aria-hidden><span className="vm-display text-[clamp(5rem,11vw,10rem)] leading-none tracking-[-0.09em] text-white/[0.055]">SITES</span></motion.div>
-            <div className="pointer-events-none absolute bottom-[8%] left-[4%] h-px w-[44%] bg-gradient-to-r from-vm-coral/70 to-transparent" aria-hidden />
             <div className="pointer-events-none absolute right-[8%] top-[7%] h-2 w-2 rounded-full bg-vm-coral shadow-[0_0_28px_rgba(224,122,95,0.9)]" aria-hidden />
             {cards.map((project, index) => project && <HeroCard key={`hero-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} />)}
           </div>
