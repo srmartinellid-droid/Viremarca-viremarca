@@ -11,6 +11,9 @@ const defaults: Record<string, string> = {
   hero_image: "",
   hero_mobile_image: "",
   hero_overlay_intensity: "58",
+  hero_background_position: "center center",
+  hero_background_scale: "103",
+  hero_cards_motion: "100",
   logo2: "",
 }
 
@@ -74,7 +77,7 @@ export function VisualSettings() {
     const rows = Object.entries(settings).map(([key, value]) => ({ key, value }))
     const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" })
     setSaving(false)
-    setNotice(error ? error.message : "Identidade visual salva. O site já pode consumir as novas configurações.")
+    setNotice(error ? error.message : "Direção visual salva. O site já pode consumir as novas configurações.")
   }
 
   const set = (key: string, value: string) => setSettings((current) => ({ ...current, [key]: value }))
@@ -87,8 +90,8 @@ export function VisualSettings() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <Link href="/admin" className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-vm-muted hover:text-vm-ink"><ArrowLeft size={14} />Admin</Link>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-vm-ink md:text-4xl">Hero & identidade visual</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-vm-muted">Controle da imagem principal da hero, versão mobile, intensidade do overlay e Logo 2. Tudo persistido no Supabase.</p>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-vm-ink md:text-4xl">Hero & direção visual</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-vm-muted">Controle a imagem de fundo, enquadramento, contraste e comportamento dos projetos. Tudo persiste no Supabase, sem novo deploy para trocar assets.</p>
           </div>
           <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-full bg-vm-coral px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-vm-coral/20 disabled:opacity-60"><Save size={16} />{saving ? "Salvando…" : "Salvar alterações"}</button>
         </div>
@@ -97,12 +100,19 @@ export function VisualSettings() {
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-[2rem] border border-vm-border bg-white p-6 md:p-8">
-            <div className="flex items-center gap-3"><div className="rounded-2xl bg-vm-sand p-3 text-vm-coral"><ImagePlus size={20} /></div><div><h2 className="font-semibold text-vm-ink">Hero</h2><p className="text-xs text-vm-muted">A imagem pública que sustenta a composição principal.</p></div></div>
+            <div className="flex items-center gap-3"><div className="rounded-2xl bg-vm-sand p-3 text-vm-coral"><ImagePlus size={20} /></div><div><h2 className="font-semibold text-vm-ink">Hero</h2><p className="text-xs text-vm-muted">A imagem pública agora ocupa a seção inteira e recebe os projetos como elementos flutuantes.</p></div></div>
             <div className="mt-7 grid gap-5 md:grid-cols-2">
               <AssetCard label="Imagem desktop" value={settings.hero_image} busy={uploading === "hero_image"} onUpload={(file) => upload("hero_image", file)} />
               <AssetCard label="Imagem mobile" value={settings.hero_mobile_image} busy={uploading === "hero_mobile_image"} onUpload={(file) => upload("hero_mobile_image", file)} />
             </div>
-            <label className="mt-7 block"><div className="flex items-center justify-between gap-4"><span className="text-xs font-semibold uppercase tracking-[0.12em] text-vm-muted">Intensidade do overlay</span><span className="rounded-full bg-vm-sand px-3 py-1 text-xs font-semibold text-vm-ink">{settings.hero_overlay_intensity}%</span></div><input type="range" min="0" max="100" value={settings.hero_overlay_intensity} onChange={(e) => set("hero_overlay_intensity", e.target.value)} className="mt-4 w-full accent-[var(--color-vm-coral)]" /><div className="mt-2 flex justify-between text-[10px] uppercase tracking-wider text-vm-muted"><span>Imagem livre</span><span>Mais contraste</span></div></label>
+            <div className="mt-8 grid gap-6 md:grid-cols-2">
+              <RangeField label="Overlay" value={settings.hero_overlay_intensity} min="0" max="100" suffix="%" onChange={(value) => set("hero_overlay_intensity", value)} left="Imagem livre" right="Mais contraste" />
+              <RangeField label="Escala do fundo" value={settings.hero_background_scale} min="100" max="120" suffix="%" onChange={(value) => set("hero_background_scale", value)} left="Enquadramento natural" right="Mais imersão" />
+            </div>
+            <div className="mt-6 grid gap-6 md:grid-cols-2">
+              <label className="block"><span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">Foco da imagem</span><select value={settings.hero_background_position} onChange={(e) => set("hero_background_position", e.target.value)} className="w-full rounded-xl border border-vm-border bg-white px-4 py-3 text-sm text-vm-ink outline-none focus:border-vm-coral focus:ring-4 focus:ring-vm-coral/10"><option value="center center">Centro</option><option value="center top">Topo</option><option value="center bottom">Base</option><option value="left center">Esquerda</option><option value="right center">Direita</option></select></label>
+              <RangeField label="Movimento dos cards" value={settings.hero_cards_motion} min="0" max="100" suffix="%" onChange={(value) => set("hero_cards_motion", value)} left="Estático" right="Mais orgânico" />
+            </div>
           </section>
 
           <section className="rounded-[2rem] border border-vm-border bg-white p-6 md:p-8">
@@ -114,6 +124,10 @@ export function VisualSettings() {
       </div>
     </main>
   )
+}
+
+function RangeField({ label, value, min, max, suffix, left, right, onChange }: { label: string; value: string; min: string; max: string; suffix: string; left: string; right: string; onChange: (value: string) => void }) {
+  return <label className="block"><div className="flex items-center justify-between gap-4"><span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">{label}</span><span className="rounded-full bg-vm-sand px-3 py-1 text-xs font-semibold text-vm-ink">{value}{suffix}</span></div><input type="range" min={min} max={max} value={value} onChange={(e) => onChange(e.target.value)} className="mt-4 w-full accent-[var(--color-vm-coral)]" /><div className="mt-2 flex justify-between text-[10px] uppercase tracking-wider text-vm-muted"><span>{left}</span><span>{right}</span></div></label>
 }
 
 function AssetCard({ label, value, busy, compact = false, onUpload }: { label: string; value: string; busy: boolean; compact?: boolean; onUpload: (file: File) => void }) {
