@@ -105,7 +105,7 @@ export function Hero({ content, featuredProjects }: Props) {
             </motion.h1>
             <motion.p initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.28, ease }} className="mt-6 max-w-xl text-base leading-relaxed text-white/70 md:text-lg">{content.heroSubtitle}</motion.p>
             <motion.div initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4, ease }} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"><MagneticButton href="/#sites" variant="primary">Conheça nossos sites<ArrowRight size={16} /></MagneticButton><MagneticButton href="/virelab" variant="secondary">Experimentar VireLab<ArrowUpRight size={16} /></MagneticButton></motion.div>
-            <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }} className="mt-8 flex max-w-xl items-center gap-3 text-xs text-white/45"><span className="h-px w-10 bg-white/25" />Uma base. Muitos segmentos. Uma identidade para cada marca.</motion.div>
+            <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }} className="mt-8 flex max-w-xl items-center gap-3 text-xs text-white/45"><span className="h-px w-10 bg-white/25" />Uma base. Muitos negócios. Uma identidade para cada marca.</motion.div>
           </div>
 
           <div className="relative hidden min-h-[600px] lg:block" aria-label="Projetos da VireMarca">
