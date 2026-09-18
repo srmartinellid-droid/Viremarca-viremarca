@@ -61,13 +61,13 @@ export const DEMO_PROJECTS: PortfolioProject[] = [
 
 export const DEMO_CONTENT = {
   heroTitle: "Seu negócio merece uma presença digital à altura.",
-  heroSubtitle: "A VireMarca cria sites profissionais pensados para cada segmento — com design, performance e estrutura que realmente vendem.",
+  heroSubtitle: "A VireMarca cria sites profissionais, pensados para cada negócio, unindo design estratégico, tecnologia e estrutura sob medida.",
   aboutTitle: "Uma nova marca, construída sobre experiência real.",
   aboutBody: `A VireMarca nasce agora, mas não do zero.
 
 Mais de duas décadas trabalhando com tecnologia, atendimento e operação de soluções técnicas formaram a base. Agora essa bagagem é direcionada para um propósito claro: transformar negócios locais em marcas digitais profissionais.
 
-Não somos uma fábrica de sites genéricos. Não somos uma agência de marketing. Somos especialistas em criar presenças digitais que respeitam o segmento do cliente e conversam com o público certo.`,
+Não somos uma fábrica de sites genéricos. Não somos uma agência de marketing. Criamos presenças digitais que respeitam o negócio de cada cliente e conversam com o público certo.`,
   process: [
     { step: "01", title: "Entendemos o negócio", desc: "Conversamos sobre o que você vende, para quem e qual o objetivo do site." },
     { step: "02", title: "Definimos a estrutura", desc: "Escolhemos o template de nicho e a arquitetura de páginas e conversão." },
@@ -77,13 +77,13 @@ Não somos uma fábrica de sites genéricos. Não somos uma agência de marketin
   delivers: [
     { title: "Sites institucionais", desc: "Presença profissional e confiável para a sua empresa." },
     { title: "Sites para profissionais", desc: "Advogados, médicos, corretores e especialistas." },
-    { title: "Sites por segmento", desc: "Templates inteligentes que respeitam a lógica do nicho." },
+    { title: "Design e experiência", desc: "Interfaces pensadas para comunicar com clareza e personalidade." },
     { title: "Landing pages", desc: "Páginas de conversão focadas em um objetivo." },
     { title: "Portfólios e galerias", desc: "Mostre o seu trabalho com elegância e clareza." },
     { title: "Estruturas personalizadas", desc: "Quando o projeto exige algo além do template." },
   ],
   contact: {
-    whatsapp: "5548999999999",
+    whatsapp: "5548991410717",
     email: "contato@viremarca.com.br",
     instagram: "viremarca",
   },
