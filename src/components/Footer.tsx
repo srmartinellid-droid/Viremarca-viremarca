@@ -13,7 +13,7 @@ export async function Footer() {
           <div className="md:col-span-2">
             <Image src={logo} alt="VireMarca" width={180} height={48} className="h-9 w-auto object-contain mb-5" unoptimized={Boolean(content.logo2)} />
             <p className="text-sm text-vm-muted max-w-sm leading-relaxed">
-              Sites profissionais por segmento. Uma base tecnológica sólida e uma identidade própria para cada negócio.
+              Sites profissionais, pensados para cada negócio. Uma base tecnológica sólida e uma identidade própria para cada marca.
             </p>
           </div>
 
