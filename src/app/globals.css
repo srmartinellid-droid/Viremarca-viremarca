@@ -19,6 +19,13 @@ body { background-color: var(--color-vm-bg); color: var(--color-vm-ink); font-fa
 .vm-glow-coral { box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-vm-coral) 25%, transparent), 0 8px 40px -8px color-mix(in srgb, var(--color-vm-coral) 35%, transparent); }
 :focus-visible { outline: 2px solid var(--color-vm-coral); outline-offset: 3px; }
 .vm-display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.035em; line-height: 1.08; }
+.text-display { font-size: 2.5rem; line-height: 1.01; letter-spacing: -0.045em; }
+.text-h2 { font-size: 1.875rem; line-height: 1.04; letter-spacing: -0.045em; }
+.text-h3 { font-size: 1.5rem; line-height: 1.08; letter-spacing: -0.035em; }
+@media (min-width: 768px) {
+  .text-display { font-size: 3.5rem; }
+  .text-h2 { font-size: 2.75rem; }
+}
 .vm-eyebrow { font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-vm-coral); }
 .vm-img-desat { filter: grayscale(1) brightness(0.92); transition: filter var(--motion-slow) var(--ease-standard), transform var(--motion-slow) var(--ease-standard); } .group:hover .vm-img-desat, .vm-img-desat.is-active { filter: grayscale(0) brightness(1); }
 .vm-reveal-mask { clip-path: inset(0 0 100% 0); transition: clip-path var(--motion-reveal) var(--ease-emphasized); } .vm-reveal-mask.is-visible { clip-path: inset(0 0 0% 0); }

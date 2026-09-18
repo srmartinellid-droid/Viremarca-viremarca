@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion as useFramerReducedMotion, us
 import Image from "next/image"
 import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { MagneticButton } from "@/components/motion/MagneticButton"
-import { renderTitleParts } from "@/components/TitleBlock"
+import { TitleBlock } from "@/components/TitleBlock"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import type { PortfolioProject } from "@/types"
 import type { PublicSiteContent } from "@/lib/site-content"
@@ -30,8 +30,6 @@ export function Hero({ content, featuredProjects }: Props) {
   const bgScale = useTransform(scrollY, [0, 700], [baseScale, baseScale + 0.055])
   const contentY = useTransform(scrollY, [0, 650], [0, -28])
   const heroStyle = content.titleStyles?.hero ?? { text: `${content.heroTitle} ${content.heroAccent}`, highlight: content.heroAccent, textColor: "#FFFFFF", highlightColor: "#E07A5F", highlightStyle: "color" as const, align: "left" as const }
-  const heroParts = renderTitleParts(heroStyle)
-  const heroHighlightClass = heroStyle.highlightStyle === "italic" ? "italic" : heroStyle.highlightStyle === "underline" ? "underline decoration-[0.08em] underline-offset-[0.14em]" : heroStyle.highlightStyle === "marker" ? "rounded-[0.12em] px-[0.08em]" : ""
 
   useEffect(() => {
     if (!projects.length) return setCardIndexes([])
@@ -100,9 +98,9 @@ export function Hero({ content, featuredProjects }: Props) {
         <div className="grid w-full gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-5 xl:grid-cols-[0.82fr_1.18fr]">
           <div className="relative z-40 max-w-3xl">
             <motion.p initial={reduced ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05, ease }} className="mb-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-vm-coral"><span className="h-px w-8 bg-vm-coral" />Design + tecnologia para o seu negócio</motion.p>
-            <motion.h1 initial={reduced ? false : { opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 0.12, ease }} className="vm-display max-w-3xl text-pretty text-[2.55rem] leading-[1.01] tracking-[-0.045em] sm:text-5xl md:text-[3.35rem] lg:text-[3.65rem] xl:text-[3.9rem]" style={{ color: heroStyle.textColor || "#FFFFFF" }}>
-              {heroParts.before}{heroParts.highlighted && <span className={`relative inline-block font-semibold drop-shadow-[0_10px_32px_rgba(224,122,95,0.18)] ${heroHighlightClass}`} style={{ color: heroStyle.highlightColor || heroStyle.textColor || "#FFFFFF", backgroundColor: heroStyle.highlightStyle === "marker" ? `${heroStyle.highlightColor || "#E07A5F"}20` : undefined }}>{heroParts.highlighted}<motion.span initial={reduced ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.85, delay: 0.68, ease }} className="absolute left-0 right-[18%] -bottom-2 h-1 origin-left rounded-full bg-vm-coral/70" /></span>}{heroParts.after}
-            </motion.h1>
+            <motion.div initial={reduced ? false : { opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 0.12, ease }}>
+              <TitleBlock style={heroStyle} size="display" as="h1" animated={false} highlightRule className="max-w-3xl !mx-0 !text-left" />
+            </motion.div>
             <motion.p initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.28, ease }} className="mt-6 max-w-xl text-base leading-relaxed text-white/70 md:text-lg">{content.heroSubtitle}</motion.p>
             <motion.div initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4, ease }} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"><MagneticButton href="/#sites" variant="primary">Conheça nossos sites<ArrowRight size={16} /></MagneticButton><MagneticButton href="/virelab" variant="secondary">Experimentar VireLab<ArrowUpRight size={16} /></MagneticButton></motion.div>
             <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }} className="mt-8 flex max-w-xl items-center gap-3 text-xs text-white/45"><span className="h-px w-10 bg-white/25" />Uma base. Muitos negócios. Uma identidade para cada marca.</motion.div>

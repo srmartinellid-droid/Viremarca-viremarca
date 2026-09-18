@@ -1,6 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
+import React from "react"
 import { Reveal } from "@/components/motion/Reveal"
 import { DEFAULT_TITLE_STYLES, type TitleStyle } from "@/lib/visual-defaults"
 export type { TitleStyle } from "@/lib/visual-defaults"
@@ -17,8 +17,18 @@ export function renderTitleParts(style: TitleStyle) {
   return { before: text, highlighted: "", after: "" }
 }
 
-export function TitleBlock({ style, className = "", size = "default" }: { style: TitleStyle; className?: string; size?: "default" | "large" }) {
+export function TitleBlock({ style, className = "", size = "h2", as = "h2", animated = true, highlightRule = false }: { style: TitleStyle; className?: string; size?: "display" | "h2" | "h3"; as?: "h1" | "h2" | "h3"; animated?: boolean; highlightRule?: boolean }) {
   const parts = renderTitleParts(style), align = style.align === "center" ? "text-center mx-auto" : "text-left"
   const highlightClass = style.highlightStyle === "italic" ? "italic" : style.highlightStyle === "underline" ? "underline decoration-[0.08em] underline-offset-[0.14em]" : style.highlightStyle === "marker" ? "rounded-[0.12em] px-[0.08em]" : ""
-  return <Reveal className={`${align} ${className}`}><motion.h2 initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-10%" }} transition={{ duration: 0.65 }} className={`vm-display text-pretty leading-[1.04] tracking-[-0.045em] ${size === "large" ? "text-4xl md:text-5xl lg:text-[3.6rem]" : "text-3xl md:text-4xl lg:text-[2.75rem]"}`} style={{ color: style.textColor || "inherit", fontWeight: style.fontWeight || 600 }}>{parts.before}{parts.highlighted && <span className={highlightClass} style={{ color: style.highlightColor || style.textColor || "inherit", backgroundColor: style.highlightStyle === "marker" ? `${style.highlightColor || "#E07A5F"}20` : undefined }}>{parts.highlighted}</span>}{parts.after}</motion.h2></Reveal>
+  const highlightedClass = parts.highlighted ? "relative inline-block" : ""
+  const titleClass = size === "display" ? "text-display" : size === "h3" ? "text-h3" : "text-h2"
+  const content = React.createElement(as, { className: "vm-display " + titleClass + " text-pretty " + className, style: { color: style.textColor || "inherit", fontWeight: style.fontWeight || 600 } },
+    parts.before,
+    parts.highlighted && React.createElement("span", { className: highlightedClass + " " + highlightClass, style: { color: style.highlightColor || style.textColor || "inherit", backgroundColor: style.highlightStyle === "marker" ? (style.highlightColor || "#E07A5F") + "20" : undefined } },
+      parts.highlighted,
+      highlightRule && React.createElement("span", { className: "absolute left-0 right-[18%] -bottom-2 h-1 origin-left rounded-full bg-vm-coral/70", "aria-hidden": true })
+    ),
+    parts.after
+  )
+  return animated ? <Reveal className={align}>{content}</Reveal> : content
 }
