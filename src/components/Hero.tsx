@@ -99,7 +99,7 @@ export function Hero({ content, featuredProjects }: Props) {
       <motion.div style={{ y: framerReduced || reduced ? 0 : contentY }} className="relative z-10 mx-auto flex min-h-[92svh] max-w-[1400px] items-center px-5 pb-16 pt-28 sm:px-8 lg:px-12">
         <div className="grid w-full gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-5 xl:grid-cols-[0.82fr_1.18fr]">
           <div className="relative z-40 max-w-3xl">
-            <motion.p initial={reduced ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05, ease }} className="mb-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-vm-coral"><span className="h-px w-8 bg-vm-coral" />Sites profissionais por segmento</motion.p>
+            <motion.p initial={reduced ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05, ease }} className="mb-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-vm-coral"><span className="h-px w-8 bg-vm-coral" />Design + tecnologia para o seu negócio</motion.p>
             <motion.h1 initial={reduced ? false : { opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 0.12, ease }} className="vm-display max-w-3xl text-pretty text-[2.55rem] leading-[1.01] tracking-[-0.045em] sm:text-5xl md:text-[3.35rem] lg:text-[3.65rem] xl:text-[3.9rem]" style={{ color: heroStyle.textColor || "#FFFFFF" }}>
               {heroParts.before}{heroParts.highlighted && <span className={`relative inline-block font-semibold drop-shadow-[0_10px_32px_rgba(224,122,95,0.18)] ${heroHighlightClass}`} style={{ color: heroStyle.highlightColor || heroStyle.textColor || "#FFFFFF", backgroundColor: heroStyle.highlightStyle === "marker" ? `${heroStyle.highlightColor || "#E07A5F"}20` : undefined }}>{heroParts.highlighted}<motion.span initial={reduced ? false : { scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.85, delay: 0.68, ease }} className="absolute left-0 right-[18%] -bottom-2 h-1 origin-left rounded-full bg-vm-coral/70" /></span>}{heroParts.after}
             </motion.h1>
@@ -108,7 +108,7 @@ export function Hero({ content, featuredProjects }: Props) {
             <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }} className="mt-8 flex max-w-xl items-center gap-3 text-xs text-white/45"><span className="h-px w-10 bg-white/25" />Uma base. Muitos segmentos. Uma identidade para cada marca.</motion.div>
           </div>
 
-          <div className="relative hidden min-h-[600px] lg:block" aria-label="Projetos em destaque">
+          <div className="relative hidden min-h-[600px] lg:block" aria-label="Projetos da VireMarca">
             <div className="pointer-events-none absolute right-[8%] top-[7%] h-2 w-2 rounded-full bg-vm-coral shadow-[0_0_28px_rgba(224,122,95,0.9)]" aria-hidden />
             {cards.map((project, index) => project && <HeroCard key={`hero-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} />)}
           </div>
