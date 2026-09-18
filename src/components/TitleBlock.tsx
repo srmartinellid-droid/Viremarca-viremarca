@@ -1,6 +1,5 @@
 "use client"
 
-import { motion } from "framer-motion"
 import { Reveal } from "@/components/motion/Reveal"
 import { DEFAULT_TITLE_STYLES, type TitleStyle } from "@/lib/visual-defaults"
 export type { TitleStyle } from "@/lib/visual-defaults"
