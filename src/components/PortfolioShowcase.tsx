@@ -53,7 +53,7 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
         <Reveal className="max-w-3xl mb-10">
           <p className="vm-eyebrow mb-3">Portfólio</p>
           <TitleBlock style={titleStyle || { text: "Veja a VireMarca em ação", highlight: "VireMarca em ação", textColor: "#171717", highlightColor: "#E07A5F", highlightStyle: "color", fontWeight: 600 }} className="!mx-0" />
-          <p className="mt-3 text-vm-muted max-w-lg leading-relaxed">Sites reais, construídos com a mesma base tecnológica e uma identidade própria para cada negócio.</p>
+          <p className="mt-3 text-vm-muted max-w-2xl leading-relaxed">Projetos e demonstrações desenvolvidos pela VireMarca para diferentes negócios, necessidades e experiências digitais.</p>
         </Reveal>
 
         <div className="relative">
@@ -79,7 +79,7 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
                     {project.thumbnail ? <Image src={project.thumbnail} alt={project.title} fill sizes="(max-width: 768px) 82vw, 360px" className={cn("object-cover transition-all duration-700", reduced ? "" : "grayscale brightness-[0.9] md:group-hover:grayscale-0 md:group-hover:brightness-100 md:group-hover:scale-[1.05]", isActive ? "grayscale-0 brightness-100 scale-[1.03]" : "")} /> : <div className="absolute inset-0 flex items-center justify-center text-vm-muted text-sm">Preview</div>}
                     <div className={cn("absolute inset-0 bg-gradient-to-t from-vm-ink/50 via-transparent to-transparent transition-opacity", isActive ? "opacity-80" : "opacity-40")} />
                     <div className="absolute top-4 left-4"><span className="rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-[11px] font-medium text-vm-ink tracking-wide">{project.category}</span></div>
-                    {project.featured && <div className="absolute top-4 right-4 rounded-full bg-vm-coral px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">Destaque</div>}
+                    {project.description.startsWith("Projeto real ·") ? <div className="absolute top-4 right-4 rounded-full bg-vm-coral px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">Projeto real</div> : <div className="absolute top-4 right-4 rounded-full border border-white/60 bg-black/55 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm">Demonstração</div>}
                     {project.site_url && <a href={project.site_url} target="_blank" rel="noopener noreferrer" aria-label={`Visitar ${project.title}`} className="absolute bottom-4 right-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-vm-ink shadow-md transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-vm-coral hover:scale-105"><ExternalLink size={16} /></a>}
                   </div>
                   <div className="p-5 md:p-6 bg-white">
