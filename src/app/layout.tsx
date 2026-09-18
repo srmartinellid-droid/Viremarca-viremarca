@@ -12,12 +12,12 @@ const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-displ
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getPublicSiteContent()
   return {
-    title: { default: "VireMarca — Sites profissionais por segmento", template: "%s · VireMarca" },
-    description: "A VireMarca cria sites profissionais pensados para cada segmento. Uma nova marca construída sobre experiência real em tecnologia.",
-    keywords: ["sites profissionais", "criação de sites", "sites por nicho", "VireMarca"],
+    title: { default: "VireMarca — Sites profissionais para o seu negócio", template: "%s · VireMarca" },
+    description: "A VireMarca constrói sites profissionais, pensados para cada negócio, unindo design estratégico, tecnologia e estrutura sob medida.",
+    keywords: ["sites profissionais", "criação de sites", "site para empresas", "site profissional", "VireMarca"],
     authors: [{ name: "VireMarca" }],
-    openGraph: { type: "website", locale: "pt_BR", siteName: "VireMarca", title: "VireMarca — Sites profissionais por segmento", description: "Sites profissionais pensados para cada segmento. Design, performance e estrutura que vendem." },
-    twitter: { card: "summary_large_image", title: "VireMarca", description: "Sites profissionais por segmento." },
+    openGraph: { type: "website", locale: "pt_BR", siteName: "VireMarca", title: "VireMarca — Sites profissionais para o seu negócio", description: "Sites profissionais, pensados para cada negócio, com design estratégico, tecnologia e estrutura sob medida." },
+    twitter: { card: "summary_large_image", title: "VireMarca", description: "Sites profissionais, pensados para cada negócio." },
     icons: content.logo1 ? { icon: [{ url: content.logo1 }], apple: [{ url: content.logo1 }] } : undefined,
   }
 }
