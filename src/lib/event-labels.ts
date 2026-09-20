@@ -11,6 +11,7 @@ export const EVENT_LABELS: Record<string, string> = {
   deliver_details_open: "Abertura de abordagem",
   traffic_source_landing: "Origem da visita",
   contact_cta_context: "Origem do CTA de contato",
+  session_region: "Região da sessão",
 }
 export const LOCATION_LABELS: Record<string, string> = {
   cta: "botão de chamada",
@@ -25,10 +26,21 @@ export const LOCATION_LABELS: Record<string, string> = {
   process: "processo",
   deliver: "entregas",
 }
+const COUNTRY_LABELS: Record<string, string> = {
+  BR: "Brasil",
+  AR: "Argentina",
+  CL: "Chile",
+  CO: "Colômbia",
+  MX: "México",
+  US: "Estados Unidos",
+  PT: "Portugal",
+}
 export function eventLabel(name: string) { return EVENT_LABELS[name] ?? name }
 export function formatEventContext(metadata: Record<string, unknown> | null) {
   if (!metadata) return ""
   const parts: string[] = []
+  const device = metadata.device_type === "mobile" ? "📱 Mobile" : metadata.device_type === "desktop" ? "🖥️ Desktop" : ""
+  if (device) parts.push(device)
   const location = typeof metadata.location === "string" ? LOCATION_LABELS[metadata.location] ?? metadata.location : ""
   if (location) parts.push(`via ${location}`)
   if (typeof metadata.project === "string") parts.push(metadata.project)
@@ -38,6 +50,13 @@ export function formatEventContext(metadata: Record<string, unknown> | null) {
   if (typeof metadata.utm_campaign === "string" && metadata.utm_campaign) parts.push(`campanha ${metadata.utm_campaign}`)
   if (typeof metadata.referrer === "string" && metadata.referrer) {
     try { parts.push(`referência ${new URL(metadata.referrer).hostname}`) } catch { parts.push("referência externa") }
+  }
+  const country = typeof metadata.country === "string" ? COUNTRY_LABELS[metadata.country.toUpperCase()] ?? metadata.country : ""
+  const region = typeof metadata.region === "string" ? metadata.region : ""
+  const city = typeof metadata.city === "string" ? metadata.city : ""
+  if (country || region || city) {
+    const place = [city, region, country].filter(Boolean).join(", ")
+    parts.push(`Origem: ${place}`)
   }
   return parts.join(" · ")
 }
