@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Cookie, Settings, X } from "lucide-react"
 
-export const CONSENT_CONSENT_STORAGE_KEY = "viremarca-consent-v1"
+export const CONSENT_STORAGE_KEY = "viremarca-consent-v1"
 
 type Consent = { necessary: true; analytics: boolean; savedAt: string }
 
