@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { TrackedAnchor } from "@/components/TrackedAnchor"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, ExternalLink } from "lucide-react"
@@ -48,7 +49,9 @@ export default async function PortfolioProjectPage({ params }: Props) {
           </p>
 
           {project.site_url && (
-            <a
+            <TrackedAnchor
+              eventName="portfolio_external_click"
+              eventMetadata={{ location: "portfolio_detail" }}
               href={project.site_url}
               target="_blank"
               rel="noopener noreferrer"
