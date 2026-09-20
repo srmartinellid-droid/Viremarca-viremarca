@@ -3,14 +3,13 @@ export const EVENT_LABELS: Record<string, string> = {
   email_click: "Clique no e-mail",
   instagram_click: "Clique no Instagram",
   contact_started: "Início de contato",
-  virelab_click: "Acesso ao VireLab",
+  virelab_click: "Clique no VireLab",
   portfolio_view: "Visualização de projeto",
   portfolio_external_click: "Acesso ao site do projeto",
-  hero_project_click: "Clique em projeto da hero",
+  hero_project_click: "Visualização de projeto (via hero)",
   process_step_interaction: "Interação com etapa do processo",
   deliver_details_open: "Abertura de abordagem",
   traffic_source_landing: "Origem da visita",
-  contact_cta_context: "Origem do CTA de contato",
   session_region: "Região da sessão",
 }
 export const LOCATION_LABELS: Record<string, string> = {
