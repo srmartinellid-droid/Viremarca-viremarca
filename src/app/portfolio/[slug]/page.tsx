@@ -59,7 +59,7 @@ export default async function PortfolioProjectPage({ params }: Props) {
             >
               Visitar site
               <ExternalLink size={15} />
-            </a>
+            </TrackedAnchor>
           )}
         </div>
 
