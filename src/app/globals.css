@@ -33,3 +33,21 @@ body { background-color: var(--color-vm-bg); color: var(--color-vm-ink); font-fa
 .vm-divider-organic::after { content: ""; position: absolute; left: -5%; right: -5%; bottom: -42px; height: 78px; border-radius: 50%; background: var(--color-vm-sand); border-top: 1px solid color-mix(in srgb, var(--color-vm-coral) 18%, transparent); }
 .vm-divider-diagonal { height: 64px; clip-path: polygon(0 45%, 100% 0, 100% 100%, 0 100%); background: var(--color-vm-sand); }
 .vm-divider-wave { height: 64px; background: radial-gradient(110% 90% at 50% 100%, var(--color-vm-sand) 0 58%, transparent 59%); }
+
+@media print {
+  @page { margin: 14mm; }
+  body { background: #fff !important; }
+  aside, header, nav, .md\:hidden, .print\:hidden { display: none !important; }
+  main { padding: 0 !important; }
+  .analytics-report { max-width: none !important; }
+  .analytics-report > div:first-child { margin-bottom: 18px !important; }
+  .analytics-report table { min-width: 0 !important; width: 100% !important; }
+  .analytics-report .rounded-3xl { border-radius: 0 !important; box-shadow: none !important; }
+  .analytics-report .bg-white { background: #fff !important; }
+  .analytics-report .text-vm-muted { color: #444 !important; }
+  .analytics-report .text-vm-ink { color: #111 !important; }
+  .analytics-report .border-vm-border { border-color: #ddd !important; }
+  .analytics-report .overflow-x-auto { overflow: visible !important; }
+  .analytics-report .min-w-\[780px\] { min-width: 0 !important; }
+  .analytics-report .analytics-chart { display: none !important; }
+}

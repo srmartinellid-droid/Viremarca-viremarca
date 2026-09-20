@@ -1,6 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { getPublicSiteContent } from "@/lib/site-content"
+import { TrackedAnchor } from "@/components/TrackedAnchor"
 
 export async function Footer() {
   const year = new Date().getFullYear()
@@ -30,9 +31,9 @@ export async function Footer() {
           <div>
             <h4 className="text-xs font-semibold tracking-wider uppercase text-vm-ink mb-4">Contato</h4>
             <ul className="space-y-2.5 text-sm text-vm-muted">
-              <li><a href={`https://wa.me/${content.contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className="hover:text-vm-coral transition-colors">WhatsApp</a></li>
-              <li><a href={`mailto:${content.contact.email}`} className="hover:text-vm-coral transition-colors">{content.contact.email}</a></li>
-              <li><a href={`https://instagram.com/${content.contact.instagram}`} target="_blank" rel="noopener noreferrer" className="hover:text-vm-coral transition-colors">@{content.contact.instagram}</a></li>
+              <li><TrackedAnchor href={`https://wa.me/${content.contact.whatsapp}`} eventName="whatsapp_click" eventMetadata={{ location: "footer" }} eventStatus="production" contactContext="other" target="_blank" rel="noopener noreferrer" className="hover:text-vm-coral transition-colors">WhatsApp</TrackedAnchor></li>
+              <li><TrackedAnchor href={`mailto:${content.contact.email}`} eventName="email_click" eventMetadata={{ location: "footer" }} eventStatus="production" contactContext="other" className="hover:text-vm-coral transition-colors">{content.contact.email}</TrackedAnchor></li>
+              <li><TrackedAnchor href={`https://instagram.com/${content.contact.instagram}`} eventName="instagram_click" eventMetadata={{ location: "footer" }} eventStatus="production" contactContext="other" target="_blank" rel="noopener noreferrer" className="hover:text-vm-coral transition-colors">@{content.contact.instagram}</TrackedAnchor></li>
             </ul>
           </div>
         </div>

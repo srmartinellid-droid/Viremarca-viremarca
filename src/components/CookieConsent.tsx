@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Cookie, Settings, X } from "lucide-react"
 
-const STORAGE_KEY = "viremarca-consent-v1"
+export const CONSENT_STORAGE_KEY = "viremarca-consent-v1"
 
 type Consent = { necessary: true; analytics: boolean; savedAt: string }
 
@@ -15,7 +15,7 @@ export function CookieConsent() {
 
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem(STORAGE_KEY)
+      const saved = window.localStorage.getItem(CONSENT_STORAGE_KEY)
       if (!saved) setOpen(true)
       else {
         const parsed = JSON.parse(saved) as Partial<Consent>
@@ -28,7 +28,8 @@ export function CookieConsent() {
 
   const save = (allowAnalytics: boolean) => {
     const consent: Consent = { necessary: true, analytics: allowAnalytics, savedAt: new Date().toISOString() }
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(consent))
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(consent))
+    window.dispatchEvent(new CustomEvent("viremarca-consent-changed"))
     setAnalytics(allowAnalytics)
     setOpen(false)
     setPreferences(false)
@@ -44,7 +45,7 @@ export function CookieConsent() {
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-vm-ink">Privacidade e cookies</h2>
             <p className="mt-1 text-xs leading-relaxed text-vm-muted">
-              Usamos cookies e armazenamento local necessários para o funcionamento do site. Com sua permissão, podemos usar recursos de análise para entender como a VireMarca é utilizada.
+              Usamos cookies e armazenamento local necessários para o funcionamento do site. Com sua permissão, podemos usar recursos de análise para entender como a VireMarca é utilizada. A análise pode coletar a região aproximada da visita (país, estado e cidade) e usar esses dados de forma agregada para fins estatísticos, sem armazenar o endereço IP.
             </p>
           </div>
           <button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="rounded-full p-1.5 text-vm-muted hover:bg-vm-bg"><X size={15} /></button>
