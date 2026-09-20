@@ -11,6 +11,7 @@ export const EVENT_LABELS: Record<string, string> = {
   deliver_details_open: "Abertura de abordagem",
   traffic_source_landing: "Origem da visita",
   session_region: "Região da sessão",
+  contact_cta_context: "Origem do CTA de contato",
 }
 export const LOCATION_LABELS: Record<string, string> = {
   cta: "botão de chamada",
@@ -34,7 +35,7 @@ const COUNTRY_LABELS: Record<string, string> = {
   US: "Estados Unidos",
   PT: "Portugal",
 }
-export function eventLabel(name: string) { return EVENT_LABELS[name] ?? name }
+export function eventLabel(name: string) { return EVENT_LABELS[name] ?? "Evento registrado" }
 export function formatEventContext(metadata: Record<string, unknown> | null) {
   if (!metadata) return ""
   const parts: string[] = []
