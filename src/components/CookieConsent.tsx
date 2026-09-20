@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Cookie, Settings, X } from "lucide-react"
 
-const STORAGE_KEY = "viremarca-consent-v1"
+export const CONSENT_CONSENT_STORAGE_KEY = "viremarca-consent-v1"
 
 type Consent = { necessary: true; analytics: boolean; savedAt: string }
 
@@ -15,7 +15,7 @@ export function CookieConsent() {
 
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem(STORAGE_KEY)
+      const saved = window.localStorage.getItem(CONSENT_STORAGE_KEY)
       if (!saved) setOpen(true)
       else {
         const parsed = JSON.parse(saved) as Partial<Consent>
@@ -28,7 +28,8 @@ export function CookieConsent() {
 
   const save = (allowAnalytics: boolean) => {
     const consent: Consent = { necessary: true, analytics: allowAnalytics, savedAt: new Date().toISOString() }
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(consent))
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(consent))
+    window.dispatchEvent(new CustomEvent("viremarca-consent-changed"))
     setAnalytics(allowAnalytics)
     setOpen(false)
     setPreferences(false)
