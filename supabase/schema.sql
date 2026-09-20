@@ -135,6 +135,7 @@ create table if not exists public.site_events (
   event_name text not null,
   page text not null,
   metadata jsonb,
+  status text not null default 'production' check (status in ('production', 'lab')),
   created_at timestamptz not null default now()
 );
 alter table public.site_events enable row level security;
