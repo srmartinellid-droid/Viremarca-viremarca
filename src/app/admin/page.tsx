@@ -12,10 +12,11 @@ import { cn } from "@/lib/utils"
 import { createProject, updateProject, deleteProject, toggleProjectActive } from "@/app/actions/portfolio"
 import { logoutAction } from "@/app/actions/auth"
 import { VisualSettings } from "@/components/VisualSettings"
+import { eventLabel, formatEventContext } from "@/lib/event-labels"
 
-type Tab = "dashboard" | "portfolio" | "content" | "settings" | "visual" | "performance"
+type Tab = "dashboard" | "portfolio" | "content" | "settings" | "visual" | "performance" | "lab"
 type PerformancePeriod = "today" | "7d" | "30d"
-type SiteEvent = { id: string; event_name: string; page: string; metadata: Record<string, unknown> | null; created_at: string }
+type SiteEvent = { id: string; event_name: string; page: string; metadata: Record<string, unknown> | null; status: "production" | "lab"; created_at: string }
 type Notice = { type: "ok" | "err"; text: string }
 type SiteMap = Record<string, string>
 
@@ -38,6 +39,7 @@ const nav = [
   { id: "settings" as Tab, label: "Configurações", icon: Settings },
   { id: "visual" as Tab, label: "Hero & Visual", icon: Sparkles },
   { id: "performance" as Tab, label: "Desempenho", icon: Activity },
+  { id: "lab" as Tab, label: "Lab", icon: Sparkles },
 ]
 
 function Field({ label, value, onChange, multiline = false, placeholder = "" }: { label: string; value: string; onChange: (value: string) => void; multiline?: boolean; placeholder?: string }) {
@@ -97,7 +99,7 @@ export default function AdminPage() {
   useEffect(() => { loadData() }, [loadData])
 
   useEffect(() => {
-    if (tab !== "performance") return
+    if (tab !== "performance" && tab !== "lab") return
     const loadPerformance = async () => {
       const supabase = createClientOptional()
       if (!supabase) return
@@ -105,7 +107,8 @@ export default function AdminPage() {
       const start = new Date()
       if (performancePeriod === "today") start.setHours(0, 0, 0, 0)
       else start.setDate(start.getDate() - (performancePeriod === "7d" ? 7 : 30))
-      const { data, error } = await supabase.from("site_events").select("id,event_name,page,metadata,created_at").gte("created_at", start.toISOString()).order("created_at", { ascending: false }).limit(1000)
+      const status = tab === "lab" ? "lab" : "production"
+      const { data, error } = await supabase.from("site_events").select("id,event_name,page,metadata,status,created_at").eq("status", status).gte("created_at", start.toISOString()).order("created_at", { ascending: false }).limit(1000)
       if (error) flash("err", error.message)
       else setSiteEvents((data as SiteEvent[]) ?? [])
       setPerformanceLoading(false)
@@ -199,15 +202,24 @@ export default function AdminPage() {
 
           {tab === "settings" && <div className="max-w-4xl space-y-7"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-vm-coral">Configurações</p><h2 className="mt-2 text-2xl font-semibold text-vm-ink">Identidade e canais</h2><p className="mt-1 text-sm text-vm-muted">Ajustes sem precisar tocar no código.</p></div><section className="rounded-3xl border border-vm-border bg-white p-6 space-y-6"><div className="grid gap-5 md:grid-cols-2"><Field label="WhatsApp" value={settings.whatsapp} onChange={(v) => setSettings(s => ({ ...s, whatsapp: v }))} placeholder="5548999999999" /><Field label="E-mail" value={settings.email} onChange={(v) => setSettings(s => ({ ...s, email: v }))} /><Field label="Instagram" value={settings.instagram} onChange={(v) => setSettings(s => ({ ...s, instagram: v }))} /></div></section><section className="rounded-3xl border border-vm-border bg-white p-6"><div className="flex items-start justify-between gap-5"><div><h3 className="font-semibold text-vm-ink">Intensidade da cor da hero</h3><p className="mt-1 text-sm text-vm-muted">0 = quase neutro · 100 = coral máximo.</p></div><span className="text-2xl font-semibold text-vm-coral">{Number(settings.hero_accent_intensity || 100)}%</span></div><input type="range" min="0" max="100" value={Number(settings.hero_accent_intensity || 100)} onChange={(e) => setSettings(s => ({ ...s, hero_accent_intensity: e.target.value }))} className="mt-6 w-full accent-vm-coral" /><div className="mt-4 h-12 rounded-xl bg-vm-ink flex items-center px-5 text-xl font-semibold"><span className="text-white">Seu negócio merece uma&nbsp;</span><span style={{ color: `color-mix(in srgb, var(--color-vm-coral) ${Number(settings.hero_accent_intensity || 100)}%, white)` }}>presença digital.</span></div></section><div className="flex justify-end"><button type="button" disabled={savingSettings} onClick={saveSettings} className="inline-flex items-center gap-2 rounded-full bg-vm-coral px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"><Save size={16} />{savingSettings ? "Salvando…" : "Salvar configurações"}</button></div></div>}
 
-          {tab === "performance" && (() => {
+          {(tab === "performance" || tab === "lab") && (() => {
             const counts = siteEvents.reduce<Record<string, number>>((acc, event) => { acc[event.event_name] = (acc[event.event_name] || 0) + 1; return acc }, {})
             const countRows = Object.entries(counts).sort((x, y) => y[1] - x[1])
-            return <div className="max-w-6xl space-y-7">
-              <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-vm-coral">Analytics próprio</p><h2 className="mt-2 text-2xl font-semibold text-vm-ink">Desempenho</h2><p className="mt-1 text-sm text-vm-muted">Eventos de negócio registrados no Supabase, sem IP, nome ou e-mail.</p></div>
-              <div className="flex flex-wrap gap-2">{([["today","Hoje"],["7d","7 dias"],["30d","30 dias"]] as const).map(([value,label]) => <button key={value} type="button" onClick={() => setPerformancePeriod(value)} className={cn("rounded-full px-4 py-2 text-xs font-semibold", performancePeriod === value ? "bg-vm-coral text-white" : "border border-vm-border bg-white text-vm-muted")}>{label}</button>)}</div>
+            const maxCount = countRows[0]?.[1] ?? 1
+            const isLab = tab === "lab"
+            return <div className={cn("analytics-report max-w-6xl space-y-7", isLab && "analytics-lab")}>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-vm-coral">{isLab ? "Analytics experimental" : "Analytics próprio"}</p><h2 className="mt-2 text-2xl font-semibold text-vm-ink">{isLab ? "Lab" : "Desempenho"}</h2><p className="mt-1 text-sm text-vm-muted">{isLab ? "Eventos experimentais para validar novas leituras de comportamento." : "Eventos de negócio em produção, sem IP, nome ou e-mail."}</p></div>
+                <div className="flex items-center gap-2 print:hidden">{isLab && <span className="rounded-full bg-vm-sand px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-vm-coral">Experimental</span>}{!isLab && <button type="button" onClick={() => window.print()} className="rounded-full bg-vm-ink px-4 py-2 text-xs font-semibold text-white">Imprimir relatório</button>}</div>
+              </div>
+              <div className="flex flex-wrap gap-2 print:hidden">{([["today","Hoje"],["7d","7 dias"],["30d","30 dias"]] as const).map(([value,label]) => <button key={value} type="button" onClick={() => setPerformancePeriod(value)} className={cn("rounded-full px-4 py-2 text-xs font-semibold", performancePeriod === value ? "bg-vm-coral text-white" : "border border-vm-border bg-white text-vm-muted")}>{label}</button>)}</div>
               {performanceLoading ? <div className="rounded-3xl border border-vm-border bg-white p-10 text-sm text-vm-muted">Carregando eventos…</div> : <>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div className="rounded-3xl border border-vm-border bg-white p-6"><p className="text-sm text-vm-muted">Total de eventos</p><p className="mt-2 text-4xl font-semibold text-vm-ink">{siteEvents.length}</p></div>{countRows.slice(0,3).map(([name,count]) => <div key={name} className="rounded-3xl border border-vm-border bg-white p-6"><p className="text-sm text-vm-muted">{name}</p><p className="mt-2 text-4xl font-semibold text-vm-ink">{count}</p></div>)}</div>
-                <div className="rounded-3xl border border-vm-border bg-white overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm min-w-[780px]"><thead><tr className="border-b border-vm-border text-left text-vm-muted"><th className="px-5 py-4">Evento</th><th className="px-5 py-4">Página</th><th className="px-5 py-4">Metadata</th><th className="px-5 py-4">Data</th></tr></thead><tbody>{siteEvents.map(event => <tr key={event.id} className="border-b border-vm-border last:border-0"><td className="px-5 py-4 font-semibold text-vm-ink">{event.event_name}</td><td className="px-5 py-4 text-vm-muted">{event.page}</td><td className="px-5 py-4 text-xs text-vm-muted">{event.metadata ? JSON.stringify(event.metadata) : "—"}</td><td className="px-5 py-4 text-vm-muted whitespace-nowrap">{new Date(event.created_at).toLocaleString("pt-BR")}</td></tr>)}</tbody></table></div>{siteEvents.length === 0 && <div className="p-8 text-sm text-vm-muted">Nenhum evento no período selecionado.</div>}</div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-3xl border border-vm-border bg-white p-6"><p className="text-sm text-vm-muted">Total de eventos</p><p className="mt-2 text-4xl font-semibold text-vm-ink">{siteEvents.length}</p></div>
+                  {countRows.slice(0,3).map(([name,count]) => <div key={name} className="rounded-3xl border border-vm-border bg-white p-6"><p className="text-sm text-vm-muted">{eventLabel(name)}</p><p className="mt-1 text-[10px] text-vm-muted/70">{name}</p><p className="mt-2 text-4xl font-semibold text-vm-ink">{count}</p></div>)}
+                </div>
+                {!isLab && countRows.length > 0 && <section className="rounded-3xl border border-vm-border bg-white p-6 print:hidden"><div className="mb-5"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-vm-coral">Distribuição</p><h3 className="mt-1 text-lg font-semibold text-vm-ink">Eventos por tipo</h3></div><div className="space-y-3">{countRows.map(([name,count]) => <div key={name}><div className="mb-1.5 flex items-center justify-between gap-4 text-xs"><span className="font-medium text-vm-ink">{eventLabel(name)}</span><span className="text-vm-muted">{count}</span></div><div className="h-2.5 overflow-hidden rounded-full bg-vm-bg"><div className="h-full rounded-full bg-vm-coral" style={{ width: `${Math.max(4, (count / maxCount) * 100)}%` }} /></div></div>)}</div></section>}
+                <div className="rounded-3xl border border-vm-border bg-white overflow-hidden"><div className="overflow-x-auto"><table className="w-full text-sm min-w-[780px]"><thead><tr className="border-b border-vm-border text-left text-vm-muted"><th className="px-5 py-4">Evento</th><th className="px-5 py-4">Página</th><th className="px-5 py-4">Contexto</th><th className="px-5 py-4">Data</th></tr></thead><tbody>{siteEvents.map(event => { const context = formatEventContext(event.metadata); return <tr key={event.id} className="border-b border-vm-border last:border-0"><td className="px-5 py-4"><p className="font-semibold text-vm-ink">{eventLabel(event.event_name)}</p><p className="text-[10px] text-vm-muted/70">{event.event_name}</p></td><td className="px-5 py-4 text-vm-muted">{event.page}</td><td className="px-5 py-4 text-xs text-vm-muted">{context || "—"}</td><td className="px-5 py-4 text-vm-muted whitespace-nowrap">{new Date(event.created_at).toLocaleString("pt-BR")}</td></tr>})}</tbody></table></div>{siteEvents.length === 0 && <div className="p-8 text-sm text-vm-muted">Nenhum evento no período selecionado.</div>}</div>
               </>}
             </div>
           })()}
