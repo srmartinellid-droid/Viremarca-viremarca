@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { Reveal } from "@/components/motion/Reveal"
 import { TitleBlock } from "@/components/TitleBlock"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
+import { trackEvent } from "@/lib/track-event"
 
 type Props = { projects: PortfolioProject[]; titleStyle?: TitleStyle }
 
@@ -80,12 +81,12 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
                     <div className={cn("absolute inset-0 bg-gradient-to-t from-vm-ink/50 via-transparent to-transparent transition-opacity", isActive ? "opacity-80" : "opacity-40")} />
                     <div className="absolute top-4 left-4"><span className="rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-[11px] font-medium text-vm-ink tracking-wide">{project.category}</span></div>
                     {project.description.startsWith("Projeto real ·") ? <div className="absolute top-4 right-4 rounded-full bg-vm-coral px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">Projeto real</div> : <div className="absolute top-4 right-4 rounded-full border border-white/60 bg-black/55 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm">Demonstração</div>}
-                    {project.site_url && <a href={project.site_url} target="_blank" rel="noopener noreferrer" aria-label={`Visitar ${project.title}`} className="absolute bottom-4 right-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-vm-ink shadow-md transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-vm-coral hover:scale-105"><ExternalLink size={16} /></a>}
+                    {project.site_url && <a onClick={() => void trackEvent("portfolio_external_click", { location: "portfolio_card" })} href={project.site_url} target="_blank" rel="noopener noreferrer" aria-label={`Visitar ${project.title}`} className="absolute bottom-4 right-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-vm-ink shadow-md transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-vm-coral hover:scale-105"><ExternalLink size={16} /></a>}
                   </div>
                   <div className="p-5 md:p-6 bg-white">
                     <div className="flex items-start justify-between gap-3">
                       <div><h3 className="text-lg font-semibold tracking-tight text-vm-ink group-hover:text-vm-coral transition-colors">{project.title}</h3><p className="mt-2 text-sm text-vm-muted leading-relaxed line-clamp-2">{project.description}</p></div>
-                      <Link href={`/portfolio/${project.slug}`} className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full border border-vm-border group-hover:border-vm-coral group-hover:bg-vm-coral group-hover:text-white transition-all" aria-label={`Ver ${project.title}`}><ArrowUpRight size={16} /></Link>
+                      <Link onClick={() => void trackEvent("portfolio_view", { location: "portfolio_card" })} href={`/portfolio/${project.slug}`} className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full border border-vm-border group-hover:border-vm-coral group-hover:bg-vm-coral group-hover:text-white transition-all" aria-label={`Ver ${project.title}`}><ArrowUpRight size={16} /></Link>
                     </div>
                   </div>
                 </motion.article>
