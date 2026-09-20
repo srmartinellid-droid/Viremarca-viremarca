@@ -52,6 +52,7 @@ export default async function PortfolioProjectPage({ params }: Props) {
             <TrackedAnchor
               eventName="portfolio_external_click"
               eventMetadata={{ location: "portfolio_detail" }}
+              eventStatus="production"
               href={project.site_url}
               target="_blank"
               rel="noopener noreferrer"
