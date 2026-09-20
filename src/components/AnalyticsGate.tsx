@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
-import { trackLandingSourceOncePerSession } from "@/lib/track-event"
+import { trackLandingSourceOncePerSession, trackRegionOncePerSession } from "@/lib/track-event"
 import { CONSENT_STORAGE_KEY } from "@/components/CookieConsent"
 
 export function AnalyticsGate() {
@@ -19,7 +19,11 @@ export function AnalyticsGate() {
     window.addEventListener("viremarca-consent-changed", sync)
     return () => window.removeEventListener("viremarca-consent-changed", sync)
   }, [])
-  useEffect(() => { if (enabled) void trackLandingSourceOncePerSession() }, [enabled])
+  useEffect(() => {
+    if (!enabled) return
+    void trackLandingSourceOncePerSession()
+    void trackRegionOncePerSession()
+  }, [enabled])
   if (!enabled) return null
   return <><Analytics /><SpeedInsights /></>
 }
