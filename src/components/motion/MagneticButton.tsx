@@ -9,6 +9,7 @@ type Common = {
   children: React.ReactNode
   className?: string
   variant?: "primary" | "secondary" | "ghost" | "dark"
+  contactContext?: "hero" | "contact_section" | "other"
 }
 
 type AsLink = Common & { href: string; onClick?: never }
@@ -53,7 +54,15 @@ export function MagneticButton(props: Props) {
           target="_blank"
           rel="noopener noreferrer"
           ref={ref as React.RefObject<HTMLAnchorElement>}
-          onClick={() => { if (props.href.startsWith("https://wa.me")) void trackEvent("whatsapp_click", { location: "cta" }); else if (props.href.startsWith("mailto:")) void trackEvent("email_click", { location: "cta" }) }}
+          onClick={() => {
+            if (props.href.startsWith("https://wa.me")) {
+              void trackEvent("whatsapp_click", { location: "cta" }, "production")
+              void trackEvent("contact_cta_context", { location: props.contactContext ?? "other" }, "lab")
+            } else if (props.href.startsWith("mailto:")) {
+              void trackEvent("email_click", { location: "cta" }, "production")
+              void trackEvent("contact_cta_context", { location: props.contactContext ?? "other" }, "lab")
+            }
+          }}
           onMouseMove={onMouseMove}
           onMouseLeave={onMouseLeave}
           className={classes}
@@ -68,7 +77,7 @@ export function MagneticButton(props: Props) {
       <Link
         href={props.href}
         ref={ref as React.RefObject<HTMLAnchorElement>}
-        onClick={() => { if (props.href === "/#contato") void trackEvent("contact_started", { location: "cta" }); else if (props.href === "/virelab") void trackEvent("virelab_click", { location: "cta" }); else if (props.href === "/#sites") void trackEvent("portfolio_view", { location: "cta" }) }}
+        onClick={() => { if (props.href === "/#contato") { void trackEvent("contact_started", { location: "cta" }, "production"); void trackEvent("contact_cta_context", { location: props.contactContext ?? "other" }, "lab") } else if (props.href === "/virelab") void trackEvent("virelab_click", { location: "cta" }, "production"); else if (props.href === "/#sites") void trackEvent("portfolio_view", { location: "cta" }, "production") }}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}
         className={classes}
