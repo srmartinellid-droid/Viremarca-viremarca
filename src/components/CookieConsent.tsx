@@ -45,7 +45,7 @@ export function CookieConsent() {
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-vm-ink">Privacidade e cookies</h2>
             <p className="mt-1 text-xs leading-relaxed text-vm-muted">
-              Usamos cookies e armazenamento local necessários para o funcionamento do site. Com sua permissão, podemos usar recursos de análise para entender como a VireMarca é utilizada.
+              Usamos cookies e armazenamento local necessários para o funcionamento do site. Com sua permissão, podemos usar recursos de análise para entender como a VireMarca é utilizada. A análise pode coletar a região aproximada da visita (país, estado e cidade) de forma agregada para fins estatísticos, sem armazenar o endereço IP.
             </p>
           </div>
           <button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="rounded-full p-1.5 text-vm-muted hover:bg-vm-bg"><X size={15} /></button>
