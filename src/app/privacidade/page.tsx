@@ -15,7 +15,7 @@ export default function PrivacidadePage() {
         </p>
         <p className="text-vm-muted mt-4 leading-relaxed">
           Com sua permissão para análise, podemos coletar a região aproximada da visita (país, estado
-          e cidade) de forma agregada para fins estatísticos. Não armazenamos o endereço IP do visitante.
+          e cidade) e usar esses dados de forma agregada para fins estatísticos. Não armazenamos o endereço IP do visitante.
         </p>
         <p className="text-vm-muted mt-4 leading-relaxed">
           Esses dados não são vendidos nem compartilhados com terceiros para fins comerciais.
