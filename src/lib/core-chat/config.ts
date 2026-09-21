@@ -18,7 +18,7 @@ const DEFAULT_CONFIG: AssistantConfig = {
   model: "",
   knowledge_base: "",
   fallback_whatsapp: "",
-  secret_reference: "GROQ_API_KEY",
+  secret_reference: "assistant_secrets.groq_api_key",
 }
 
 function bool(value: string | undefined) {
@@ -43,7 +43,7 @@ export class SupabaseAssistantConfigRepository implements AssistantConfigReposit
     const supabase = await createClient()
     const { data, error } = await supabase.from("site_settings").select("key,value").in("key", [
       "assistant_enabled", "assistant_name", "assistant_model", "assistant_knowledge_base",
-      "assistant_fallback_whatsapp", "whatsapp", "assistant_groq_configured",
+      "assistant_fallback_whatsapp", "whatsapp",
     ])
     if (error) throw error
     return normalize(data as Array<{ key: string; value: string }> | null)
@@ -60,16 +60,9 @@ export class SupabaseAssistantConfigRepository implements AssistantConfigReposit
       { key: "assistant_model", value: next.model },
       { key: "assistant_knowledge_base", value: next.knowledge_base },
       { key: "assistant_fallback_whatsapp", value: next.fallback_whatsapp },
-      { key: "assistant_groq_configured", value: String(Boolean(process.env.GROQ_API_KEY)) },
     ]
     const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" })
     if (error) throw error
     return next
   }
-}
-
-export function getGroqApiKey() {
-  const key = process.env.GROQ_API_KEY
-  if (!key) throw new Error("GROQ_API_KEY não configurada no ambiente.")
-  return key
 }
