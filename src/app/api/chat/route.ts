@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { SupabaseAssistantConfigRepository, getGroqApiKey } from "@/lib/core-chat/config"
+import { SupabaseAssistantConfigRepository } from "@/lib/core-chat/config"
+import { getGroqApiKey } from "@/lib/core-chat/secrets"
 import { buildSystemPrompt, extractLead, hasCommercialIntent } from "@/lib/core-chat/prompt"
 import { checkRateLimit } from "@/lib/core-chat/rate-limit"
 import { groqChat } from "@/lib/core-chat/groq"
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     const userMessage = commercial && !lead.contact
       ? message + "\n\nHá intenção comercial. Conduza naturalmente a captura de nome e contato."
       : message
-    const answer = await groqChat(getGroqApiKey(), config.model, [
+    const answer = await groqChat(await getGroqApiKey(), config.model, [
       { role: "system", content: buildSystemPrompt(config) },
       ...history,
       { role: "user", content: userMessage },
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       fallback_whatsapp: config.fallback_whatsapp,
     })
   } catch (error) {
-    console.error("[core-chat]", error)
+    console.error("[core-chat]", error instanceof Error ? error.message : "unknown error")
     return NextResponse.json({ error: "Não foi possível responder agora. Fale conosco pelo WhatsApp." }, { status: 500 })
   }
 }
