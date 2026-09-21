@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { SupabaseAssistantConfigRepository } from "@/lib/core-chat/config"
+import { hasGroqApiKey } from "@/lib/core-chat/secrets"
 import { createClient } from "@/lib/supabase/server"
 
 async function assertAdmin() {
@@ -14,7 +15,7 @@ export async function GET() {
   try {
     if (!await assertAdmin()) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
     const config = await new SupabaseAssistantConfigRepository().get()
-    return NextResponse.json({ ...config, groq_configured: Boolean(process.env.GROQ_API_KEY) })
+    return NextResponse.json({ ...config, groq_configured: await hasGroqApiKey() })
   } catch {
     return NextResponse.json({ error: "Não foi possível carregar a configuração." }, { status: 500 })
   }
@@ -31,7 +32,7 @@ export async function PUT(request: NextRequest) {
       knowledge_base: typeof body.knowledge_base === "string" ? body.knowledge_base.slice(0, 20000) : undefined,
       fallback_whatsapp: typeof body.fallback_whatsapp === "string" ? body.fallback_whatsapp.slice(0, 40) : undefined,
     })
-    return NextResponse.json({ ...config, groq_configured: Boolean(process.env.GROQ_API_KEY) })
+    return NextResponse.json({ ...config, groq_configured: await hasGroqApiKey() })
   } catch {
     return NextResponse.json({ error: "Não foi possível salvar a configuração." }, { status: 500 })
   }
