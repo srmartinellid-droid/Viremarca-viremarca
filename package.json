@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test tests/core-chat.test.ts"
+    "test": "node --experimental-strip-types --test tests/core-chat.test.ts tests/core-chat-secrets.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
