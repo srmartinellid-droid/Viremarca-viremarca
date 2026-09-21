@@ -1,7 +1,8 @@
-import { describe, expect, it, beforeEach } from "node:test"
+import { describe, it, beforeEach } from "node:test"
 import assert from "node:assert/strict"
-import { checkRateLimit, resetRateLimitForTests } from "../src/lib/core-chat/rate-limit"
-import { buildSystemPrompt, hasCommercialIntent, extractLead } from "../src/lib/core-chat/prompt"
+import { checkRateLimit, resetRateLimitForTests } from "../src/lib/core-chat/rate-limit.ts"
+import { buildSystemPrompt, hasCommercialIntent, extractLead } from "../src/lib/core-chat/prompt.ts"
+import { parseGroqResponse } from "../src/lib/core-chat/groq.ts"
 
 describe("Core Chat", () => {
   beforeEach(() => resetRateLimitForTests())
@@ -17,7 +18,7 @@ describe("Core Chat", () => {
   })
 
   it("detecta intenção comercial", () => {
-    expect(hasCommercialIntent("Quanto custa um site?")).toBe(true)
+    assert.equal(hasCommercialIntent("Quanto custa um site?"), true)
   })
 
   it("extrai nome e contato", () => {
@@ -26,17 +27,19 @@ describe("Core Chat", () => {
     assert.equal(lead.contact, "48999998888")
   })
 
-  it("monta prompt sem inventar base comercial", () => {
+  it("monta system prompt com contrato comercial", () => {
     const prompt = buildSystemPrompt({
-      enabled: true,
-      assistant_name: "Teste",
-      model: "modelo",
-      knowledge_base: "Sites institucionais.",
-      fallback_whatsapp: "5548999999999",
+      enabled: true, assistant_name: "Teste", model: "modelo",
+      knowledge_base: "Sites institucionais.", fallback_whatsapp: "5548999999999",
       secret_reference: "GROQ_API_KEY",
     })
     assert.match(prompt, /Teste/)
     assert.match(prompt, /Sites institucionais/)
     assert.match(prompt, /Nunca invente/)
+  })
+
+  it("faz parsing da resposta Groq", () => {
+    assert.equal(parseGroqResponse({ choices: [{ message: { content: "Resposta OK" } }] }), "Resposta OK")
+    assert.throws(() => parseGroqResponse({ choices: [] }))
   })
 })
