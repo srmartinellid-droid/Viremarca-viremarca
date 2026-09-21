@@ -67,6 +67,10 @@ export default function AdminPage() {
   const [performancePeriod, setPerformancePeriod] = useState<PerformancePeriod>("7d")
   const [siteEvents, setSiteEvents] = useState<SiteEvent[]>([])
   const [performanceLoading, setPerformanceLoading] = useState(false)
+  const [assistant, setAssistant] = useState({ enabled: false, assistant_name: "Assistente VireMarca", model: "", knowledge_base: "", fallback_whatsapp: "" })
+  const [groqConfigured, setGroqConfigured] = useState(false)
+  const [groqModels, setGroqModels] = useState<Array<{ id: string; active: boolean }>>([])
+  const [savingAssistant, setSavingAssistant] = useState(false)
 
   const flash = (type: Notice["type"], text: string) => { setNotice({ type, text }); window.setTimeout(() => setNotice(null), 4000) }
 
@@ -92,6 +96,18 @@ export default function AdminPage() {
       try { if ((next.delivers_json as string)) setDelivers(JSON.parse(next.delivers_json)) } catch { setDelivers(defaultDelivers) }
     }
     if (!settingsResult.error) { const next = { ...defaultSettings }; for (const row of (settingsResult.data ?? []) as Array<{ key: string; value: string }>) next[row.key] = row.value; setSettings(next) }
+    try {
+      const response = await fetch("/api/admin/assistant-config")
+      if (response.ok) {
+        const data = await response.json()
+        setAssistant({ enabled: Boolean(data.enabled), assistant_name: data.assistant_name || "Assistente VireMarca", model: data.model || "", knowledge_base: data.knowledge_base || "", fallback_whatsapp: data.fallback_whatsapp || "" })
+        setGroqConfigured(Boolean(data.groq_configured))
+        if (data.groq_configured) {
+          const modelsResponse = await fetch("/api/chat/models")
+          if (modelsResponse.ok) setGroqModels((await modelsResponse.json()).models || [])
+        }
+      }
+    } catch { /* painel continua funcional mesmo sem a configuração do Core Chat */ }
     setLoading(false)
   }, [])
 
@@ -161,6 +177,19 @@ export default function AdminPage() {
     setSavingSettings(false); if (error) flash("err", error.message); else flash("ok", "Configurações salvas com sucesso.")
   }
 
+  const saveAssistant = async () => {
+    setSavingAssistant(true)
+    try {
+      const response = await fetch("/api/admin/assistant-config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(assistant) })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || "Falha ao salvar o Assistente de IA.")
+      setAssistant({ enabled: Boolean(data.enabled), assistant_name: data.assistant_name, model: data.model, knowledge_base: data.knowledge_base, fallback_whatsapp: data.fallback_whatsapp })
+      setGroqConfigured(Boolean(data.groq_configured))
+      flash("ok", "Configuração do Assistente de IA salva.")
+    } catch (error) { flash("err", error instanceof Error ? error.message : "Falha ao salvar.") }
+    finally { setSavingAssistant(false) }
+  }
+
   const updateProcess = (index: number, patch: Partial<ProcessItem>) => setProcess((items) => items.map((item, i) => i === index ? { ...item, ...patch } : item))
   const updateDeliver = (index: number, patch: Partial<DeliverItem>) => setDelivers((items) => items.map((item, i) => i === index ? { ...item, ...patch } : item))
 
@@ -198,7 +227,7 @@ export default function AdminPage() {
             <div className="flex justify-end"><button type="button" disabled={savingContent || uploading} onClick={saveContent} className="inline-flex items-center gap-2 rounded-full bg-vm-coral px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"><Save size={16} />{savingContent ? "Salvando…" : "Salvar conteúdo"}</button></div>
           </div>}
 
-          {tab === "settings" && <div className="max-w-4xl space-y-7"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-vm-coral">Configurações</p><h2 className="mt-2 text-2xl font-semibold text-vm-ink">Identidade e canais</h2><p className="mt-1 text-sm text-vm-muted">Ajustes sem precisar tocar no código.</p></div><section className="rounded-3xl border border-vm-border bg-white p-6 space-y-6"><div className="grid gap-5 md:grid-cols-2"><Field label="WhatsApp" value={settings.whatsapp} onChange={(v) => setSettings(s => ({ ...s, whatsapp: v }))} placeholder="5548999999999" /><Field label="E-mail" value={settings.email} onChange={(v) => setSettings(s => ({ ...s, email: v }))} /><Field label="Instagram" value={settings.instagram} onChange={(v) => setSettings(s => ({ ...s, instagram: v }))} /></div></section><section className="rounded-3xl border border-vm-border bg-white p-6"><div className="flex items-start justify-between gap-5"><div><h3 className="font-semibold text-vm-ink">Intensidade da cor da hero</h3><p className="mt-1 text-sm text-vm-muted">0 = quase neutro · 100 = coral máximo.</p></div><span className="text-2xl font-semibold text-vm-coral">{Number(settings.hero_accent_intensity || 100)}%</span></div><input type="range" min="0" max="100" value={Number(settings.hero_accent_intensity || 100)} onChange={(e) => setSettings(s => ({ ...s, hero_accent_intensity: e.target.value }))} className="mt-6 w-full accent-vm-coral" /><div className="mt-4 h-12 rounded-xl bg-vm-ink flex items-center px-5 text-xl font-semibold"><span className="text-white">Seu negócio merece uma&nbsp;</span><span style={{ color: `color-mix(in srgb, var(--color-vm-coral) ${Number(settings.hero_accent_intensity || 100)}%, white)` }}>presença digital.</span></div></section><div className="flex justify-end"><button type="button" disabled={savingSettings} onClick={saveSettings} className="inline-flex items-center gap-2 rounded-full bg-vm-coral px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"><Save size={16} />{savingSettings ? "Salvando…" : "Salvar configurações"}</button></div></div>}
+          {tab === "settings" && <div className="max-w-4xl space-y-7"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-vm-coral">Configurações</p><h2 className="mt-2 text-2xl font-semibold text-vm-ink">Identidade e canais</h2><p className="mt-1 text-sm text-vm-muted">Ajustes sem precisar tocar no código.</p></div><section className="rounded-3xl border border-vm-border bg-white p-6 space-y-6"><div className="grid gap-5 md:grid-cols-2"><Field label="WhatsApp" value={settings.whatsapp} onChange={(v) => setSettings(s => ({ ...s, whatsapp: v }))} placeholder="5548999999999" /><Field label="E-mail" value={settings.email} onChange={(v) => setSettings(s => ({ ...s, email: v }))} /><Field label="Instagram" value={settings.instagram} onChange={(v) => setSettings(s => ({ ...s, instagram: v }))} /></div></section><section className="rounded-3xl border border-vm-border bg-white p-6 space-y-6"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-vm-coral">Core Chat</p><h3 className="mt-2 text-lg font-semibold text-vm-ink">Assistente de IA</h3><p className="mt-1 text-sm text-vm-muted">Configuração comercial do assistente, sem expor a chave Groq ao navegador.</p></div><div className="grid gap-5 md:grid-cols-2"><Field label="Nome do assistente" value={assistant.assistant_name} onChange={(v) => setAssistant(a => ({ ...a, assistant_name: v }))} /><Field label="WhatsApp de fallback" value={assistant.fallback_whatsapp} onChange={(v) => setAssistant(a => ({ ...a, fallback_whatsapp: v }))} /><label className="block"><span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">Modelo Groq</span><select value={assistant.model} onChange={e => setAssistant(a => ({ ...a, model: e.target.value }))} className="w-full rounded-xl border border-vm-border bg-white px-4 py-3 text-sm text-vm-ink outline-none focus:border-vm-coral">{groqModels.map(model => <option key={model.id} value={model.id}>{model.id}</option>)}</select></label><label className="flex items-center gap-3 rounded-xl border border-vm-border p-4"><input type="checkbox" checked={assistant.enabled} onChange={e => setAssistant(a => ({ ...a, enabled: e.target.checked }))} className="accent-vm-coral" /><span><strong className="block text-sm text-vm-ink">Assistente ativo</strong><small className="text-xs text-vm-muted">Exibir o Core Chat no site.</small></span></label></div><Field label="Base de conhecimento comercial" value={assistant.knowledge_base} onChange={(v) => setAssistant(a => ({ ...a, knowledge_base: v }))} multiline placeholder="Serviços, diferenciais, processo, preços/faixas quando aplicável, FAQs e voz da marca." /><div className="rounded-2xl border border-vm-border bg-vm-bg p-4"><p className="text-xs font-semibold text-vm-ink">Chave da API Groq</p><p className="mt-1 text-sm text-vm-muted">{groqConfigured ? "•••••••• configurada" : "não configurada"}</p><p className="mt-1 text-[11px] text-vm-muted">O valor nunca é exibido, salvo em site_settings ou enviado ao navegador.</p></div><div className="flex justify-end"><button type="button" disabled={savingAssistant} onClick={() => void saveAssistant()} className="inline-flex items-center gap-2 rounded-full bg-vm-coral px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"><Save size={16} />{savingAssistant ? "Salvando…" : "Salvar Assistente de IA"}</button></div></section><section className="rounded-3xl border border-vm-border bg-white p-6"><div className="flex items-start justify-between gap-5"><div><h3 className="font-semibold text-vm-ink">Intensidade da cor da hero</h3><p className="mt-1 text-sm text-vm-muted">0 = quase neutro · 100 = coral máximo.</p></div><span className="text-2xl font-semibold text-vm-coral">{Number(settings.hero_accent_intensity || 100)}%</span></div><input type="range" min="0" max="100" value={Number(settings.hero_accent_intensity || 100)} onChange={(e) => setSettings(s => ({ ...s, hero_accent_intensity: e.target.value }))} className="mt-6 w-full accent-vm-coral" /><div className="mt-4 h-12 rounded-xl bg-vm-ink flex items-center px-5 text-xl font-semibold"><span className="text-white">Seu negócio merece uma&nbsp;</span><span style={{ color: `color-mix(in srgb, var(--color-vm-coral) ${Number(settings.hero_accent_intensity || 100)}%, white)` }}>presença digital.</span></div></section><div className="flex justify-end"><button type="button" disabled={savingSettings} onClick={saveSettings} className="inline-flex items-center gap-2 rounded-full bg-vm-coral px-6 py-3 text-sm font-semibold text-white disabled:opacity-60"><Save size={16} />{savingSettings ? "Salvando…" : "Salvar configurações"}</button></div></div>}
 
           {tab === "performance" && (() => {
             const counts = siteEvents.reduce<Record<string, number>>((acc, event) => { acc[event.event_name] = (acc[event.event_name] || 0) + 1; return acc }, {})
