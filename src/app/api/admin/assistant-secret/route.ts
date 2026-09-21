@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ groq_configured: true })
   } catch (error) {
     console.error("[assistant-secret] POST failed", error)
-    return NextResponse.json({ error: "Não foi possível salvar a chave da API Groq." }, { status: 500 })
+    const debugMessage = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ error: "Não foi possível salvar a chave da API Groq.", debug: debugMessage }, { status: 500 })
   }
 }
