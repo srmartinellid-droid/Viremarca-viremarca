@@ -2,6 +2,12 @@ export type GroqChatMessage = { role: "system" | "user" | "assistant"; content: 
 
 const GROQ_BASE = "https://api.groq.com/openai/v1"
 
+export function parseGroqResponse(payload: any) {
+  const content = payload?.choices?.[0]?.message?.content
+  if (typeof content !== "string" || !content.trim()) throw new Error("Resposta inválida da Groq.")
+  return content.trim()
+}
+
 export async function groqChat(apiKey: string, model: string, messages: GroqChatMessage[]) {
   const response = await fetch(GROQ_BASE + "/chat/completions", {
     method: "POST",
