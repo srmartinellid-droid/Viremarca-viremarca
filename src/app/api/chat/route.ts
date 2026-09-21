@@ -3,7 +3,7 @@ import { SupabaseAssistantConfigRepository } from "@/lib/core-chat/config"
 import { getGroqApiKey } from "@/lib/core-chat/secrets"
 import { buildSystemPrompt, extractLead, hasCommercialIntent } from "@/lib/core-chat/prompt"
 import { checkRateLimit } from "@/lib/core-chat/rate-limit"
-import { groqChat } from "@/lib/core-chat/groq"
+import { chooseGroqModel, groqChat } from "@/lib/core-chat/groq"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function POST(request: NextRequest) {
@@ -21,14 +21,14 @@ export async function POST(request: NextRequest) {
 
     const config = await new SupabaseAssistantConfigRepository().get()
     if (!config.enabled) return NextResponse.json({ error: "Assistente indisponível.", fallback_whatsapp: config.fallback_whatsapp }, { status: 503 })
-    if (!config.model) return NextResponse.json({ error: "Modelo do assistente não configurado.", fallback_whatsapp: config.fallback_whatsapp }, { status: 503 })
+    const selectedModel = config.model || "auto"
 
     const lead = extractLead(message)
     const commercial = hasCommercialIntent(message)
     const userMessage = commercial && !lead.contact
       ? message + "\n\nHá intenção comercial. Conduza naturalmente a captura de nome e contato."
       : message
-    const answer = await groqChat(await getGroqApiKey(), config.model, [
+    const answer = await groqChat(await getGroqApiKey(), selectedModel === "auto" ? chooseGroqModel(message, history) : selectedModel, [
       { role: "system", content: buildSystemPrompt(config) },
       ...history,
       { role: "user", content: userMessage },
