@@ -1,13 +1,41 @@
 import { NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 import { SupabaseAssistantConfigRepository } from "@/lib/core-chat/config"
 import { hasGroqApiKey } from "@/lib/core-chat/secrets"
-import { createClient } from "@/lib/supabase/server"
 
 async function assertAdmin() {
-  const supabase = await createClient()
+  const cookieStore = await cookies()
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!url || !key) throw new Error("Supabase não está configurado no servidor.")
+
+  const supabase = createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll()
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+        } catch {
+          // Server route: cookies can be refreshed by middleware.
+        }
+      },
+    },
+  })
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return false
-  const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle()
+
+  if (error) throw error
   return data?.role === "admin" || data?.role === "owner"
 }
 
@@ -16,7 +44,8 @@ export async function GET() {
     if (!await assertAdmin()) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
     const config = await new SupabaseAssistantConfigRepository().get()
     return NextResponse.json({ ...config, groq_configured: await hasGroqApiKey() })
-  } catch {
+  } catch (error) {
+    console.error("[assistant-config] GET failed", error)
     return NextResponse.json({ error: "Não foi possível carregar a configuração." }, { status: 500 })
   }
 }
@@ -33,7 +62,8 @@ export async function PUT(request: NextRequest) {
       fallback_whatsapp: typeof body.fallback_whatsapp === "string" ? body.fallback_whatsapp.slice(0, 40) : undefined,
     })
     return NextResponse.json({ ...config, groq_configured: await hasGroqApiKey() })
-  } catch {
+  } catch (error) {
+    console.error("[assistant-config] PUT failed", error)
     return NextResponse.json({ error: "Não foi possível salvar a configuração." }, { status: 500 })
   }
 }
