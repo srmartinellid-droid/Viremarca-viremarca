@@ -3,6 +3,7 @@ import { SupabaseAssistantConfigRepository, getGroqApiKey } from "@/lib/core-cha
 import { buildSystemPrompt, extractLead, hasCommercialIntent } from "@/lib/core-chat/prompt"
 import { checkRateLimit } from "@/lib/core-chat/rate-limit"
 import { groqChat } from "@/lib/core-chat/groq"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown"
@@ -52,8 +53,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function saveLead(lead: { name: string; contact: string; transcript: string; source: string }) {
-  const { createClient } = await import("@/lib/supabase/server")
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { error } = await supabase.from("chat_leads").insert({
     name: lead.name,
     contact: lead.contact,
