@@ -15,7 +15,7 @@ export type AssistantConfigRepository = {
 const DEFAULT_CONFIG: AssistantConfig = {
   enabled: false,
   assistant_name: "Assistente VireMarca",
-  model: "",
+  model: "auto",
   knowledge_base: "",
   fallback_whatsapp: "",
   secret_reference: "assistant_secrets.groq_api_key",
