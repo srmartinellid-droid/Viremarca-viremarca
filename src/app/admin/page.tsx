@@ -213,7 +213,7 @@ export default function AdminPage() {
     }
   }
 
-  const saveAssistant = async () =>
+  const saveAssistant = async () => {
     setSavingAssistant(true)
     try {
       const response = await fetch("/api/admin/assistant-config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(assistant) })
