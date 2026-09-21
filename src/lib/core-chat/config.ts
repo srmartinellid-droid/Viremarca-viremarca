@@ -60,6 +60,7 @@ export class SupabaseAssistantConfigRepository implements AssistantConfigReposit
       { key: "assistant_model", value: next.model },
       { key: "assistant_knowledge_base", value: next.knowledge_base },
       { key: "assistant_fallback_whatsapp", value: next.fallback_whatsapp },
+      { key: "assistant_groq_configured", value: String(Boolean(process.env.GROQ_API_KEY)) },
     ]
     const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" })
     if (error) throw error
