@@ -6,6 +6,8 @@ import { Footer } from "@/components/Footer"
 import { getPublicSiteContent } from "@/lib/site-content"
 import { CookieConsent } from "@/components/CookieConsent"
 import { AnalyticsGate } from "@/components/AnalyticsGate"
+import { CoreChat } from "@/components/core-chat/CoreChat"
+import { SupabaseAssistantConfigRepository } from "@/lib/core-chat/config"
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" })
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display", display: "swap" })
@@ -25,5 +27,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const content = await getPublicSiteContent()
-  return <html lang="pt-BR" className={`${inter.variable} ${spaceGrotesk.variable}`}><body className="min-h-screen flex flex-col antialiased"><Header logo1={content.logo2} /><main className="flex-1">{children}</main><Footer /><CookieConsent /><AnalyticsGate /></body></html>
+  return <html lang="pt-BR" className={`${inter.variable} ${spaceGrotesk.variable}`}><body className="min-h-screen flex flex-col antialiased"><Header logo1={content.logo2} /><main className="flex-1">{children}</main><Footer /><CookieConsent /><AnalyticsGate /><CoreChat config={await getChatConfig()} /></body></html>
+}
+
+
+async function getChatConfig() {
+  try {
+    const config = await new SupabaseAssistantConfigRepository().get()
+    return { enabled: config.enabled, assistant_name: config.assistant_name, fallback_whatsapp: config.fallback_whatsapp }
+  } catch {
+    return { enabled: false, assistant_name: "Assistente VireMarca", fallback_whatsapp: "" }
+  }
 }
