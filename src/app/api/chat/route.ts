@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const visitorId = request.nextUrl.searchParams.get("visitor_id") || ""
   const conversationId = request.nextUrl.searchParams.get("conversation_id") || ""
   if (!validUuid(visitorId) || !validUuid(conversationId)) return NextResponse.json({ messages: [] })
-  const supabase = createAdminClient()
+  const supabase: any = createAdminClient()
   const { data: conversation } = await supabase.from("chat_conversations").select("id").eq("id", conversationId).eq("visitor_id", visitorId).maybeSingle()
   if (!conversation) return NextResponse.json({ messages: [] })
   const { data, error } = await supabase.from("chat_messages").select("role,content,created_at").eq("conversation_id", conversationId).order("created_at", { ascending: true }).limit(100)
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function upsertLead(supabase: ReturnType<typeof createAdminClient>, conversationId: string, extraction: LeadExtraction) {
+async function upsertLead(supabase: any, conversationId: string, extraction: LeadExtraction) {
   const { data: existing } = await supabase.from("chat_leads").select("*").eq("conversation_id", conversationId).maybeSingle()
   const merged = {
     name: extraction.name ?? existing?.name ?? null,
