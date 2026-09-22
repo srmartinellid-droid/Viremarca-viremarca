@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Bot, CalendarCheck, PlugZap, ArrowUpRight } from "lucide-react"
 import { motion } from "framer-motion"
 import { Reveal, RevealStagger, revealItem } from "@/components/motion/Reveal"
@@ -51,6 +52,7 @@ function Conversation({ demo, reduced }: { demo: CommercialSections["solutions"]
 
 export function CommercialSolutions({ data, whatsapp }: { data: CommercialSections["solutions"]; whatsapp: string }) {
   const reduced = useReducedMotion()
+  const [activeDemo, setActiveDemo] = useState(0)
   const wa = "https://wa.me/" + whatsapp + "?text=" + encodeURIComponent("Olá! Quero saber mais sobre atendimento com IA e integrações para o meu negócio.")
   return (
     <section id="solucoes" className="relative overflow-hidden bg-vm-charcoal py-20 text-white md:py-28">
@@ -85,11 +87,11 @@ export function CommercialSolutions({ data, whatsapp }: { data: CommercialSectio
           <Reveal className="h-full">
             <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-4 shadow-2xl backdrop-blur md:p-5">
               <div role="tablist" aria-label="Exemplos de atendimento" className="mb-4 flex gap-2 overflow-x-auto pb-1">
-                {data.demos.map((demo, index) => <button key={demo.label} type="button" role="tab" aria-selected={index === 0} aria-controls={"conversation-" + index} className={"shrink-0 rounded-full border border-white/10 px-4 py-2 text-xs font-semibold transition-colors " + (index === 0 ? "bg-vm-coral text-white" : "bg-white/5 text-white/60")} data-demo-index={index}>{demo.label}</button>)}
+                {data.demos.map((demo, index) => <button key={demo.label} type="button" role="tab" aria-selected={activeDemo === index} id={"demo-tab-" + index} aria-controls={"conversation-" + index} onClick={() => setActiveDemo(index)} className={"shrink-0 rounded-full border border-white/10 px-4 py-2 text-xs font-semibold transition-colors " + (activeDemo === index ? "bg-vm-coral text-white" : "bg-white/5 text-white/60")}>{demo.label}</button>)}
               </div>
               <div className="rounded-[1.5rem] border border-white/10 bg-black/10 p-5 sm:p-6">
                 <div className="mb-6 flex items-center gap-3 border-b border-white/10 pb-4"><span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(74,222,128,0.55)]" /><span className="text-sm font-semibold text-white">Assistente do seu site</span><span className="ml-auto text-xs text-white/40">23:47</span></div>
-                <div id="conversation-0" role="tabpanel" aria-label={data.demos[0]?.label || "Pousada"} className="min-h-[290px]"><Conversation demo={data.demos[0]} reduced={reduced} /></div>
+                <div id={"conversation-" + activeDemo} role="tabpanel" aria-labelledby={"demo-tab-" + activeDemo} aria-label={data.demos[activeDemo]?.label || "Pousada"} className="min-h-[290px]"><Conversation key={activeDemo} demo={data.demos[activeDemo]} reduced={reduced} /></div>
                 <div className="mt-5 border-t border-white/10 pt-4 text-[11px] text-white/40">Exemplo ilustrativo</div>
               </div>
             </div>
