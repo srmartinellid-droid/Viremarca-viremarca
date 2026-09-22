@@ -115,8 +115,20 @@ begin
   if not found then raise exception 'Sugestão não encontrada ou já processada'; end if;
   select value into current_kb from public.site_settings where key = 'assistant_knowledge_base';
   current_kb := coalesce(current_kb, '');
-  current_kb := current_kb || case when right(current_kb, 1) = E'\\n' or current_kb = '' then '' else E'\\n\\n' end
-    || '## Perguntas frequentes aprendidas' || E'\\n- Pergunta: ' || suggestion.question || E'\\n  Resposta: ' || suggestion.suggested_answer;
+  if current_kb ~ E'(?m)^## Perguntas frequentes aprendidas[[:space:]]*
+  insert into public.site_settings (key, value, updated_at) values ('assistant_knowledge_base', current_kb, now())
+    on conflict (key) do update set value = excluded.value, updated_at = now();
+  update public.chat_kb_suggestions set status = 'aprovada' where id = p_id;
+end;
+$$;
+
+revoke all on function public.append_approved_chat_kb_suggestion(uuid) from public, anon, authenticated;
+grant execute on function public.append_approved_chat_kb_suggestion(uuid) to authenticated;
+ then
+    current_kb := rtrim(current_kb) || E'\\n- Pergunta: ' || suggestion.question || E'\\n  Resposta: ' || suggestion.suggested_answer;
+  else
+    current_kb := rtrim(current_kb) || E'\\n\\n## Perguntas frequentes aprendidas' || E'\\n- Pergunta: ' || suggestion.question || E'\\n  Resposta: ' || suggestion.suggested_answer;
+  end if;
   insert into public.site_settings (key, value, updated_at) values ('assistant_knowledge_base', current_kb, now())
     on conflict (key) do update set value = excluded.value, updated_at = now();
   update public.chat_kb_suggestions set status = 'aprovada' where id = p_id;
