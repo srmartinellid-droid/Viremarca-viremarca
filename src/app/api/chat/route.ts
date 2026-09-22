@@ -14,6 +14,18 @@ function clean(value: unknown, max: number) { return typeof value === "string" ?
 function validUuid(value: unknown) { return typeof value === "string" && UUID.test(value) }
 function normalizeDevice(value: unknown) { return value === "mobile" || value === "tablet" || value === "desktop" ? value : "unknown" }
 
+export async function GET(request: NextRequest) {
+  const visitorId = request.nextUrl.searchParams.get("visitor_id") || ""
+  const conversationId = request.nextUrl.searchParams.get("conversation_id") || ""
+  if (!validUuid(visitorId) || !validUuid(conversationId)) return NextResponse.json({ messages: [] })
+  const supabase = createAdminClient()
+  const { data: conversation } = await supabase.from("chat_conversations").select("id").eq("id", conversationId).eq("visitor_id", visitorId).maybeSingle()
+  if (!conversation) return NextResponse.json({ messages: [] })
+  const { data, error } = await supabase.from("chat_messages").select("role,content,created_at").eq("conversation_id", conversationId).order("created_at", { ascending: true }).limit(100)
+  if (error) return NextResponse.json({ error: "Não foi possível carregar a conversa." }, { status: 500 })
+  return NextResponse.json({ messages: data ?? [], conversation_id: conversationId })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
