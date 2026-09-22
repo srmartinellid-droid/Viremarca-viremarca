@@ -28,26 +28,76 @@ export async function groqChat(apiKey: string, model: string, messages: GroqChat
   })
   const payload = await response.json().catch(() => null)
   if (!response.ok) throw new Error(payload?.error?.message || "Falha ao consultar a Groq.")
-  const content = payload?.choices?.[0]?.message?.content
-  if (typeof content !== "string" || !content.trim()) throw new Error("Resposta inválida da Groq.")
-  return content.trim()
+  return parseGroqResponse(payload)
+}
+
+export async function groqExtractLead(apiKey: string, transcript: GroqChatMessage[]) {
+  const response = await fetch(GROQ_BASE + "/chat/completions", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: COST_EFFICIENT_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: "Extraia dados comerciais da conversa. Não invente. Se um campo não aparecer, retorne null. Responda apenas no schema JSON.",
+        },
+        ...transcript,
+      ],
+      temperature: 0,
+      max_tokens: 700,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "viremarca_lead",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              name: { type: ["string", "null"] },
+              whatsapp: { type: ["string", "null"] },
+              email: { type: ["string", "null"] },
+              business_name: { type: ["string", "null"] },
+              business_segment: { type: ["string", "null"] },
+              city: { type: ["string", "null"] },
+              has_website: { type: ["boolean", "null"] },
+              current_site_url: { type: ["string", "null"] },
+              demand_summary: { type: ["string", "null"] },
+              services_interest: { type: ["array", "null"], items: { type: "string" } },
+              urgency: { type: ["string", "null"] },
+              preferred_contact_time: { type: ["string", "null"] },
+              summary: { type: ["string", "null"] },
+              lead_score: { type: ["integer", "null"], minimum: 0, maximum: 100 },
+            },
+            required: ["name","whatsapp","email","business_name","business_segment","city","has_website","current_site_url","demand_summary","services_interest","urgency","preferred_contact_time","summary","lead_score"],
+          },
+        },
+      },
+      reasoning_format: "hidden",
+    }),
+    cache: "no-store",
+  })
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(payload?.error?.message || "Falha na extração estruturada.")
+  const content = parseGroqResponse(payload)
+  return JSON.parse(content) as {
+    name: string | null; whatsapp: string | null; email: string | null; business_name: string | null;
+    business_segment: string | null; city: string | null; has_website: boolean | null; current_site_url: string | null;
+    demand_summary: string | null; services_interest: string[] | null; urgency: string | null;
+    preferred_contact_time: string | null; summary: string | null; lead_score: number | null;
+  }
 }
 
 export async function listGroqModels(apiKey: string) {
-  const response = await fetch(GROQ_BASE + "/models", {
-    headers: { Authorization: "Bearer " + apiKey },
-    next: { revalidate: 300 },
-  })
+  const response = await fetch(GROQ_BASE + "/models", { headers: { Authorization: "Bearer " + apiKey }, next: { revalidate: 300 } })
   const payload = await response.json().catch(() => null)
   if (!response.ok) throw new Error(payload?.error?.message || "Não foi possível consultar os modelos Groq.")
-  const ids = Array.isArray(payload?.data)
-    ? payload.data.filter((item: any) => typeof item?.id === "string" && item.active !== false).map((item: any) => item.id)
-    : []
+  const ids = Array.isArray(payload?.data) ? payload.data.filter((item: any) => typeof item?.id === "string" && item.active !== false).map((item: any) => item.id) : []
   return [
     { id: AUTO_MODEL, label: "Automático · custo inteligente" },
     ...ids.filter((id: string) => [COST_EFFICIENT_MODEL, HIGH_CAPABILITY_MODEL].includes(id)).map((id: string) => ({
-      id,
-      label: id === COST_EFFICIENT_MODEL ? "GPT-OSS 20B · econômico" : "GPT-OSS 120B · maior capacidade",
+      id, label: id === COST_EFFICIENT_MODEL ? "GPT-OSS 20B · econômico" : "GPT-OSS 120B · maior capacidade",
     })),
   ]
 }
@@ -57,11 +107,7 @@ export async function transcribeGroq(apiKey: string, file: File) {
   form.append("file", file, file.name || "audio.webm")
   form.append("model", "whisper-large-v3-turbo")
   form.append("response_format", "json")
-  const response = await fetch(GROQ_BASE + "/audio/transcriptions", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + apiKey },
-    body: form,
-  })
+  const response = await fetch(GROQ_BASE + "/audio/transcriptions", { method: "POST", headers: { Authorization: "Bearer " + apiKey }, body: form })
   const payload = await response.json().catch(() => null)
   if (!response.ok) throw new Error(payload?.error?.message || "Falha ao transcrever o áudio.")
   if (typeof payload?.text !== "string") throw new Error("Transcrição inválida.")
