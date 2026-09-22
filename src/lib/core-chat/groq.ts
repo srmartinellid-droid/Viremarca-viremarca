@@ -98,7 +98,7 @@ export async function groqAnalyzeConversations(apiKey: string, transcript: GroqC
       messages: [
         {
           role: "system",
-          content: "Analise conversas comerciais recentes. Identifique somente perguntas do visitante que parecem ter recebido uma resposta insuficiente, vaga, ou que exigiria confirmação. Crie no máximo 5 sugestões úteis para a base de conhecimento. Não invente fatos. Se não houver oportunidade clara, retorne lista vazia.",
+          content: "Analise conversas comerciais recentes. Identifique somente perguntas do visitante que parecem ter recebido uma resposta insuficiente, vaga, ou que exigiria confirmação. Crie no máximo 5 sugestões úteis para a base de conhecimento. Não invente fatos. O campo source_conversation_id deve ser exatamente o ID da conversa que contém a pergunta. Se não houver oportunidade clara, retorne lista vazia.",
         },
         ...transcript,
       ],
