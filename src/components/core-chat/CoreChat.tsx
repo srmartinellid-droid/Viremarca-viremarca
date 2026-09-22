@@ -156,12 +156,12 @@ export function CoreChat({ config }: { config: ChatConfig }) {
         <div className="flex items-center gap-1"><button type="button" onClick={newConversation} aria-label="Nova conversa" title="Nova conversa" className="rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white"><RotateCcw size={16}/></button><button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="rounded-lg p-2 hover:bg-white/10"><X size={18}/></button></div>
       </header>
       <div className="flex-1 space-y-3 overflow-y-auto bg-vm-bg p-4">
-        {noticeVisible && <div className="rounded-2xl border border-vm-border bg-white px-3 py-2.5 text-[11px] leading-relaxed text-vm-muted">Ao conversar, suas mensagens e os dados que você informar são registrados para que a equipe VireMarca possa te atender. <a href="/privacidade" className="font-semibold text-vm-coral hover:underline">Política de Privacidade</a></div>}
         {!messages.length && <div className="rounded-2xl border border-vm-border bg-white p-4 text-sm text-vm-muted">Posso ajudar com informações sobre a VireMarca e adiantar seu atendimento comercial.</div>}
         {messages.map((message, i) => <div key={i} className={message.role === "user" ? "ml-8 rounded-2xl rounded-br-md bg-vm-coral px-4 py-3 text-sm text-white" : "mr-8 rounded-2xl rounded-bl-md bg-white px-4 py-3 text-sm text-vm-ink"}>{message.content}</div>)}
         {typing && <div className="mr-8 rounded-2xl bg-white px-4 py-3 text-xs text-vm-muted">Digitando…</div>}
       </div>
       <div className="border-t border-vm-border bg-white p-3">
+        {noticeVisible && <div className="mb-2 rounded-xl border border-vm-border bg-vm-bg px-3 py-2 text-[11px] leading-relaxed text-vm-muted">Ao conversar, suas mensagens e os dados que você informar são registrados para que a equipe VireMarca possa te atender. <a href="/privacidade" className="font-semibold text-vm-coral hover:underline">Política de Privacidade</a></div>}
         {config.fallback_whatsapp && <button type="button" onClick={whatsapp} className="mb-2 block w-full text-center text-[11px] font-semibold text-vm-coral">Falar com um especialista no WhatsApp</button>}
         <form onSubmit={e => { e.preventDefault(); void send() }} className="flex items-end gap-2">
           <textarea value={input} maxLength={2000} onChange={e => setInput(e.target.value)} rows={1} placeholder="Digite sua mensagem..." className="min-h-11 flex-1 resize-none rounded-xl border border-vm-border px-3 py-3 text-sm outline-none focus:border-vm-coral"/>
