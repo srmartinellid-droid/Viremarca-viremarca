@@ -6,7 +6,7 @@ import { useState, useEffect } from "react"
 import { Menu, X, Contrast } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MagneticButton } from "@/components/motion/MagneticButton"
-const nav = [{ href: "/", label: "Início" }, { href: "/#sites", label: "Sites" }, { href: "/#como-fazemos", label: "Método" }, { href: "/#quem-somos", label: "Quem somos" }, { href: "/virelab", label: "VireLab" }]
+const nav = [{ href: "/", label: "Início" }, { href: "/#sites", label: "Sites" }, { href: "/#como-fazemos", label: "Método" }, { href: "/#quem-somos", label: "Quem somos" }, { href: "/#diagnostico", label: "Diagnóstico" }]
 export function Header({ logo1 = "/logo-wordmark.png" }: { logo1?: string }) {
   const [open, setOpen] = useState(false), [scrolled, setScrolled] = useState(false), [mono, setMono] = useState(false)
   useEffect(() => { const onScroll = () => setScrolled(window.scrollY > 18); window.addEventListener("scroll", onScroll, { passive: true }); const saved = window.localStorage.getItem("viremarca-mono") === "1"; setMono(saved); document.documentElement.classList.toggle("vire-mono", saved); return () => window.removeEventListener("scroll", onScroll) }, [])
