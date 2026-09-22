@@ -40,7 +40,7 @@ function ScoreRing({ reduced }: { reduced: boolean }) {
     <div className="relative h-36 w-36 shrink-0">
       <svg viewBox="0 0 112 112" className="h-full w-full -rotate-90" aria-label="Nota geral 6,4 de 10" role="img">
         <circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="8" className="text-vm-border" />
-        <motion.circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" className="text-vm-coral" strokeDasharray={circumference} initial={{ strokeDashoffset: reduced ? circumference * 0.36 : circumference }} whileInView={{ strokeDashoffset: circumference * 0.36 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: 1.2, ease: "easeOut" }} />
+        <motion.circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" className="text-vm-coral" strokeDasharray={circumference} initial={{ strokeDashoffset: reduced ? circumference * 0.36 : circumference }} whileInView={{ strokeDashoffset: circumference * 0.36 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center"><motion.span className="text-3xl font-semibold tracking-tight text-vm-ink">{score.toFixed(1).replace(".", ",")}</motion.span><span className="text-xs text-vm-muted">/ 10</span></div>
     </div>
@@ -81,7 +81,7 @@ export function CommercialDiagnostic({ data, whatsapp }: { data: CommercialSecti
               <div className="flex flex-col items-center gap-7 py-8 sm:flex-row sm:items-center">
                 <ScoreRing reduced={reduced} />
                 <div className="w-full space-y-4">
-                  {criteria.map((item) => <div key={item.label}><div className="mb-1.5 flex items-center justify-between text-xs"><span className="text-vm-muted">{item.label}</span><span className="font-semibold text-vm-ink">{item.value.toFixed(1).replace(".", ",")}</span></div><div className="h-2 overflow-hidden rounded-full bg-vm-border"><motion.div className="h-full origin-left rounded-full bg-vm-coral" initial={{ scaleX: reduced ? item.value / 10 : 0 }} whileInView={{ scaleX: item.value / 10 }} viewport={{ once: true, amount: 0.65 }} transition={{ duration: 0.8, ease: "easeOut" }} /></div></div>)}
+                  {criteria.map((item) => <div key={item.label}><div className="mb-1.5 flex items-center justify-between text-xs"><span className="text-vm-muted">{item.label}</span><span className="font-semibold text-vm-ink">{item.value.toFixed(1).replace(".", ",")}</span></div><div className="h-2 overflow-hidden rounded-full bg-vm-border"><motion.div className="h-full origin-left rounded-full bg-vm-coral" initial={{ scaleX: reduced ? item.value / 10 : 0 }} whileInView={{ scaleX: item.value / 10 }} viewport={{ once: true, amount: 0.65 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }} /></div></div>)}
                 </div>
               </div>
               <div className="space-y-3 border-t border-vm-border pt-5">{findings.map((finding) => <div key={finding.text} className={"border-l-2 pl-4 text-sm leading-relaxed " + (finding.tone === "critical" ? "border-red-500" : "border-amber-400")}>{finding.text}</div>)}</div>
