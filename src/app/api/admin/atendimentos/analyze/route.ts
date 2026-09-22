@@ -28,10 +28,11 @@ export async function POST(_request: NextRequest) {
     let created = 0
     for (const suggestion of result.suggestions.slice(0, 5)) {
       if (!suggestion.question.trim() || !suggestion.suggested_answer.trim()) continue
+      const sourceId = conversations?.some(c => c.id === suggestion.source_conversation_id) ? suggestion.source_conversation_id : null
       const { error: insertError } = await supabase.from("chat_kb_suggestions").insert({
         question: suggestion.question.slice(0, 1000),
         suggested_answer: suggestion.suggested_answer.slice(0, 4000),
-        source_conversation_id: conversations?.[0]?.id || null,
+        source_conversation_id: sourceId,
       })
       if (!insertError) created += 1
     }
