@@ -13,10 +13,9 @@ export async function POST(request: NextRequest) {
     if (event !== "whatsapp_clicked" && event !== "consent") return NextResponse.json({ error: "Evento inválido." }, { status: 400 })
 
     const supabase = createAdminClient()
-    let query = supabase.from("chat_conversations").update({
-      whatsapp_clicked: event === "whatsapp_clicked" ? true : undefined,
-      consent_at: new Date().toISOString(),
-    }).eq("visitor_id", visitorId)
+    const patch: Record<string, unknown> = { consent_at: new Date().toISOString() }
+    if (event === "whatsapp_clicked") patch.whatsapp_clicked = true
+    let query = supabase.from("chat_conversations").update(patch).eq("visitor_id", visitorId)
     if (conversationId) query = query.eq("id", conversationId)
     else query = query.order("last_message_at", { ascending: false }).limit(1)
     const { error } = await query
