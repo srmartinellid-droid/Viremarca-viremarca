@@ -15,10 +15,13 @@ export async function POST(request: NextRequest) {
     const supabase = createAdminClient()
     const patch: Record<string, unknown> = { consent_at: new Date().toISOString() }
     if (event === "whatsapp_clicked") patch.whatsapp_clicked = true
-    let query = supabase.from("chat_conversations").update(patch).eq("visitor_id", visitorId)
-    if (conversationId) query = query.eq("id", conversationId)
-    else query = query.order("last_message_at", { ascending: false }).limit(1)
-    const { error } = await query
+    let targetId = conversationId
+    if (!targetId) {
+      const { data: latest } = await supabase.from("chat_conversations").select("id").eq("visitor_id", visitorId).order("last_message_at", { ascending: false }).limit(1).maybeSingle()
+      targetId = latest?.id || ""
+    }
+    if (!targetId) return NextResponse.json({ ok: true })
+    const { error } = await supabase.from("chat_conversations").update(patch).eq("id", targetId).eq("visitor_id", visitorId)
     if (error) throw error
     return NextResponse.json({ ok: true })
   } catch {
