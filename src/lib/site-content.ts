@@ -9,10 +9,12 @@ export type PublicSiteContent = { heroTitle: string; heroAccent: string; heroSub
 
 export type PillarItem = { title: string; desc: string }
 export type SolutionItem = { title: string; desc: string }
+export type ConversationMessage = { from: "client" | "assistant"; text: string }
+export type ConversationDemo = { label: string; messages: ConversationMessage[] }
 export type DiagnosticItem = { title: string; desc: string }
 export type CommercialSections = {
   pillars: { eyebrow: string; title: string; highlight: string; subtitle: string; items: PillarItem[]; note: string }
-  solutions: { eyebrow: string; title: string; highlight: string; subtitle: string; items: SolutionItem[]; examples: string[]; note: string; cta: string }
+  solutions: { eyebrow: string; title: string; highlight: string; subtitle: string; items: SolutionItem[]; examples: string[]; note: string; cta: string; demos: ConversationDemo[] }
   diagnostic: { eyebrow: string; title: string; highlight: string; items: DiagnosticItem[]; cta: string; note: string }
 }
 
@@ -25,19 +27,37 @@ const fallbackCommercial: CommercialSections = {
     { title: "Google Meu Negócio", desc: "Perfil configurado e organizado para apresentar seu negócio nas buscas e no mapa da sua região, com informações, fotos e horários corretos." },
     { title: "Arte e conteúdo", desc: "Peças visuais para redes sociais, promoções e materiais impressos, alinhadas à identidade da sua marca." },
   ], note: "Contrate uma frente ou as três, conforme o momento do seu negócio." },
-  solutions: { eyebrow: "Soluções inteligentes", title: "Seu site atendendo, mesmo quando você não pode.", highlight: "mesmo quando você não pode.", subtitle: "Recursos que vão além da vitrine e colocam o site para trabalhar no dia a dia do seu negócio.", items: [
-    { title: "Atendimento com IA", desc: "Um assistente no seu site que responde dúvidas a qualquer hora, com base nas informações do seu negócio: serviços, horários, políticas e perguntas frequentes. Quando necessário, encaminha o cliente para o seu WhatsApp." },
-    { title: "Agendamentos e reservas", desc: "O cliente consulta opções e envia o pedido de horário ou reserva direto pelo site, sem esperar alguém responder." },
-    { title: "Integração com o seu sistema", desc: "Conectamos o site ao sistema que você já usa (PDV, agenda ou sistema de reservas) para consultar disponibilidade, produtos ou informações atualizadas." },
-  ], examples: ["Pousadas e hotéis: dúvidas e pedidos de reserva a qualquer hora", "Clínicas: pré-agendamento fora do horário comercial", "Comércio: consulta de produtos e disponibilidade"], note: "Cada solução é avaliada conforme o seu negócio e os sistemas que você já utiliza.", cta: "Conversar sobre o meu negócio" },
-  diagnostic: { eyebrow: "Diagnóstico técnico gratuito", title: "Seu site já existe. A pergunta é: ele está te vendendo ou te custando clientes?", highlight: "te vendendo ou te custando clientes?", items: [
-    { title: "Auditoria completa", desc: "Analisamos desempenho, versão mobile, clareza visual, organização das informações e experiência de quem visita, com nota de 0 a 10 em cada critério." },
-    { title: "Relatório objetivo", desc: "Você recebe um documento visual mostrando o que funciona, o que não funciona e como isso afeta a credibilidade e os contatos gerados." },
-    { title: "Caminho claro", desc: "Com base no diagnóstico, apresentamos um plano de correção, sem enrolação e sem jargão técnico." },
-  ], cta: "Solicitar avaliação do meu site", note: "Ainda não tem site? Fale com a gente" },
+  solutions: { eyebrow: "Soluções inteligentes", title: "Seu site atende. Mesmo quando você não pode.", highlight: "Mesmo quando você não pode.", subtitle: "Recursos que transformam o site de vitrine em parte da operação do seu negócio.", items: [
+    { title: "Atendimento com IA", desc: "Responde dúvidas a qualquer hora, com base nas informações do seu negócio, e encaminha para o seu WhatsApp quando precisa de você." },
+    { title: "Agendamentos e reservas", desc: "O cliente envia o pedido de horário ou reserva direto pelo site, sem esperar alguém responder." },
+    { title: "Integração com o seu sistema", desc: "Conectamos o site ao PDV, à agenda ou ao sistema de reservas que você já usa." },
+  ], examples: [], note: "Cada solução é avaliada conforme o seu negócio e os sistemas que você já utiliza.", cta: "Conversar sobre o meu negócio", demos: [
+    { label: "Pousada", messages: [
+      { from: "client", text: "Oi! Vocês têm quarto para casal no próximo feriado?" },
+      { from: "assistant", text: "Olá! Temos opções para casal nessas datas. Quer que eu registre seu pedido de reserva? A equipe confirma pela manhã." },
+      { from: "client", text: "Quero sim!" },
+      { from: "assistant", text: "Perfeito. Só preciso do seu nome e WhatsApp." },
+    ] },
+    { label: "Clínica", messages: [
+      { from: "client", text: "Vocês atendem aos sábados?" },
+      { from: "assistant", text: "Atendemos aos sábados pela manhã. Posso registrar um pré-agendamento para você?" },
+      { from: "client", text: "Pode ser às 9h?" },
+      { from: "assistant", text: "Anotado! A recepção confirma o horário com você." },
+    ] },
+    { label: "Comércio", messages: [
+      { from: "client", text: "Tem esse modelo no tamanho 42?" },
+      { from: "assistant", text: "Vou verificar a disponibilidade para você." },
+      { from: "assistant", text: "Temos o 42 disponível. Quer que eu envie o link para falar com um vendedor?" },
+    ] },
+  ] },
+  diagnostic: { eyebrow: "Diagnóstico gratuito", title: "Seu site está vendendo, ou custando clientes?", highlight: "ou custando clientes?", subtitle: "Uma avaliação técnica e visual do seu site atual, com nota por critério e um plano claro do que corrigir.", items: [
+    { title: "Auditoria", desc: "Desempenho, versão mobile, clareza visual e experiência de quem visita, com nota de 0 a 10." },
+    { title: "Relatório", desc: "Um documento visual com o que funciona, o que não funciona e o impacto nos seus contatos." },
+    { title: "Caminho", desc: "Um plano de correção objetivo, sem jargão técnico." },
+  ], cta: "Solicitar meu diagnóstico", note: "Ainda não tem site? Fale com a gente" },
 }
 
-const fallbackDividers: Record<string, DividerStyle> = { projects: { label: "Projetos em destaque", mode: "color", backgroundColor: "#171717", textColor: "#FFFFFF", overlay: 45, images: [], position: "center center", scale: 100 }, method: { label: "Método · Direção · Resultado", mode: "color", backgroundColor: "#F5F0E8", textColor: "#171717", overlay: 35, images: [], position: "center center", scale: 100 }, presence: { label: "Uma marca que ganha presença", mode: "color", backgroundColor: "#171717", textColor: "#FFFFFF", overlay: 45, images: [], position: "center center", scale: 100 } }
+const fallbackDividers: Record<string, DividerStyle> = { solutions: { label: "Atendimento · Agenda · Integração", mode: "color", backgroundColor: "#171717", textColor: "#FFFFFF", overlay: 45, images: [], position: "center center", scale: 100 }, diagnostic: { label: "Diagnóstico · Relatório · Plano", mode: "color", backgroundColor: "#F5F0E8", textColor: "#171717", overlay: 35, images: [], position: "center center", scale: 100 }, projects: { label: "Projetos em destaque", mode: "color", backgroundColor: "#171717", textColor: "#FFFFFF", overlay: 45, images: [], position: "center center", scale: 100 }, method: { label: "Método · Direção · Resultado", mode: "color", backgroundColor: "#F5F0E8", textColor: "#171717", overlay: 35, images: [], position: "center center", scale: 100 }, presence: { label: "Uma marca que ganha presença", mode: "color", backgroundColor: "#171717", textColor: "#FFFFFF", overlay: 45, images: [], position: "center center", scale: 100 } }
 
 export async function getPublicSiteContent(): Promise<PublicSiteContent> {
   const fallbackImages = ["/portfolio/magia-glass.jpg"]
