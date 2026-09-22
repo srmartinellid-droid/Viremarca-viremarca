@@ -89,6 +89,56 @@ export async function groqExtractLead(apiKey: string, transcript: GroqChatMessag
   }
 }
 
+export async function groqAnalyzeConversations(apiKey: string, transcript: GroqChatMessage[]) {
+  const response = await fetch(GROQ_BASE + "/chat/completions", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: COST_EFFICIENT_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: "Analise conversas comerciais recentes. Identifique somente perguntas do visitante que parecem ter recebido uma resposta insuficiente, vaga, ou que exigiria confirmação. Crie no máximo 5 sugestões úteis para a base de conhecimento. Não invente fatos. Se não houver oportunidade clara, retorne lista vazia.",
+        },
+        ...transcript,
+      ],
+      temperature: 0,
+      max_tokens: 900,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "viremarca_kb_suggestions",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              suggestions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    question: { type: "string" },
+                    suggested_answer: { type: "string" },
+                  },
+                  required: ["question", "suggested_answer"],
+                },
+              },
+            },
+            required: ["suggestions"],
+          },
+        },
+      },
+      reasoning_format: "hidden",
+    }),
+    cache: "no-store",
+  })
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(payload?.error?.message || "Falha ao analisar conversas.")
+  return JSON.parse(parseGroqResponse(payload)) as { suggestions: Array<{ question: string; suggested_answer: string }> }
+}
+
 export async function listGroqModels(apiKey: string) {
   const response = await fetch(GROQ_BASE + "/models", { headers: { Authorization: "Bearer " + apiKey }, next: { revalidate: 300 } })
   const payload = await response.json().catch(() => null)
