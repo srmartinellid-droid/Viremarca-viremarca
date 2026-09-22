@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Check, Download, ExternalLink, MessageSquare, RefreshCw, Search, Sparkles, Trash2, X } from "lucide-react"
+import { ArrowLeft, Check, Download, MessageSquare, RefreshCw, Search, Sparkles, Trash2, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 type Lead = {
