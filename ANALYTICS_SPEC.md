@@ -124,3 +124,14 @@ A implementação não lê nem grava o endereço IP. O evento `session_region` r
 8. Nenhum nome técnico cru é exibido ao usuário no painel.
 9. Nenhum dado histórico é alterado.
 10. Produção é validada depois do deploy, incluindo os eventos efetivamente registrados no banco.
+
+
+## Eventos das seções comerciais
+
+| Evento técnico | Status | Metadados | Origem |
+|---|---|---|---|
+| `diagnostic_cta_click` | production | `location: hero \| contact_cta \| nav` | CTA de diagnóstico |
+| `diagnostic_request` | production | `location: diagnostic_section` | CTA da seção Diagnóstico |
+| `solutions_interest` | production | `location: solutions_section` | CTA da seção Soluções |
+
+Todos seguem a mesma regra de consentimento de analytics já existente em `src/lib/track-event.ts`.
