@@ -41,3 +41,10 @@ export function buildSystemPrompt(config: AssistantConfig, visitorContext?: { na
 export function hasCommercialIntent(text: string) {
   return /\b(contratar|contratação|contratacao|comprar|agendar|reunião|reuniao|contato|whatsapp|telefone|serviço|servico|proposta|orçamento|orcamento|interesse|site|diagnóstico|diagnostico)\b/i.test(text)
 }
+
+export function extractLead(text: string) {
+  const phone = text.match(/(?:\+?55\s?)?(?:\(?\d{2}\)?\s?)?\d{4,5}[-.\s]?\d{4}/)?.[0]
+  const email = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0]
+  const name = text.match(/(?:meu nome é|me chamo|sou)\s+([A-Za-zÀ-ÿ]+(?:\s+[A-Za-zÀ-ÿ]+){0,3})/i)?.[1]
+  return { name: name?.trim() || null, contact: phone?.trim() || email?.trim() || null }
+}
