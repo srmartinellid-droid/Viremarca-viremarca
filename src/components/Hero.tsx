@@ -6,6 +6,7 @@ import Image from "next/image"
 import { ArrowRight, ArrowUpRight } from "lucide-react"
 import { MagneticButton } from "@/components/motion/MagneticButton"
 import { TitleBlock } from "@/components/TitleBlock"
+import { TrackedAnchor } from "@/components/TrackedAnchor"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import type { PortfolioProject } from "@/types"
 import type { PublicSiteContent } from "@/lib/site-content"
@@ -103,7 +104,7 @@ export function Hero({ content, featuredProjects }: Props) {
               <TitleBlock style={heroStyle} size="display" as="h1" animated={false} highlightRule className="max-w-3xl !mx-0 !text-left" />
             </motion.div>
             <motion.p initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.28, ease }} className="mt-6 max-w-xl text-base leading-relaxed text-white/70 md:text-lg">{content.heroSubtitle}</motion.p>
-            <motion.div initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4, ease }} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"><MagneticButton href="/#sites" variant="primary">Conheça nossos sites<ArrowRight size={16} /></MagneticButton><MagneticButton href="/#diagnostico" variant="secondary" onClick={() => void trackEvent("diagnostic_cta_click", { location: "hero" }, "production")}>Avaliar meu site atual<ArrowUpRight size={16} /></MagneticButton></motion.div>
+            <motion.div initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4, ease }} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"><MagneticButton href="/#sites" variant="primary">Conheça nossos sites<ArrowRight size={16} /></MagneticButton><TrackedAnchor href="/#diagnostico" eventName="diagnostic_cta_click" eventMetadata={{ location: "hero" }} eventStatus="production" className="inline-flex items-center justify-center gap-2 rounded-full border border-vm-border bg-white px-7 py-3.5 text-sm font-semibold text-vm-ink transition-colors hover:bg-vm-sand">Avaliar meu site atual<ArrowUpRight size={16} /></TrackedAnchor></motion.div>
             <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }} className="mt-8 flex max-w-xl items-center gap-3 text-xs text-white/45"><span className="h-px w-10 bg-white/25" />Uma base. Muitos negócios. Uma identidade para cada marca.</motion.div>
           </div>
 
