@@ -21,16 +21,16 @@ function Conversation({ demo, reduced }: { demo: CommercialSections["solutions"]
             {isAssistant ? (
               <div className="max-w-[88%]">
                 {!reduced && (
-                  <motion.div custom={Math.max(0, delay - 0.25)} initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.55 }} transition={{ duration: 0.2, delay: Math.max(0, delay - 0.25), ease: [0.22, 1, 0.36, 1] }} className="mb-1 flex w-fit items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] text-white/40" aria-label="Assistente digitando">
+                  <motion.div initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.55 }} transition={{ duration: 0.2, delay: Math.max(0, delay - 0.25), ease: [0.22, 1, 0.36, 1] }} className="mb-1 flex w-fit items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] text-white/40" aria-label="Assistente digitando">
                     <span>digitando</span><span className="animate-pulse">·</span><span className="animate-pulse [animation-delay:120ms]">·</span><span className="animate-pulse [animation-delay:240ms]">·</span>
                   </motion.div>
                 )}
-                <motion.div custom={delay} initial={reduced ? false : { opacity: 0, y: 10 }} whileInView={reduced ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.55 }} transition={{ duration: 0.35, delay, ease: [0.22, 1, 0.36, 1] }} className="rounded-2xl rounded-tl-md bg-vm-coral/90 px-4 py-3 text-sm leading-relaxed text-white shadow-sm">
+                <motion.div initial={reduced ? false : { opacity: 0, y: 10 }} whileInView={reduced ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.55 }} transition={{ duration: 0.35, delay, ease: [0.22, 1, 0.36, 1] }} className="rounded-2xl rounded-tl-md bg-vm-coral/90 px-4 py-3 text-sm leading-relaxed text-white shadow-sm">
                   {message.text}
                 </motion.div>
               </div>
             ) : (
-              <motion.div custom={delay} variants={bubbleVariants} initial={reduced ? false : "hidden"} whileInView={reduced ? undefined : "visible"} viewport={{ once: true, amount: 0.55 }} className="max-w-[82%] rounded-2xl rounded-tr-md bg-white/10 px-4 py-3 text-sm leading-relaxed text-white/90">
+              <motion.div initial={reduced ? false : { opacity: 0, y: 10 }} whileInView={reduced ? undefined : { opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.55 }} transition={{ duration: 0.35, delay, ease: [0.22, 1, 0.36, 1] }} className="max-w-[82%] rounded-2xl rounded-tr-md bg-white/10 px-4 py-3 text-sm leading-relaxed text-white/90">
                 {message.text}
               </motion.div>
             )}
