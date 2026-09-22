@@ -24,7 +24,7 @@ export async function Footer() {
               <li><Link href="/" className="hover:text-vm-coral transition-colors">Início</Link></li>
               <li><Link href="/#sites" className="hover:text-vm-coral transition-colors">Sites</Link></li>
               <li><Link href="/#como-fazemos" className="hover:text-vm-coral transition-colors">Método</Link></li>
-              <li><Link href="/virelab" className="hover:text-vm-coral transition-colors">VireLab</Link></li>
+              <li><Link href="/#diagnostico" className="hover:text-vm-coral transition-colors">Diagnóstico</Link></li>
             </ul>
           </div>
 
