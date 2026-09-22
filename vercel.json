@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/cron/chat-retention", "schedule": "0 3 * * *" }
+  ]
+}
