@@ -119,10 +119,11 @@ export async function groqAnalyzeConversations(apiKey: string, transcript: GroqC
                   type: "object",
                   additionalProperties: false,
                   properties: {
+                    source_conversation_id: { type: "string" },
                     question: { type: "string" },
                     suggested_answer: { type: "string" },
                   },
-                  required: ["question", "suggested_answer"],
+                  required: ["source_conversation_id", "question", "suggested_answer"],
                 },
               },
             },
@@ -136,7 +137,7 @@ export async function groqAnalyzeConversations(apiKey: string, transcript: GroqC
   })
   const payload = await response.json().catch(() => null)
   if (!response.ok) throw new Error(payload?.error?.message || "Falha ao analisar conversas.")
-  return JSON.parse(parseGroqResponse(payload)) as { suggestions: Array<{ question: string; suggested_answer: string }> }
+  return JSON.parse(parseGroqResponse(payload)) as { suggestions: Array<{ source_conversation_id: string; question: string; suggested_answer: string }> }
 }
 
 export async function listGroqModels(apiKey: string) {
