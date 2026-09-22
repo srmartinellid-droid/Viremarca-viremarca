@@ -1,7 +1,8 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { ArrowUpRight } from "lucide-react"
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion"
+import { motion } from "framer-motion"
 import { Reveal } from "@/components/motion/Reveal"
 import { TitleBlock } from "@/components/TitleBlock"
 import { TrackedAnchor } from "@/components/TrackedAnchor"
@@ -20,9 +21,20 @@ const findings = [
 ]
 
 function ScoreRing({ reduced }: { reduced: boolean }) {
-  const value = useMotionValue(reduced ? 6.4 : 0)
-  const spring = useSpring(value, { stiffness: 80, damping: 18 })
-  const display = useTransform(spring, (v) => v.toFixed(1).replace(".", ","))
+  const [score, setScore] = useState(reduced ? 6.4 : 0)
+  useEffect(() => {
+    if (reduced) return
+    const started = performance.now()
+    const duration = 1200
+    let frame = 0
+    const tick = (now: number) => {
+      const progress = Math.min(1, (now - started) / duration)
+      setScore(Number((6.4 * (1 - Math.pow(1 - progress, 3))).toFixed(1)))
+      if (progress < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [reduced])
   const circumference = 2 * Math.PI * 46
   return (
     <div className="relative h-36 w-36 shrink-0">
@@ -30,7 +42,7 @@ function ScoreRing({ reduced }: { reduced: boolean }) {
         <circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="8" className="text-vm-border" />
         <motion.circle cx="56" cy="56" r="46" fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" className="text-vm-coral" strokeDasharray={circumference} initial={{ strokeDashoffset: reduced ? circumference * 0.36 : circumference }} whileInView={{ strokeDashoffset: circumference * 0.36 }} viewport={{ once: true, amount: 0.6 }} transition={{ duration: 1.2, ease: "easeOut" }} />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center"><motion.span className="text-3xl font-semibold tracking-tight text-vm-ink">{display}</motion.span><span className="text-xs text-vm-muted">/ 10</span></div>
+      <div className="absolute inset-0 flex flex-col items-center justify-center"><motion.span className="text-3xl font-semibold tracking-tight text-vm-ink">{score.toFixed(1).replace(".", ",")}</motion.span><span className="text-xs text-vm-muted">/ 10</span></div>
     </div>
   )
 }
