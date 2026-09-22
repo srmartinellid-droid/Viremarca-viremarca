@@ -15,7 +15,8 @@ export type CommercialSections = {
   solutions: { eyebrow: string; title: string; highlight: string; subtitle: string; items: SolutionItem[]; examples: string[]; note: string; cta: string }
   diagnostic: { eyebrow: string; title: string; highlight: string; items: DiagnosticItem[]; cta: string; note: string }
 }
-\nconst fallbackProcess: ProcessItem[] = DEMO_CONTENT.process.map((item, index) => ({ ...item, image: ["/portfolio/magia-glass.jpg", "/portfolio/odonto.jpg", "/portfolio/imoveis.jpg", "/portfolio/advocacia.jpg"][index] }))
+
+const fallbackProcess: ProcessItem[] = DEMO_CONTENT.process.map((item, index) => ({ ...item, image: ["/portfolio/magia-glass.jpg", "/portfolio/odonto.jpg", "/portfolio/imoveis.jpg", "/portfolio/advocacia.jpg"][index] }))
 const fallbackDelivers: DeliverItem[] = DEMO_CONTENT.delivers.map((item, index) => ({ ...item, image: ["/portfolio/magia-glass.jpg", "/portfolio/odonto.jpg", "/portfolio/imoveis.jpg", "/portfolio/advocacia.jpg", "/portfolio/odonto.jpg", "/portfolio/magia-glass.jpg"][index], details: "Conteúdo, estrutura e direção visual definidos para o objetivo do projeto." }))
 
 const fallbackCommercial: CommercialSections = {
@@ -35,7 +36,8 @@ const fallbackCommercial: CommercialSections = {
     { title: "Caminho claro", desc: "Com base no diagnóstico, apresentamos um plano de correção, sem enrolação e sem jargão técnico." },
   ], cta: "Solicitar avaliação do meu site", note: "Ainda não tem site? Fale com a gente" },
 }
-\nconst fallbackDividers: Record<string, DividerStyle> = { projects: { label: "Projetos em destaque", mode: "color", backgroundColor: "#171717", textColor: "#FFFFFF", overlay: 45, images: [], position: "center center", scale: 100 }, method: { label: "Método · Direção · Resultado", mode: "color", backgroundColor: "#F5F0E8", textColor: "#171717", overlay: 35, images: [], position: "center center", scale: 100 }, presence: { label: "Uma marca que ganha presença", mode: "color", backgroundColor: "#171717", textColor: "#FFFFFF", overlay: 45, images: [], position: "center center", scale: 100 } }
+
+const fallbackDividers: Record<string, DividerStyle> = { projects: { label: "Projetos em destaque", mode: "color", backgroundColor: "#171717", textColor: "#FFFFFF", overlay: 45, images: [], position: "center center", scale: 100 }, method: { label: "Método · Direção · Resultado", mode: "color", backgroundColor: "#F5F0E8", textColor: "#171717", overlay: 35, images: [], position: "center center", scale: 100 }, presence: { label: "Uma marca que ganha presença", mode: "color", backgroundColor: "#171717", textColor: "#FFFFFF", overlay: 45, images: [], position: "center center", scale: 100 } }
 
 export async function getPublicSiteContent(): Promise<PublicSiteContent> {
   const fallbackImages = ["/portfolio/magia-glass.jpg"]
@@ -44,7 +46,9 @@ export async function getPublicSiteContent(): Promise<PublicSiteContent> {
     const supabase = await createClientOptional(); if (!supabase) return fallback
     const [{ data: content }, { data: settings }] = await Promise.all([supabase.from("site_content").select("key,value"), supabase.from("site_settings").select("key,value")])
     const values = Object.fromEntries((content ?? []).map(row => [row.key, row.value])), config = Object.fromEntries((settings ?? []).map(row => [row.key, row.value]))
-    let process = fallback.process, delivers = fallback.delivers\n    const commercial = { ...fallback.commercial, pillars: parseJsonObject(values.pillars_json, fallback.commercial.pillars), solutions: parseJsonObject(values.solutions_json, fallback.commercial.solutions), diagnostic: parseJsonObject(values.diagnostic_json, fallback.commercial.diagnostic) }
+    let process = fallback.process, delivers = fallback.delivers
+    const parseJsonObject = <T,>(value: string | undefined, fallbackValue: T): T => { try { return value ? JSON.parse(value) as T : fallbackValue } catch { return fallbackValue } }
+    const commercial = { ...fallback.commercial, pillars: parseJsonObject(values.pillars_json, fallback.commercial.pillars), solutions: parseJsonObject(values.solutions_json, fallback.commercial.solutions), diagnostic: parseJsonObject(values.diagnostic_json, fallback.commercial.diagnostic) }
     try { if (values.process_json) process = JSON.parse(values.process_json); if (values.delivers_json) delivers = JSON.parse(values.delivers_json) } catch { process = fallback.process; delivers = fallback.delivers }
     const parseImages = (value: string | undefined, fallbackValue: string[]): string[] => { if (!value) return fallbackValue; try { const parsed: unknown = JSON.parse(value); if (Array.isArray(parsed)) { const images = parsed.filter((item): item is string => typeof item === "string" && !!item.trim()); if (images.length) return images } } catch { if (value.trim()) return [value.trim()] } return fallbackValue }
     const heroBackgroundImages = parseImages(config.hero_background_images, config.hero_image ? [config.hero_image] : fallback.heroBackgroundImages), heroMobileBackgroundImages = parseImages(config.hero_mobile_background_images, config.hero_mobile_image ? [config.hero_mobile_image] : fallback.heroMobileBackgroundImages)
