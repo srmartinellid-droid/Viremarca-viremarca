@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { LayoutDashboard, FolderKanban, FileText, Settings, Activity, LogOut, Plus, Pencil, Trash2, Eye, EyeOff, X, Save, ExternalLink, CheckCircle2, AlertCircle, Sparkles, Upload, Star } from "lucide-react"
+import { LayoutDashboard, FolderKanban, FileText, Settings, Activity, MessageSquare, LogOut, Plus, Pencil, Trash2, Eye, EyeOff, X, Save, ExternalLink, CheckCircle2, AlertCircle, Sparkles, Upload, Star } from "lucide-react"
 import { createClientOptional } from "@/lib/supabase/client"
 import type { PortfolioProject } from "@/types"
 import type { ProcessItem, DeliverItem } from "@/lib/site-content"
@@ -238,13 +238,13 @@ export default function AdminPage() {
   return <div className="min-h-screen bg-vm-bg flex">
     <aside className="hidden md:flex w-64 shrink-0 flex-col border-r border-vm-border bg-white">
       <div className="p-6 border-b border-vm-border"><Image src="/logo-wordmark.png" alt="VireMarca" width={360} height={92} className="h-12 w-auto" /><p className="mt-3 text-xs text-vm-muted truncate">{userEmail || "Admin"}</p></div>
-      <nav className="flex-1 p-4 space-y-1.5">{nav.map((item) => { const Icon = item.icon; return <button key={item.id} type="button" onClick={() => setTab(item.id)} className={cn("w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all", tab === item.id ? "bg-vm-coral/10 text-vm-coral" : "text-vm-muted hover:bg-vm-sand hover:text-vm-ink")}><Icon size={18} />{item.label}</button> })}</nav>
+      <nav className="flex-1 p-4 space-y-1.5">{nav.map((item) => { const Icon = item.icon; return <button key={item.id} type="button" onClick={() => setTab(item.id)} className={cn("w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all", tab === item.id ? "bg-vm-coral/10 text-vm-coral" : "text-vm-muted hover:bg-vm-sand hover:text-vm-ink")}><Icon size={18} />{item.label}</button> })}<Link href="/admin/atendimentos" className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-vm-muted hover:bg-vm-sand hover:text-vm-ink"><MessageSquare size={18} />Atendimentos</Link></nav>
       <div className="p-4 border-t border-vm-border"><button type="button" onClick={() => logoutAction()} className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-vm-muted hover:bg-vm-sand"><LogOut size={18} />Sair</button></div>
     </aside>
 
     <div className="flex-1 min-w-0 flex flex-col">
       <header className="sticky top-0 z-30 min-h-16 border-b border-vm-border bg-white/90 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-vm-coral">VireMarca · Admin</p><h1 className="mt-1 text-lg font-semibold tracking-tight text-vm-ink">{nav.find((item) => item.id === tab)?.label}</h1></div><Link href="/" className="inline-flex items-center gap-2 rounded-full border border-vm-border bg-white px-4 py-2 text-xs font-semibold text-vm-ink hover:border-vm-coral"><ExternalLink size={13} />Ver site</Link></header>
-      <div className="md:hidden overflow-x-auto border-b border-vm-border bg-white px-3 py-2"><div className="flex gap-2 min-w-max">{nav.map((item) => { const Icon = item.icon; return <button key={item.id} type="button" onClick={() => setTab(item.id)} className={cn("inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium", tab === item.id ? "bg-vm-coral text-white" : "bg-vm-bg text-vm-muted")}><Icon size={14} />{item.label}</button> })}</div></div>
+      <div className="md:hidden overflow-x-auto border-b border-vm-border bg-white px-3 py-2"><div className="flex gap-2 min-w-max">{nav.map((item) => { const Icon = item.icon; return <button key={item.id} type="button" onClick={() => setTab(item.id)} className={cn("inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium", tab === item.id ? "bg-vm-coral text-white" : "bg-vm-bg text-vm-muted")}><Icon size={14} />{item.label}</button> })}<Link href="/admin/atendimentos" className="inline-flex items-center gap-2 rounded-full bg-vm-bg px-3 py-2 text-xs font-medium text-vm-muted"><MessageSquare size={14} />Atendimentos</Link></div></div>
       {notice && <div className={cn("mx-4 mt-4 md:mx-8 rounded-2xl border px-4 py-3 text-sm flex items-center gap-3", notice.type === "ok" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-700")}>{notice.type === "ok" ? <CheckCircle2 size={17} /> : <AlertCircle size={17} />}{notice.text}</div>}
 
       <main className="flex-1 p-4 md:p-8 lg:p-10">
