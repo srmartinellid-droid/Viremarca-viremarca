@@ -17,10 +17,11 @@ export async function GET(request: NextRequest) {
   const from = p.get("from")
   const to = p.get("to")
   const supabase = createAdminClient()
-  let query = supabase.from("chat_conversations").select("*").order("last_message_at", { ascending: false }).limit(5000)
+  let query = supabase.from("chat_conversations").select("*")
   if (status) query = query.eq("status", status)
   if (from) query = query.gte("last_message_at", from)
   if (to) query = query.lt("last_message_at", to)
+  query = query.order("last_message_at", { ascending: false }).limit(1000)
   const { data: conversations, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const ids = (conversations ?? []).map(row => row.id)
