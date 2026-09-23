@@ -51,18 +51,18 @@ export function CoreChat({ config }: { config: ChatConfig }) {
   const [noticeVisible, setNoticeVisible] = useState(true)
   const recorderRef = useRef<MediaRecorder | null>(null)
 
-  useEffect(() => {
-    if (!config.enabled) return
+  const openChat = () => {
     const visitor = getVisitorId()
     const conversation = getConversationId()
     visitorIdRef.current = visitor
     conversationIdRef.current = conversation
+    setOpen(true)
     if (!conversation) return
     fetch("/api/chat?visitor_id=" + encodeURIComponent(visitor) + "&conversation_id=" + encodeURIComponent(conversation))
       .then(async response => response.ok ? response.json() : { messages: [] })
       .then(data => { if (Array.isArray(data.messages)) setMessages(data.messages.map((m: Message) => ({ role: m.role, content: m.content, created_at: m.created_at }))) })
       .catch(() => {})
-  }, [config.enabled])
+  }
 
   if (!config.enabled) return config.fallback_whatsapp ? <Fallback whatsapp={config.fallback_whatsapp} /> : null
 
@@ -170,7 +170,7 @@ export function CoreChat({ config }: { config: ChatConfig }) {
         </form>
       </div>
     </section>}
-    <button type="button" onClick={() => setOpen(v => !v)} aria-label={open ? "Fechar assistente" : "Abrir assistente"} className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-vm-coral text-white shadow-lg">{open ? <X size={22}/> : <MessageCircle size={22}/>}</button>
+    <button type="button" onClick={() => open ? setOpen(false) : openChat()} aria-label={open ? "Fechar assistente" : "Abrir assistente"} className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-vm-coral text-white shadow-lg">{open ? <X size={22}/> : <MessageCircle size={22}/>}</button>
   </div>
 }
 
