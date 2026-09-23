@@ -5,6 +5,7 @@ import { buildSystemPrompt, hasCommercialIntent } from "@/lib/core-chat/prompt"
 import { checkRateLimit } from "@/lib/core-chat/rate-limit"
 import { chooseGroqModel, groqChat, groqExtractLead } from "@/lib/core-chat/groq"
 import { extractDeterministicLead } from "@/lib/core-chat/lead-extraction"
+import { sanitizeAssistantResponse } from "@/lib/core-chat/response-sanitizer"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -151,12 +152,16 @@ export async function POST(request: NextRequest) {
       ? "Posso adiantar seu atendimento por aqui. Se preferir, fale diretamente com a equipe no WhatsApp."
       : "Posso adiantar seu atendimento por aqui. Vou registrar sua mensagem para a equipe VireMarca."
 
+    const previousAssistantMessage = [...history].reverse().find(item => item.role === "assistant")?.content || ""
+    const currentDeterministicLead = extractDeterministicLead(message, previousAssistantMessage)
+    const officialWhatsapp = config.fallback_whatsapp || "5548991410717"
     let answer = fallbackAnswer
     try {
       answer = await groqChat(await getGroqApiKey(), model, [{ role: "system", content: buildSystemPrompt(config, visitorContext) }, ...history])
     } catch (error) {
       logAuxiliary("groq", error)
     }
+    answer = sanitizeAssistantResponse(answer, officialWhatsapp, currentDeterministicLead.whatsapp ? [currentDeterministicLead.whatsapp] : [])
 
     if (supabase) {
       try {
@@ -195,8 +200,7 @@ export async function POST(request: NextRequest) {
       }
 
       try {
-        const previousAssistant = [...history].reverse().find(item => item.role === "assistant")?.content || ""
-        deterministicLead = extractDeterministicLead(message, previousAssistant)
+        deterministicLead = currentDeterministicLead
         const hasBasicData = Boolean(deterministicLead.name || deterministicLead.whatsapp || deterministicLead.email)
         if (hasBasicData) {
           const merged = await upsertLead(supabase, conversation.id, deterministicLead)
