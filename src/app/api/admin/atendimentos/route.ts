@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
   const search = (params.get("search") || "").trim().toLowerCase()
   const from = params.get("from")
   const to = params.get("to")
+  const scoreBand = params.get("score") || ""
+  const sort = params.get("sort") || "date_desc"
 
   const supabase = createAdminClient()
   let query = supabase.from("chat_conversations").select("*")
@@ -29,12 +31,17 @@ export async function GET(request: NextRequest) {
 
   if (leadFilter === "with") items = items.filter(item => item.has_lead)
   if (leadFilter === "without") items = items.filter(item => !item.has_lead)
+  if (scoreBand === "hot") items = items.filter(item => typeof item.lead?.lead_score === "number" && item.lead.lead_score >= 70)
+  if (scoreBand === "warm") items = items.filter(item => typeof item.lead?.lead_score === "number" && item.lead.lead_score >= 40 && item.lead.lead_score < 70)
+  if (scoreBand === "cold") items = items.filter(item => typeof item.lead?.lead_score === "number" && item.lead.lead_score < 40)
   if (search) items = items.filter(item => {
     const l = item.lead || {}
     const haystack = [l.name,l.whatsapp,l.email,l.business_name,l.business_segment,l.demand_summary,item.summary,item.admin_notes].filter(Boolean).join(" ").toLowerCase()
     return haystack.includes(search)
   })
 
+  if (sort === "score_desc") items.sort((a, b) => (b.lead?.lead_score ?? -1) - (a.lead?.lead_score ?? -1))
+  else items.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime())
   const newCount = items.filter(item => item.status === "novo").length
   return NextResponse.json({ items, new_count: newCount })
 }
