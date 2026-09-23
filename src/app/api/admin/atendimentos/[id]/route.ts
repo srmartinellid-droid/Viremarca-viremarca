@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { getGroqApiKey } from "@/lib/core-chat/secrets"
 import { groqExtractLead } from "@/lib/core-chat/groq"
 import { extractDeterministicLead } from "@/lib/core-chat/lead-extraction"
+import { calculateLeadScore } from "@/lib/core-chat/lead-score"
 
 const allowedStatuses = new Set(["novo","em_atendimento","convertido","perdido","arquivado"])
 
@@ -27,9 +28,10 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ i
   if (!profile) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
   const { id } = await context.params
   const supabase = createAdminClient()
-  const [{ data: messages, error: messagesError }, { data: existingLead }] = await Promise.all([
+  const [{ data: messages, error: messagesError }, { data: existingLead }, { data: conversation }] = await Promise.all([
     supabase.from("chat_messages").select("id,role,content,created_at").eq("conversation_id", id).order("created_at", { ascending: true }),
     supabase.from("chat_leads").select("*").eq("conversation_id", id).maybeSingle(),
+    supabase.from("chat_conversations").select("whatsapp_clicked").eq("id", id).maybeSingle(),
   ])
   if (messagesError) return NextResponse.json({ error: messagesError.message }, { status: 500 })
   if (!messages?.length) return NextResponse.json({ error: "Conversa sem mensagens." }, { status: 400 })
@@ -50,7 +52,11 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ i
         updated_at: new Date().toISOString(),
         contact: basic.whatsapp ?? merged.whatsapp ?? basic.email ?? merged.email ?? merged.contact ?? null,
       }
-      const { error } = await supabase.from("chat_leads").upsert(current, { onConflict: "conversation_id" })
+      current.lead_score = calculateLeadScore(current, {
+      messages: messages.map(message => ({ role: message.role, content: message.content })),
+      whatsapp_clicked: Boolean(conversation?.whatsapp_clicked),
+    })
+    const { error } = await supabase.from("chat_leads").upsert(current, { onConflict: "conversation_id" })
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       merged = current
     }
@@ -115,10 +121,15 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   const leadPatch: Record<string, unknown> = {}
   for (const field of leadFields) if (field in body) leadPatch[field] = body[field]
   if (Object.keys(leadPatch).length) {
-    if (leadPatch.lead_score !== undefined && leadPatch.lead_score !== null) leadPatch.lead_score = Math.max(0, Math.min(100, Number(leadPatch.lead_score)))
+    delete leadPatch.lead_score
     if (leadPatch.services_interest !== undefined && !Array.isArray(leadPatch.services_interest)) leadPatch.services_interest = []
-    const { data: existing } = await supabase.from("chat_leads").select("*").eq("conversation_id", id).maybeSingle()
+    const [{ data: existing }, { data: conversation }, { data: messages }] = await Promise.all([
+      supabase.from("chat_leads").select("*").eq("conversation_id", id).maybeSingle(),
+      supabase.from("chat_conversations").select("whatsapp_clicked").eq("id", id).maybeSingle(),
+      supabase.from("chat_messages").select("role,content").eq("conversation_id", id).order("created_at", { ascending: true }),
+    ])
     const merged = { ...(existing || {}), ...leadPatch, conversation_id: id, updated_at: new Date().toISOString(), contact: leadPatch.whatsapp ?? existing?.whatsapp ?? leadPatch.email ?? existing?.email ?? existing?.contact ?? null, source: existing?.source || "core-chat" }
+    merged.lead_score = calculateLeadScore(merged, { messages: messages ?? [], whatsapp_clicked: Boolean(conversation?.whatsapp_clicked) })
     const { error } = await supabase.from("chat_leads").upsert(merged, { onConflict: "conversation_id" })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     await supabase.from("chat_conversations").update({ has_lead: Boolean(merged.name || merged.whatsapp || merged.email || merged.demand_summary), expires_at: merged.name || merged.whatsapp || merged.email ? null : undefined }).eq("id", id)
