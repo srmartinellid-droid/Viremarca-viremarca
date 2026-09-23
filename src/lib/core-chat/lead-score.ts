@@ -13,6 +13,7 @@ export type ConversationForScore = {
 }
 
 const COMMERCIAL_QUESTION = /\b(?:quanto custa|qual(?:\s+é|\s+e)?\s+o\s+preço|qual(?:\s+é|\s+e)?\s+o\s+valor|preço|preco|valor|quanto fica|prazo|quanto tempo|em quanto tempo|quando fica pronto|contratar|contratação|contratacao|quero contratar|como contrato)\b/i
+const URGENCY_SIGNAL = /\b(?:urgente|urgência|urgencia|pra ontem|o quanto antes|ainda este mês|ainda este mes|este mês|este mes|esta semana|essa semana|preciso rápido|preciso rapido|precisamos rápido|precisamos rapido)\b/i
 
 export function calculateLeadScore(lead: LeadForScore, conversation: ConversationForScore = {}) {
   let score = 0
@@ -28,7 +29,12 @@ export function calculateLeadScore(lead: LeadForScore, conversation: Conversatio
     return role === "user" && typeof content === "string" && COMMERCIAL_QUESTION.test(content)
   })
   if (visitorAskedCommercialQuestion) score += 15
-  if (lead.urgency?.trim()) score += 10
+  const urgencyInConversation = messages.some(message => {
+    const role = typeof message === "string" ? "user" : message.role
+    const content = typeof message === "string" ? message : message.content
+    return role === "user" && typeof content === "string" && URGENCY_SIGNAL.test(content)
+  })
+  if (lead.urgency?.trim() || urgencyInConversation) score += 10
   if (conversation.whatsapp_clicked) score += 5
 
   return Math.min(100, score)
