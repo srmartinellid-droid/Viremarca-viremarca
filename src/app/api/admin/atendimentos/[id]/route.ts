@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAdminProfile } from "@/lib/auth"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getGroqApiKey } from "@/lib/core-chat/secrets"
+import { groqExtractLead } from "@/lib/core-chat/groq"
+import { extractDeterministicLead } from "@/lib/core-chat/lead-extraction"
 
 const allowedStatuses = new Set(["novo","em_atendimento","convertido","perdido","arquivado"])
 
@@ -18,7 +21,77 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
   return NextResponse.json({ conversation, lead, messages: messages ?? [] })
 }
 
-export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+
+export async function POST(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const profile = await getAdminProfile()
+  if (!profile) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
+  const { id } = await context.params
+  const supabase = createAdminClient()
+  const [{ data: messages, error: messagesError }, { data: existingLead }] = await Promise.all([
+    supabase.from("chat_messages").select("id,role,content,created_at").eq("conversation_id", id).order("created_at", { ascending: true }),
+    supabase.from("chat_leads").select("*").eq("conversation_id", id).maybeSingle(),
+  ])
+  if (messagesError) return NextResponse.json({ error: messagesError.message }, { status: 500 })
+  if (!messages?.length) return NextResponse.json({ error: "Conversa sem mensagens." }, { status: 400 })
+
+  let merged = existingLead || { conversation_id: id, source: "core-chat" }
+  for (const [index, message] of messages.entries()) {
+    if (message.role !== "user") continue
+    const previousAssistant = [...messages.slice(0, index)].reverse().find(item => item.role === "assistant")?.content || ""
+    const basic = extractDeterministicLead(message.content, previousAssistant)
+    if (basic.name || basic.whatsapp || basic.email) {
+      const current = {
+        ...merged,
+        name: basic.name ?? merged.name ?? null,
+        whatsapp: basic.whatsapp ?? merged.whatsapp ?? null,
+        email: basic.email ?? merged.email ?? null,
+        conversation_id: id,
+        source: merged.source || "core-chat",
+        updated_at: new Date().toISOString(),
+        contact: basic.whatsapp ?? merged.whatsapp ?? basic.email ?? merged.email ?? merged.contact ?? null,
+      }
+      const { error } = await supabase.from("chat_leads").upsert(current, { onConflict: "conversation_id" })
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      merged = current
+    }
+  }
+
+  try {
+    const transcript = messages.map(message => ({ role: message.role as "user" | "assistant", content: message.content }))
+    const extraction = await groqExtractLead(await getGroqApiKey(), transcript)
+    const current = {
+      ...merged,
+      name: extraction.name ?? merged.name ?? null,
+      whatsapp: extraction.whatsapp ?? merged.whatsapp ?? null,
+      email: extraction.email ?? merged.email ?? null,
+      business_name: extraction.business_name ?? merged.business_name ?? null,
+      business_segment: extraction.business_segment ?? merged.business_segment ?? null,
+      city: extraction.city ?? merged.city ?? null,
+      has_website: extraction.has_website ?? merged.has_website ?? null,
+      current_site_url: extraction.current_site_url ?? merged.current_site_url ?? null,
+      demand_summary: extraction.demand_summary ?? merged.demand_summary ?? null,
+      services_interest: extraction.services_interest?.length ? extraction.services_interest : (merged.services_interest ?? null),
+      urgency: extraction.urgency ?? merged.urgency ?? null,
+      preferred_contact_time: extraction.preferred_contact_time ?? merged.preferred_contact_time ?? null,
+      lead_score: typeof extraction.lead_score === "number" ? extraction.lead_score : (merged.lead_score ?? null),
+      transcript_summary: extraction.summary ?? merged.transcript_summary ?? null,
+      updated_at: new Date().toISOString(),
+      contact: extraction.whatsapp ?? merged.whatsapp ?? extraction.email ?? merged.email ?? merged.contact ?? null,
+      conversation_id: id,
+      source: merged.source || "core-chat",
+    }
+    const { error } = await supabase.from("chat_leads").upsert(current, { onConflict: "conversation_id" })
+    if (error) throw error
+    merged = current
+    await supabase.from("chat_conversations").update({ has_lead: Boolean(current.name || current.whatsapp || current.email || current.demand_summary), summary: current.transcript_summary || current.demand_summary || null, expires_at: current.name || current.whatsapp || current.email ? null : undefined }).eq("id", id)
+  } catch (error) {
+    console.error("[core-chat reprocess]", error instanceof Error ? error.message : "unknown error")
+    if (!(merged.name || merged.whatsapp || merged.email)) return NextResponse.json({ error: "Não foi possível reprocessar a ficha." }, { status: 502 })
+  }
+
+  return NextResponse.json({ ok: true, lead: merged })
+}
+\nexport async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const profile = await getAdminProfile()
   if (!profile) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
   const { id } = await context.params
