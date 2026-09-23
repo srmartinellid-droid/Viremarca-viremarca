@@ -30,7 +30,7 @@ export default function AtendimentosPage() {
   const [selected,setSelected]=useState<Conversation|null>(null)
   const [messages,setMessages]=useState<Message[]>([])
   const [loading,setLoading]=useState(true)
-  const [saving,setSaving]=useState(false)
+  const [saving,setSaving]=useState(false),[reprocessing,setReprocessing]=useState(false)
   const [search,setSearch]=useState("")
   const [status,setStatus]=useState("")
   const [leadFilter,setLeadFilter]=useState("")
@@ -88,6 +88,15 @@ export default function AtendimentosPage() {
     if(!selected||!confirm("Excluir esta conversa e todos os dados vinculados? Esta ação atende ao pedido de exclusão LGPD e não pode ser desfeita."))return
     const r=await fetch("/api/admin/atendimentos/"+selected.id,{method:"DELETE"})
     if(r.ok){setSelected(null);setMessages([]);setNotice("Conversa excluída.");await load()}else{const d=await r.json();setNotice(d.error||"Falha ao excluir.")}
+  }
+
+  const reprocess=async()=>{
+    if(!selected)return
+    setReprocessing(true)
+    const r=await fetch("/api/admin/atendimentos/"+selected.id,{method:"POST"})
+    const d=await r.json()
+    if(r.ok){setNotice("Ficha reprocessada.");await open(selected.id);await load()}else setNotice(d.error||"Falha ao reprocessar.")
+    setReprocessing(false)
   }
 
   const analyze=async()=>{
@@ -173,7 +182,7 @@ export default function AtendimentosPage() {
               <label className="block"><span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">Notas do admin</span><textarea value={selected.admin_notes||""} onChange={e=>setSelected(s=>s?{...s,admin_notes:e.target.value}:s)} rows={4} className="w-full rounded-xl border border-vm-border px-3 py-2.5 text-sm outline-none focus:border-vm-coral"/></label>
             </div>
             <label className="block"><span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">Status</span><select value={selected.status} onChange={e=>setSelected(s=>s?{...s,status:e.target.value}:s)} className="w-full rounded-xl border border-vm-border px-3 py-2.5 text-sm">{statuses.slice(1).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>
-            <div className="grid gap-2"><button type="button" disabled={saving} onClick={()=>void patch({...((selected.lead)||{}),admin_notes:selected.admin_notes,status:selected.status})} className="rounded-xl bg-vm-coral px-4 py-3 text-sm font-semibold text-white disabled:opacity-60">Salvar alterações</button>{selected.lead?.whatsapp&&<a href={wa(selected.lead.whatsapp,selected.lead.name,selected.lead.demand_summary)} target="_blank" rel="noreferrer" onClick={()=>void patch({})} className="inline-flex items-center justify-center gap-2 rounded-xl border border-vm-border px-4 py-3 text-sm font-semibold text-vm-ink"><MessageSquare size={16}/>Abrir WhatsApp</a>}<button type="button" onClick={()=>void remove()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-semibold text-red-600"><Trash2 size={16}/>Excluir conversa</button></div>
+            <div className="grid gap-2"><button type="button" disabled={reprocessing} onClick={()=>void reprocess()} className="rounded-xl border border-vm-border px-4 py-3 text-sm font-semibold text-vm-ink disabled:opacity-60">{reprocessing?"Reprocessando…":"Reprocessar ficha"}</button><button type="button" disabled={saving} onClick={()=>void patch({...((selected.lead)||{}),admin_notes:selected.admin_notes,status:selected.status})} className="rounded-xl bg-vm-coral px-4 py-3 text-sm font-semibold text-white disabled:opacity-60">Salvar alterações</button>{selected.lead?.whatsapp&&<a href={wa(selected.lead.whatsapp,selected.lead.name,selected.lead.demand_summary)} target="_blank" rel="noreferrer" onClick={()=>void patch({})} className="inline-flex items-center justify-center gap-2 rounded-xl border border-vm-border px-4 py-3 text-sm font-semibold text-vm-ink"><MessageSquare size={16}/>Abrir WhatsApp</a>}<button type="button" onClick={()=>void remove()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-semibold text-red-600"><Trash2 size={16}/>Excluir conversa</button></div>
             <div className="rounded-2xl bg-vm-bg p-4 text-xs text-vm-muted">Mensagens: {selected.message_count} · Início: {new Date(selected.started_at).toLocaleString("pt-BR")} · WhatsApp clicado: {selected.whatsapp_clicked?"sim":"não"}</div>
           </div>
         </aside>
