@@ -46,8 +46,8 @@ export function CoreChat({ config }: { config: ChatConfig }) {
   const [messages, setMessages] = useState<Message[]>([])
   const [typing, setTyping] = useState(false)
   const [recording, setRecording] = useState(false)
-  const [visitorId, setVisitorId] = useState("")
-  const [conversationId, setConversationId] = useState("")
+  const visitorIdRef = useRef("")
+  const conversationIdRef = useRef("")
   const [noticeVisible, setNoticeVisible] = useState(true)
   const recorderRef = useRef<MediaRecorder | null>(null)
 
@@ -55,8 +55,8 @@ export function CoreChat({ config }: { config: ChatConfig }) {
     if (!config.enabled) return
     const visitor = getVisitorId()
     const conversation = getConversationId()
-    setVisitorId(visitor)
-    setConversationId(conversation)
+    visitorIdRef.current = visitor
+    conversationIdRef.current = conversation
     if (!conversation) return
     fetch("/api/chat?visitor_id=" + encodeURIComponent(visitor) + "&conversation_id=" + encodeURIComponent(conversation))
       .then(async response => response.ok ? response.json() : { messages: [] })
@@ -68,7 +68,7 @@ export function CoreChat({ config }: { config: ChatConfig }) {
 
   const send = async (value = input) => {
     const text = value.trim()
-    if (!text || typing || !visitorId || text.length > 2000) return
+    if (!text || typing || !visitorIdRef.current || text.length > 2000) return
     setInput("")
     const next = [...messages, { role: "user" as const, content: text }]
     setMessages(next)
@@ -78,8 +78,8 @@ export function CoreChat({ config }: { config: ChatConfig }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          conversation_id: conversationId || undefined,
-          visitor_id: visitorId,
+          conversation_id: conversationIdRef.current || undefined,
+          visitor_id: visitorIdRef.current,
           message: text,
           page_path: window.location.pathname + window.location.search,
           utm: utmParams(),
@@ -88,7 +88,7 @@ export function CoreChat({ config }: { config: ChatConfig }) {
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || "Não foi possível responder.")
-      if (data.conversation_id) { setConversationId(data.conversation_id); saveConversationId(data.conversation_id) }
+      if (data.conversation_id) { conversationIdRef.current = data.conversation_id; saveConversationId(data.conversation_id) }
       setMessages([...next, { role: "assistant", content: data.message }])
       setNoticeVisible(false)
     } catch (error) {
@@ -98,18 +98,18 @@ export function CoreChat({ config }: { config: ChatConfig }) {
 
   const newConversation = () => {
     clearConversationId()
-    setConversationId("")
+    conversationIdRef.current = ""
     setMessages([])
     setInput("")
     setNoticeVisible(true)
   }
 
   const trackEvent = async (event: "whatsapp_clicked" | "consent") => {
-    if (!visitorId) return
+    if (!visitorIdRef.current) return
     void fetch("/api/chat/event", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event, visitor_id: visitorId, conversation_id: conversationId || null, page_path: window.location.pathname }),
+      body: JSON.stringify({ event, visitor_id: visitorId, conversation_id: conversationIdRef.current || null, page_path: window.location.pathname }),
     }).catch(() => {})
   }
 
