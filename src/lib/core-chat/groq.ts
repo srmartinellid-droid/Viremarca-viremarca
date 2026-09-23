@@ -23,7 +23,7 @@ export async function groqChat(apiKey: string, model: string, messages: GroqChat
   const response = await fetch(GROQ_BASE + "/chat/completions", {
     method: "POST",
     headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages, temperature: 0.3, max_tokens: 350 }),
+    body: JSON.stringify({ model, messages, temperature: 0.3, max_completion_tokens: 240, reasoning_effort: "low", include_reasoning: false }),
     cache: "no-store",
   })
   const payload = await response.json().catch(() => null)
@@ -42,7 +42,9 @@ export async function groqExtractLead(apiKey: string, transcript: GroqChatMessag
         ...transcript,
       ],
       temperature: 0,
-      max_tokens: 700,
+      max_completion_tokens: 450,
+      reasoning_effort: "low",
+      include_reasoning: false,
       response_format: { type: "json_object" },
     }),
     cache: "no-store",
