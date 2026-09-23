@@ -6,6 +6,7 @@ import { checkRateLimit } from "@/lib/core-chat/rate-limit"
 import { chooseGroqModel, groqChat, groqExtractLead } from "@/lib/core-chat/groq"
 import { extractDeterministicLead } from "@/lib/core-chat/lead-extraction"
 import { sanitizeAssistantResponse } from "@/lib/core-chat/response-sanitizer"
+import { calculateLeadScore } from "@/lib/core-chat/lead-score"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -212,7 +213,10 @@ export async function POST(request: NextRequest) {
         deterministicLead = currentDeterministicLead
         const hasBasicData = Boolean(deterministicLead.name || deterministicLead.whatsapp || deterministicLead.email)
         if (hasBasicData) {
-          const merged = await upsertLead(supabase, conversation.id, deterministicLead)
+          const merged = await upsertLead(supabase, conversation.id, deterministicLead, {
+            messages: userMessages.map(content => ({ role: "user", content })),
+            whatsapp_clicked: Boolean(conversation.whatsapp_clicked),
+          })
           await supabase.from("chat_conversations").update({ has_lead: true, expires_at: null }).eq("id", conversation.id)
           deterministicLead = merged
         }
@@ -230,7 +234,10 @@ export async function POST(request: NextRequest) {
         const { data: extractionRows, error } = await supabase.from("chat_messages").select("role,content").eq("conversation_id", conversation.id).order("created_at", { ascending: true }).limit(24)
         if (error) throw error
         extraction = await groqExtractLead(await getGroqApiKey(), (extractionRows ?? []).map((row: any) => ({ role: row.role, content: row.content })))
-        const merged = await upsertLead(supabase, conversation.id, extraction)
+        const merged = await upsertLead(supabase, conversation.id, extraction, {
+          messages: userMessages.map(content => ({ role: "user", content })),
+          whatsapp_clicked: Boolean(conversation.whatsapp_clicked),
+        })
         extraction = merged
       } catch (error) {
         logAuxiliary("extraction", error)
@@ -266,7 +273,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function upsertLead(supabase: any, conversationId: string, extraction: any) {
+async function upsertLead(
+  supabase: any,
+  conversationId: string,
+  extraction: any,
+  scoreConversation: { messages: Array<{ role: string; content: string }>; whatsapp_clicked?: boolean | null },
+) {
   const { data: existing } = await supabase.from("chat_leads").select("*").eq("conversation_id", conversationId).maybeSingle()
   const merged = {
     name: extraction.name ?? existing?.name ?? null,
@@ -281,13 +293,13 @@ async function upsertLead(supabase: any, conversationId: string, extraction: any
     services_interest: extraction.services_interest?.length ? extraction.services_interest : (existing?.services_interest ?? null),
     urgency: extraction.urgency ?? existing?.urgency ?? null,
     preferred_contact_time: extraction.preferred_contact_time ?? existing?.preferred_contact_time ?? null,
-    lead_score: typeof extraction.lead_score === "number" ? Math.max(0, Math.min(100, extraction.lead_score)) : (existing?.lead_score ?? null),
     updated_at: new Date().toISOString(),
     contact: extraction.whatsapp ?? existing?.whatsapp ?? extraction.email ?? existing?.email ?? null,
     transcript_summary: extraction.summary ?? existing?.transcript_summary ?? null,
     source: "core-chat",
     conversation_id: conversationId,
   }
+  merged.lead_score = calculateLeadScore(merged, scoreConversation)
   const { error } = await supabase.from("chat_leads").upsert(merged, { onConflict: "conversation_id" })
   if (error) throw error
   return merged
