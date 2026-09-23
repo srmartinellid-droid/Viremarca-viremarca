@@ -4,6 +4,7 @@ import { checkRateLimit, resetRateLimitForTests } from "../src/lib/core-chat/rat
 import { buildSystemPrompt, hasCommercialIntent, extractLead } from "../src/lib/core-chat/prompt.ts"
 import { parseGroqResponse } from "../src/lib/core-chat/groq.ts"
 import { sanitizeAssistantResponse } from "../src/lib/core-chat/response-sanitizer.ts"
+import { calculateLeadScore } from "../src/lib/core-chat/lead-score.ts"
 
 describe("Core Chat", () => {
   beforeEach(() => resetRateLimitForTests())
@@ -57,6 +58,36 @@ describe("Core Chat", () => {
     assert.equal(
       sanitizeAssistantResponse("https://wa.me/5548991410717", "5548991410717"),
       "https://wa.me/5548991410717",
+    )
+  })
+
+  it("calcula score determinístico de 85 para lead completo com pergunta de preço", () => {
+    const score = calculateLeadScore(
+      {
+        name: "Teste VireMarca",
+        whatsapp: "48900000000",
+        business_name: "Pousada Teste",
+        demand_summary: "Quero um site para a pousada.",
+      },
+      {
+        messages: [
+          { role: "user", content: "Me chamo Teste VireMarca" },
+          { role: "user", content: "WhatsApp 48 90000-0000" },
+          { role: "user", content: "A pousada se chama Pousada Teste." },
+          { role: "user", content: "Quanto custa um site para a pousada?" },
+        ],
+      },
+    )
+    assert.equal(score, 85)
+  })
+
+  it("soma urgência e clique sem ultrapassar 100", () => {
+    assert.equal(
+      calculateLeadScore(
+        { name: "Teste", whatsapp: "48900000000", business_segment: "Pousada", demand_summary: "Site", urgency: "este mês" },
+        { messages: [{ role: "user", content: "Quanto custa?" }], whatsapp_clicked: true },
+      ),
+      100,
     )
   })
 
