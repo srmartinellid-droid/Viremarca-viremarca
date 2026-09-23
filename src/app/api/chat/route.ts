@@ -154,6 +154,15 @@ export async function POST(request: NextRequest) {
 
     const previousAssistantMessage = [...history].reverse().find(item => item.role === "assistant")?.content || ""
     const currentDeterministicLead = extractDeterministicLead(message, previousAssistantMessage)
+    const knownVisitorPhones = currentDeterministicLead.whatsapp ? [currentDeterministicLead.whatsapp] : []
+    if (supabase) {
+      try {
+        const { data: existingLead } = await supabase.from("chat_leads").select("whatsapp").eq("conversation_id", conversation.id).maybeSingle()
+        if (existingLead?.whatsapp) knownVisitorPhones.push(existingLead.whatsapp)
+      } catch (error) {
+        logAuxiliary("persistence", error)
+      }
+    }
     const officialWhatsapp = config.fallback_whatsapp || "5548991410717"
     let answer = fallbackAnswer
     try {
@@ -161,7 +170,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       logAuxiliary("groq", error)
     }
-    answer = sanitizeAssistantResponse(answer, officialWhatsapp, currentDeterministicLead.whatsapp ? [currentDeterministicLead.whatsapp] : [])
+    answer = sanitizeAssistantResponse(answer, officialWhatsapp, knownVisitorPhones)
 
     if (supabase) {
       try {
