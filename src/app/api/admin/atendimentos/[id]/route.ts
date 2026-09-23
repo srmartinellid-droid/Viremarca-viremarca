@@ -42,7 +42,7 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ i
     const previousAssistant = [...messages.slice(0, index)].reverse().find(item => item.role === "assistant")?.content || ""
     const basic = extractDeterministicLead(message.content, previousAssistant)
     if (basic.name || basic.whatsapp || basic.email) {
-      const current = {
+      const current: any = {
         ...merged,
         name: basic.name ?? merged.name ?? null,
         whatsapp: basic.whatsapp ?? merged.whatsapp ?? null,
@@ -65,7 +65,7 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ i
   try {
     const transcript = messages.map(message => ({ role: message.role as "user" | "assistant", content: message.content }))
     const extraction = await groqExtractLead(await getGroqApiKey(), transcript)
-    const current = {
+    const current: any = {
       ...merged,
       name: extraction.name ?? merged.name ?? null,
       whatsapp: extraction.whatsapp ?? merged.whatsapp ?? null,
@@ -128,7 +128,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       supabase.from("chat_conversations").select("whatsapp_clicked").eq("id", id).maybeSingle(),
       supabase.from("chat_messages").select("role,content").eq("conversation_id", id).order("created_at", { ascending: true }),
     ])
-    const merged = { ...(existing || {}), ...leadPatch, conversation_id: id, updated_at: new Date().toISOString(), contact: leadPatch.whatsapp ?? existing?.whatsapp ?? leadPatch.email ?? existing?.email ?? existing?.contact ?? null, source: existing?.source || "core-chat" }
+    const merged: any = { ...(existing || {}), ...leadPatch, conversation_id: id, updated_at: new Date().toISOString(), contact: leadPatch.whatsapp ?? existing?.whatsapp ?? leadPatch.email ?? existing?.email ?? existing?.contact ?? null, source: existing?.source || "core-chat" }
     merged.lead_score = calculateLeadScore(merged, { messages: messages ?? [], whatsapp_clicked: Boolean(conversation?.whatsapp_clicked) })
     const { error } = await supabase.from("chat_leads").upsert(merged, { onConflict: "conversation_id" })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
