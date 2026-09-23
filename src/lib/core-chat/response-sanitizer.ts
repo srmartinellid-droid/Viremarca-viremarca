@@ -8,6 +8,11 @@ function normalizedDigits(value: string) {
   return digits(value)
 }
 
+function canonicalBrazilPhone(value: string) {
+  const valueDigits = normalizedDigits(value)
+  return valueDigits.startsWith("55") && valueDigits.length >= 12 ? valueDigits.slice(2) : valueDigits
+}
+
 function officialUrl(value: string) {
   const official = normalizedDigits(value) || OFFICIAL_FALLBACK_WHATSAPP
   return "https://wa.me/" + official
@@ -28,7 +33,7 @@ export function sanitizeAssistantResponse(answer: string, officialWhatsapp: stri
     return phone === official ? url : officialUrl(official)
   })
 
-  const visitorNumbers = visitorPhones.map(normalizedDigits).filter(value => value.length >= 10)
+  const visitorNumbers = visitorPhones.map(canonicalBrazilPhone).filter(value => value.length >= 10)
   if (!visitorNumbers.length) return sanitized
 
   const contextPattern = /\b(?:fale|falar|clique|chame|ligue)\b[^.!?\n]{0,100}/gi
@@ -36,7 +41,7 @@ export function sanitizeAssistantResponse(answer: string, officialWhatsapp: stri
 
   sanitized = sanitized.replace(contextPattern, segment =>
     segment.replace(phonePattern, phone => {
-      const candidate = normalizedDigits(phone)
+      const candidate = canonicalBrazilPhone(phone)
       return visitorNumbers.includes(candidate) ? official : phone
     }),
   )
