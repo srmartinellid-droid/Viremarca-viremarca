@@ -6,8 +6,6 @@ import { checkRateLimit } from "@/lib/core-chat/rate-limit"
 import { chooseGroqModel, groqChat, groqExtractLead } from "@/lib/core-chat/groq"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-type ChatMessage = { role: "user" | "assistant"; content: string }
-type LeadExtraction = Awaited<ReturnType<typeof groqExtractLead>>
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function clean(value: unknown, max: number) { return typeof value === "string" ? value.trim().slice(0, max) : "" }
@@ -66,9 +64,9 @@ export async function POST(request: NextRequest) {
 
     const { data: historyRows, error: historyError } = await supabase.from("chat_messages").select("role,content").eq("conversation_id", conversation.id).order("created_at", { ascending: false }).limit(12)
     if (historyError) throw historyError
-    const history = ((historyRows ?? []).reverse() as ChatMessage[])
+    const history: any[] = (historyRows ?? []).reverse()
 
-    let visitorContext: { name: string; demand: string | null; lastContact: string } | null = null
+    let visitorContext: any = null
     const { data: previousConversations } = await supabase.from("chat_conversations").select("id,last_message_at").eq("visitor_id", visitorId).neq("id", conversation.id).order("last_message_at", { ascending: false }).limit(5)
     if (previousConversations?.length) {
       const ids = previousConversations.map(row => row.id)
@@ -78,7 +76,7 @@ export async function POST(request: NextRequest) {
       if (lead?.name && source) visitorContext = { name: lead.name, demand: lead.demand_summary || null, lastContact: new Date(source.last_message_at).toLocaleDateString("pt-BR") }
     }
 
-    const config = await new SupabaseAssistantConfigRepository().get()
+    const config: any = await new SupabaseAssistantConfigRepository().get()
     if (!config.enabled) return NextResponse.json({ error: "Assistente indisponível.", fallback_whatsapp: config.fallback_whatsapp }, { status: 503 })
     const selectedModel = config.model || "auto"
     const model = selectedModel === "auto" ? chooseGroqModel(message, history) : selectedModel
@@ -93,10 +91,10 @@ export async function POST(request: NextRequest) {
       expires_at: conversation.has_lead ? null : conversation.expires_at,
     }).eq("id", conversation.id)
 
-    let extraction: LeadExtraction | null = null
+    let extraction: any = null
     try {
       const { data: extractionRows } = await supabase.from("chat_messages").select("role,content").eq("conversation_id", conversation.id).order("created_at", { ascending: false }).limit(12)
-      extraction = await groqExtractLead(await getGroqApiKey(), ((extractionRows ?? []).reverse() as ChatMessage[]))
+      extraction = await groqExtractLead(await getGroqApiKey(), (extractionRows ?? []).reverse())
       await upsertLead(supabase, conversation.id, extraction)
     } catch (error) {
       console.error("[core-chat extraction]", error instanceof Error ? error.message : "unknown error")
@@ -117,7 +115,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function upsertLead(supabase: any, conversationId: string, extraction: LeadExtraction) {
+async function upsertLead(supabase: any, conversationId: string, extraction: any) {
   const { data: existing } = await supabase.from("chat_leads").select("*").eq("conversation_id", conversationId).maybeSingle()
   const merged = {
     name: extraction.name ?? existing?.name ?? null,
