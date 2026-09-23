@@ -91,7 +91,7 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ i
 
   return NextResponse.json({ ok: true, lead: merged })
 }
-\nexport async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const profile = await getAdminProfile()
   if (!profile) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
   const { id } = await context.params
