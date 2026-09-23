@@ -280,7 +280,7 @@ async function upsertLead(
   scoreConversation: { messages: Array<{ role: string; content: string }>; whatsapp_clicked?: boolean | null },
 ) {
   const { data: existing } = await supabase.from("chat_leads").select("*").eq("conversation_id", conversationId).maybeSingle()
-  const merged = {
+  const merged: any = {
     name: extraction.name ?? existing?.name ?? null,
     whatsapp: extraction.whatsapp ?? existing?.whatsapp ?? null,
     email: extraction.email ?? existing?.email ?? null,
