@@ -5,7 +5,7 @@ const GROQ_BASE = "https://api.groq.com/openai/v1"
 export const AUTO_MODEL = "auto"
 export const COST_EFFICIENT_MODEL = "openai/gpt-oss-20b"
 export const HIGH_CAPABILITY_MODEL = "openai/gpt-oss-120b"
-export const LEAD_EXTRACTION_MODEL = "llama-3.1-8b-instant"
+export const LEAD_EXTRACTION_MODEL = "qwen/qwen3.8-27b"
 
 export function chooseGroqModel(message: string, history: GroqChatMessage[] = []) {
   const text = [message, ...history.map(item => item.content)].join(" ").toLowerCase()
