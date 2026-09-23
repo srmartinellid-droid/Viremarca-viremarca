@@ -21,6 +21,18 @@ function wa(value: string | null | undefined, name: string | null | undefined, d
   return "https://wa.me/55" + number.replace(/^55/, "") + "?text=" + encodeURIComponent(`Olá ${name || ""}! Aqui é da VireMarca, vi sua conversa no nosso site sobre ${demand || "seu projeto"}.`)
 }
 
+function scoreMeta(score: number | null | undefined) {
+  if (typeof score !== "number") return { label: "Sem score", className: "bg-vm-bg text-vm-muted" }
+  if (score >= 70) return { label: "Quente", className: "bg-vm-coral/15 text-vm-coral" }
+  if (score >= 40) return { label: "Morno", className: "bg-amber-100 text-amber-700" }
+  return { label: "Frio", className: "bg-gray-100 text-gray-600" }
+}
+
+function ScoreBadge({ score }: { score: number | null | undefined }) {
+  const meta = scoreMeta(score)
+  return <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", meta.className)}>{score ?? "—"}{typeof score === "number" && <span>{meta.label}</span>}</span>
+}
+
 function Field({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return <label className="block"><span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">{label}</span><input type={type} value={value} onChange={e => onChange(e.target.value)} className="w-full rounded-xl border border-vm-border bg-white px-3 py-2.5 text-sm text-vm-ink outline-none focus:border-vm-coral"/></label>
 }
@@ -34,6 +46,8 @@ export default function AtendimentosPage() {
   const [search,setSearch]=useState("")
   const [status,setStatus]=useState("")
   const [leadFilter,setLeadFilter]=useState("")
+  const [scoreBand,setScoreBand]=useState("")
+  const [sort,setSort]=useState("date_desc")
   const [period,setPeriod]=useState("30")
   const [tab,setTab]=useState<"atendimentos"|"melhorias">("atendimentos")
   const [suggestions,setSuggestions]=useState<Suggestion[]>([])
@@ -148,7 +162,7 @@ export default function AtendimentosPage() {
           </div>
         </section>
 
-        {loading?<div className="rounded-3xl border border-vm-border bg-white p-10 text-sm text-vm-muted">Carregando atendimentos…</div>:<div className="overflow-hidden rounded-3xl border border-vm-border bg-white"><div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-sm"><thead><tr className="border-b border-vm-border text-left text-xs text-vm-muted"><th className="px-5 py-4">Data</th><th className="px-5 py-4">Nome</th><th className="px-5 py-4">WhatsApp</th><th className="px-5 py-4">Ramo / negócio</th><th className="px-5 py-4">Demanda</th><th className="px-5 py-4">Serviços</th><th className="px-5 py-4">Score</th><th className="px-5 py-4">Status</th><th className="px-5 py-4">WhatsApp</th></tr></thead><tbody>{items.map(item=><tr key={item.id} onClick={()=>void open(item.id)} className="cursor-pointer border-b border-vm-border last:border-0 hover:bg-vm-bg/70"><td className="whitespace-nowrap px-5 py-4 text-xs text-vm-muted">{new Date(item.last_message_at).toLocaleString("pt-BR")}</td><td className="px-5 py-4 font-semibold text-vm-ink">{item.lead?.name||"Sem nome"}</td><td className="px-5 py-4 text-vm-muted">{item.lead?.whatsapp||"—"}</td><td className="px-5 py-4 text-vm-muted">{[item.lead?.business_segment,item.lead?.business_name].filter(Boolean).join(" · ")||"—"}</td><td className="max-w-[260px] px-5 py-4 text-vm-muted">{item.lead?.demand_summary||item.summary||"—"}</td><td className="px-5 py-4 text-xs text-vm-muted">{item.lead?.services_interest?.join(", ")||"—"}</td><td className="px-5 py-4 font-semibold">{item.lead?.lead_score ?? "—"}</td><td className="px-5 py-4"><span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold",item.status==="novo"?"bg-vm-coral/10 text-vm-coral":"bg-vm-bg text-vm-muted")}>{item.status.replace("_"," ")}</span></td><td className="px-5 py-4">{item.whatsapp_clicked?<Check size={16} className="text-emerald-600"/>:"—"}</td></tr>)}</tbody></table></div>{!items.length&&<div className="p-10 text-center text-sm text-vm-muted">Nenhum atendimento encontrado.</div>}</div>}
+        {loading?<div className="rounded-3xl border border-vm-border bg-white p-10 text-sm text-vm-muted">Carregando atendimentos…</div>:<div className="overflow-hidden rounded-3xl border border-vm-border bg-white"><div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-sm"><thead><tr className="border-b border-vm-border text-left text-xs text-vm-muted"><th className="px-5 py-4">Data</th><th className="px-5 py-4">Nome</th><th className="px-5 py-4">WhatsApp</th><th className="px-5 py-4">Ramo / negócio</th><th className="px-5 py-4">Demanda</th><th className="px-5 py-4">Serviços</th><th className="px-5 py-4">Score</th><th className="px-5 py-4">Status</th><th className="px-5 py-4">WhatsApp</th></tr></thead><tbody>{items.map(item=><tr key={item.id} onClick={()=>void open(item.id)} className="cursor-pointer border-b border-vm-border last:border-0 hover:bg-vm-bg/70"><td className="whitespace-nowrap px-5 py-4 text-xs text-vm-muted">{new Date(item.last_message_at).toLocaleString("pt-BR")}</td><td className="px-5 py-4 font-semibold text-vm-ink">{item.lead?.name||"Sem nome"}</td><td className="px-5 py-4 text-vm-muted">{item.lead?.whatsapp||"—"}</td><td className="px-5 py-4 text-vm-muted">{[item.lead?.business_segment,item.lead?.business_name].filter(Boolean).join(" · ")||"—"}</td><td className="max-w-[260px] px-5 py-4 text-vm-muted">{item.lead?.demand_summary||item.summary||"—"}</td><td className="px-5 py-4 text-xs text-vm-muted">{item.lead?.services_interest?.join(", ")||"—"}</td><td className="px-5 py-4"><ScoreBadge score={item.lead?.lead_score}/></td><td className="px-5 py-4"><span className={cn("rounded-full px-2.5 py-1 text-[11px] font-semibold",item.status==="novo"?"bg-vm-coral/10 text-vm-coral":"bg-vm-bg text-vm-muted")}>{item.status.replace("_"," ")}</span></td><td className="px-5 py-4">{item.whatsapp_clicked?<Check size={16} className="text-emerald-600"/>:"—"}</td></tr>)}</tbody></table></div>{!items.length&&<div className="p-10 text-center text-sm text-vm-muted">Nenhum atendimento encontrado.</div>}</div>}
       </div>}
 
       {tab==="melhorias"&&<section className="space-y-5">
@@ -166,7 +180,7 @@ export default function AtendimentosPage() {
         </section>
         <aside className="hidden w-[390px] shrink-0 overflow-y-auto border-l border-vm-border bg-white p-5 lg:block">
           <div className="space-y-5">
-            <div className="flex items-center justify-between"><h3 className="font-semibold text-vm-ink">Ficha do lead</h3><span className="rounded-full bg-vm-bg px-3 py-1 text-xs font-semibold">{selected.lead?.lead_score??"—"}/100</span></div>
+            <div className="flex items-center justify-between"><h3 className="font-semibold text-vm-ink">Ficha do lead</h3><ScoreBadge score={selected.lead?.lead_score}/></div>
             <div className="grid gap-3">
               <Field label="Nome" value={selected.lead?.name||""} onChange={v=>setSelected(s=>s?{...s,lead:{...(s.lead||{}),name:v}}:s)}/>
               <Field label="WhatsApp" value={selected.lead?.whatsapp||""} onChange={v=>setSelected(s=>s?{...s,lead:{...(s.lead||{}),whatsapp:v}}:s)}/>
@@ -177,7 +191,6 @@ export default function AtendimentosPage() {
               <Field label="Serviços de interesse" value={selected.lead?.services_interest?.join(", ")||""} onChange={v=>setSelected(s=>s?{...s,lead:{...(s.lead||{}),services_interest:v.split(",").map(x=>x.trim()).filter(Boolean)}}:s)}/>
               <Field label="Urgência" value={selected.lead?.urgency||""} onChange={v=>setSelected(s=>s?{...s,lead:{...(s.lead||{}),urgency:v}}:s)}/>
               <Field label="Melhor horário" value={selected.lead?.preferred_contact_time||""} onChange={v=>setSelected(s=>s?{...s,lead:{...(s.lead||{}),preferred_contact_time:v}}:s)}/>
-              <Field label="Score (0–100)" type="number" value={String(selected.lead?.lead_score??"")} onChange={v=>setSelected(s=>s?{...s,lead:{...(s.lead||{}),lead_score:v?Number(v):null}}:s)}/>
               <label className="block"><span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">Demanda</span><textarea value={selected.lead?.demand_summary||""} onChange={e=>setSelected(s=>s?{...s,lead:{...(s.lead||{}),demand_summary:e.target.value}}:s)} rows={4} className="w-full rounded-xl border border-vm-border px-3 py-2.5 text-sm outline-none focus:border-vm-coral"/></label>
               <label className="block"><span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">Notas do admin</span><textarea value={selected.admin_notes||""} onChange={e=>setSelected(s=>s?{...s,admin_notes:e.target.value}:s)} rows={4} className="w-full rounded-xl border border-vm-border px-3 py-2.5 text-sm outline-none focus:border-vm-coral"/></label>
             </div>
