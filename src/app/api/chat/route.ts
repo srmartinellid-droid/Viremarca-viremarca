@@ -4,6 +4,7 @@ import { getGroqApiKey } from "@/lib/core-chat/secrets"
 import { buildSystemPrompt, hasCommercialIntent } from "@/lib/core-chat/prompt"
 import { checkRateLimit } from "@/lib/core-chat/rate-limit"
 import { chooseGroqModel, groqChat, groqExtractLead } from "@/lib/core-chat/groq"
+import { extractDeterministicLead } from "@/lib/core-chat/lead-extraction"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -181,25 +182,56 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    let deterministicLead: any = null
     let extraction: any = null
-    if (hasCommercialIntent(message) && supabase) {
+    let userMessages: string[] = [message]
+    if (supabase) {
       try {
-        const { data: extractionRows, error } = await supabase.from("chat_messages").select("role,content").eq("conversation_id", conversation.id).order("created_at", { ascending: false }).limit(12)
+        const { data: allUsers, error } = await supabase.from("chat_messages").select("content").eq("conversation_id", conversation.id).eq("role", "user").order("created_at", { ascending: true })
         if (error) throw error
-        extraction = await groqExtractLead(await getGroqApiKey(), (extractionRows ?? []).reverse())
-        await upsertLead(supabase, conversation.id, extraction)
+        userMessages = (allUsers ?? []).map((row: any) => row.content).filter((value: any): value is string => typeof value === "string")
+      } catch (error) {
+        logAuxiliary("persistence", error)
+      }
+
+      try {
+        const previousAssistant = [...history].reverse().find(item => item.role === "assistant")?.content || ""
+        deterministicLead = extractDeterministicLead(message, previousAssistant)
+        const hasBasicData = Boolean(deterministicLead.name || deterministicLead.whatsapp || deterministicLead.email)
+        if (hasBasicData) {
+          const merged = await upsertLead(supabase, conversation.id, deterministicLead)
+          await supabase.from("chat_conversations").update({ has_lead: true, expires_at: null }).eq("id", conversation.id)
+          deterministicLead = merged
+        }
+      } catch (error) {
+        logAuxiliary("deterministic-extraction", error)
+      }
+    }
+
+    const commercialIntent = userMessages.some(text => hasCommercialIntent(text))
+    const basicDataPresent = Boolean(deterministicLead?.name || deterministicLead?.whatsapp || deterministicLead?.email)
+    const userMessageCount = userMessages.length || Math.max(1, Math.ceil(Number(conversation.message_count || 0) / 2))
+    const shouldRunLLM = Boolean(supabase && (commercialIntent || basicDataPresent || userMessageCount % 4 === 0))
+    if (shouldRunLLM && supabase) {
+      try {
+        const { data: extractionRows, error } = await supabase.from("chat_messages").select("role,content").eq("conversation_id", conversation.id).order("created_at", { ascending: true }).limit(24)
+        if (error) throw error
+        extraction = await groqExtractLead(await getGroqApiKey(), (extractionRows ?? []).map((row: any) => ({ role: row.role, content: row.content })))
+        const merged = await upsertLead(supabase, conversation.id, extraction)
+        extraction = merged
       } catch (error) {
         logAuxiliary("extraction", error)
       }
     }
 
-    const hasLead = Boolean(extraction && (extraction.name || extraction.whatsapp || extraction.email || extraction.business_name || extraction.business_segment || extraction.city || extraction.demand_summary || extraction.current_site_url))
-    if (supabase && (hasLead || extraction)) {
+    const lead = extraction || deterministicLead
+    const hasLead = Boolean(lead && (lead.name || lead.whatsapp || lead.email || lead.business_name || lead.business_segment || lead.city || lead.demand_summary || lead.current_site_url))
+    if (supabase && hasLead) {
       try {
         const { error } = await supabase.from("chat_conversations").update({
-          has_lead: hasLead,
-          summary: extraction?.summary || extraction?.demand_summary || null,
-          expires_at: hasLead ? null : conversation.expires_at,
+          has_lead: true,
+          summary: lead.summary || lead.demand_summary || null,
+          expires_at: null,
         }).eq("id", conversation.id)
         if (error) throw error
       } catch (error) {
@@ -245,4 +277,5 @@ async function upsertLead(supabase: any, conversationId: string, extraction: any
   }
   const { error } = await supabase.from("chat_leads").upsert(merged, { onConflict: "conversation_id" })
   if (error) throw error
+  return merged
 }
