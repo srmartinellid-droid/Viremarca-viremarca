@@ -167,7 +167,7 @@ export function CoreChat({ config }: { config: ChatConfig }) {
         <div className="flex items-center gap-1"><button type="button" onClick={newConversation} aria-label="Nova conversa" title="Nova conversa" className="rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white"><RotateCcw size={16}/></button><button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="rounded-lg p-2 hover:bg-white/10"><X size={18}/></button></div>
       </header>
       <div className="flex-1 space-y-3 overflow-y-auto bg-vm-bg p-4">
-        {!messages.length && <div className="rounded-2xl border border-vm-border bg-white p-4 text-sm text-vm-muted">Posso ajudar com informações sobre a VireMarca e adiantar seu atendimento comercial.</div>}
+        {!messages.length && <div className="rounded-2xl border border-vm-border bg-white p-4 text-sm text-vm-muted">Olá! Sou o assistente da VireMarca 👋 Estou aqui para entender o seu negócio e adiantar seu atendimento com a equipe. Para começar, como posso te chamar?</div>}
         {messages.map((message, index) => <div key={index} className={message.role === "user" ? "ml-8 rounded-2xl rounded-br-md bg-vm-coral px-4 py-3 text-sm text-white" : "mr-8 rounded-2xl rounded-bl-md bg-white px-4 py-3 text-sm text-vm-ink"}>{message.content}</div>)}
         {typing && <div className="mr-8 rounded-2xl bg-white px-4 py-3 text-xs text-vm-muted">Digitando…</div>}
       </div>
