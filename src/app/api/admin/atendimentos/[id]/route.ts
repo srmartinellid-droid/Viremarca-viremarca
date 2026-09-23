@@ -56,7 +56,11 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ i
         messages: messages.map(message => ({ role: message.role, content: message.content })),
         whatsapp_clicked: Boolean(conversation?.whatsapp_clicked),
       })
-      const { error } = await supabase.from("chat_leads").upsert(current, { onConflict: "conversation_id" })
+      current.lead_score = calculateLeadScore(current, {
+      messages: messages.map(message => ({ role: message.role, content: message.content })),
+      whatsapp_clicked: Boolean(conversation?.whatsapp_clicked),
+    })
+    const { error } = await supabase.from("chat_leads").upsert(current, { onConflict: "conversation_id" })
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       merged = current
     }
@@ -79,7 +83,6 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ i
       services_interest: extraction.services_interest?.length ? extraction.services_interest : (merged.services_interest ?? null),
       urgency: extraction.urgency ?? merged.urgency ?? null,
       preferred_contact_time: extraction.preferred_contact_time ?? merged.preferred_contact_time ?? null,
-      lead_score: typeof extraction.lead_score === "number" ? extraction.lead_score : (merged.lead_score ?? null),
       transcript_summary: extraction.summary ?? merged.transcript_summary ?? null,
       updated_at: new Date().toISOString(),
       contact: extraction.whatsapp ?? merged.whatsapp ?? extraction.email ?? merged.email ?? merged.contact ?? null,
