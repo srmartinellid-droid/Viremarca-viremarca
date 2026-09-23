@@ -44,7 +44,7 @@ export async function groqExtractLead(apiKey: string, transcript: GroqChatMessag
   const payload = await groqCompletion(apiKey, {
     model: LEAD_EXTRACTION_MODEL,
     messages: [
-      { role: "system", content: "Extraia dados comerciais da conversa. Não invente. Se um campo não aparecer, retorne null. Responda somente JSON válido com name, whatsapp, email, business_name, business_segment, city, has_website, current_site_url, demand_summary, services_interest, urgency, preferred_contact_time, summary e lead_score." },
+      { role: "system", content: "Extraia dados comerciais da conversa. Não invente. Se um campo não aparecer, retorne null. Responda somente JSON válido com name, whatsapp, email, business_name, business_segment, city, has_website, current_site_url, demand_summary, services_interest, urgency, preferred_contact_time, summary." },
       ...transcript,
     ],
     temperature: 0,
@@ -66,7 +66,6 @@ export async function groqExtractLead(apiKey: string, transcript: GroqChatMessag
     urgency: typeof content.urgency === "string" ? content.urgency : null,
     preferred_contact_time: typeof content.preferred_contact_time === "string" ? content.preferred_contact_time : null,
     summary: typeof content.summary === "string" ? content.summary : null,
-    lead_score: typeof content.lead_score === "number" ? Math.max(0, Math.min(100, Math.round(content.lead_score))) : null,
   }
 }
 export async function groqAnalyzeConversations(apiKey: string, transcript: GroqChatMessage[]) {
