@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import { checkRateLimit, resetRateLimitForTests } from "../src/lib/core-chat/rate-limit.ts"
 import { buildSystemPrompt, hasCommercialIntent, extractLead } from "../src/lib/core-chat/prompt.ts"
 import { parseGroqResponse } from "../src/lib/core-chat/groq.ts"
+import { sanitizeAssistantResponse } from "../src/lib/core-chat/response-sanitizer.ts"
 
 describe("Core Chat", () => {
   beforeEach(() => resetRateLimitForTests())
@@ -36,6 +37,27 @@ describe("Core Chat", () => {
     assert.match(prompt, /Teste/)
     assert.match(prompt, /Sites institucionais/)
     assert.match(prompt, /Nunca invente/)
+  })
+
+  it("sanitiza links e telefone do visitante no texto do assistente", () => {
+    const official = "5548991410717"
+    const visitor = "+55 48 90000-0000"
+    const answer = "Aqui está: https://wa.me/5548998023620. Fale com a equipe pelo 48 90000-0000."
+    const sanitized = sanitizeAssistantResponse(answer, official, [visitor])
+    assert.equal(sanitized, "Aqui está: https://wa.me/5548991410717. Fale com a equipe pelo 5548991410717.")
+    assert.doesNotMatch(sanitized, /wa\.me\/5548998023620/)
+    assert.doesNotMatch(sanitized, /48 90000-0000/)
+  })
+
+  it("sanitiza api.whatsapp.com e preserva o canal oficial", () => {
+    assert.equal(
+      sanitizeAssistantResponse("https://api.whatsapp.com/send?phone=5548998023620", "5548991410717"),
+      "https://wa.me/5548991410717",
+    )
+    assert.equal(
+      sanitizeAssistantResponse("https://wa.me/5548991410717", "5548991410717"),
+      "https://wa.me/5548991410717",
+    )
   })
 
   it("faz parsing da resposta Groq", () => {
