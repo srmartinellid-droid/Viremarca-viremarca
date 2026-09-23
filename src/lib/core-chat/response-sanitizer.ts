@@ -29,8 +29,10 @@ export function sanitizeAssistantResponse(answer: string, officialWhatsapp: stri
   const official = normalizedDigits(officialWhatsapp) || OFFICIAL_FALLBACK_WHATSAPP
   const urlPattern = /https?:\/\/(?:www\.)?(?:wa\.me\/[^\s"'<>]+|api\.whatsapp\.com\/send\?[^\s"'<>]+)/gi
   let sanitized = answer.replace(urlPattern, url => {
-    const phone = phoneInUrl(url)
-    return phone === official ? url : officialUrl(official)
+    const trailing = url.match(/[.,;:!?)]*$/)?.[0] || ""
+    const core = trailing ? url.slice(0, -trailing.length) : url
+    const phone = phoneInUrl(core)
+    return (phone === official ? core : officialUrl(official)) + trailing
   })
 
   const visitorNumbers = visitorPhones.map(canonicalBrazilPhone).filter(value => value.length >= 10)
