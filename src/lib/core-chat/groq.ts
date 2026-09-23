@@ -23,12 +23,7 @@ export function parseGroqResponse(payload: any) {
 async function groqCompletion(apiKey: string, body: Record<string, unknown>) {
   let attempt = 0
   while (true) {
-    const response = await fetch(GROQ_BASE + "/chat/completions", {
-      method: "POST",
-      headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      cache: "no-store",
-    })
+    const response = await fetch(GROQ_BASE + "/chat/completions", { method: "POST", headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" }, body: JSON.stringify(body), cache: "no-store" })
     const payload = await response.json().catch(() => null)
     if (response.ok) return payload
     if (response.status === 429 && attempt === 0) {
@@ -45,7 +40,6 @@ export async function groqChat(apiKey: string, model: string, messages: GroqChat
   const payload = await groqCompletion(apiKey, { model, messages, temperature: 0.3, max_completion_tokens: 240, reasoning_effort: "low", include_reasoning: false })
   return parseGroqResponse(payload)
 }
-
 export async function groqExtractLead(apiKey: string, transcript: GroqChatMessage[]) {
   const payload = await groqCompletion(apiKey, {
     model: LEAD_EXTRACTION_MODEL,
@@ -75,4 +69,78 @@ export async function groqExtractLead(apiKey: string, transcript: GroqChatMessag
     lead_score: typeof content.lead_score === "number" ? Math.max(0, Math.min(100, Math.round(content.lead_score))) : null,
   }
 }
+export async function groqAnalyzeConversations(apiKey: string, transcript: GroqChatMessage[]) {
+  const response = await fetch(GROQ_BASE + "/chat/completions", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: COST_EFFICIENT_MODEL,
+      messages: [
+        {
+          role: "system",
+          content: "Analise conversas comerciais recentes. Identifique somente perguntas do visitante que parecem ter recebido uma resposta insuficiente, vaga, ou que exigiria confirmação. Crie no máximo 5 sugestões úteis para a base de conhecimento. Não invente fatos. O campo source_conversation_id deve ser exatamente o ID da conversa que contém a pergunta. Se não houver oportunidade clara, retorne lista vazia.",
+        },
+        ...transcript,
+      ],
+      temperature: 0,
+      max_tokens: 900,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "viremarca_kb_suggestions",
+          strict: true,
+          schema: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              suggestions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  properties: {
+                    source_conversation_id: { type: "string" },
+                    question: { type: "string" },
+                    suggested_answer: { type: "string" },
+                  },
+                  required: ["source_conversation_id", "question", "suggested_answer"],
+                },
+              },
+            },
+            required: ["suggestions"],
+          },
+        },
+      },
+      reasoning_format: "hidden",
+    }),
+    cache: "no-store",
+  })
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(payload?.error?.message || "Falha ao analisar conversas.")
+  return JSON.parse(parseGroqResponse(payload)) as { suggestions: Array<{ source_conversation_id: string; question: string; suggested_answer: string }> }
+}
 
+export async function listGroqModels(apiKey: string) {
+  const response = await fetch(GROQ_BASE + "/models", { headers: { Authorization: "Bearer " + apiKey }, next: { revalidate: 300 } })
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(payload?.error?.message || "Não foi possível consultar os modelos Groq.")
+  const ids = Array.isArray(payload?.data) ? payload.data.filter((item: any) => typeof item?.id === "string" && item.active !== false).map((item: any) => item.id) : []
+  return [
+    { id: AUTO_MODEL, label: "Automático · custo inteligente" },
+    ...ids.filter((id: string) => [COST_EFFICIENT_MODEL, HIGH_CAPABILITY_MODEL].includes(id)).map((id: string) => ({
+      id, label: id === COST_EFFICIENT_MODEL ? "GPT-OSS 20B · econômico" : "GPT-OSS 120B · maior capacidade",
+    })),
+  ]
+}
+
+export async function transcribeGroq(apiKey: string, file: File) {
+  const form = new FormData()
+  form.append("file", file, file.name || "audio.webm")
+  form.append("model", "whisper-large-v3-turbo")
+  form.append("response_format", "json")
+  const response = await fetch(GROQ_BASE + "/audio/transcriptions", { method: "POST", headers: { Authorization: "Bearer " + apiKey }, body: form })
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(payload?.error?.message || "Falha ao transcrever o áudio.")
+  if (typeof payload?.text !== "string") throw new Error("Transcrição inválida.")
+  return payload.text.trim()
+}
