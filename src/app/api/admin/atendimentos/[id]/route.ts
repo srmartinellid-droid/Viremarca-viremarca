@@ -89,6 +89,10 @@ export async function POST(_request: NextRequest, context: { params: Promise<{ i
       conversation_id: id,
       source: merged.source || "core-chat",
     }
+    current.lead_score = calculateLeadScore(current, {
+      messages: messages.map(message => ({ role: message.role, content: message.content })),
+      whatsapp_clicked: Boolean(conversation?.whatsapp_clicked),
+    })
     const { error } = await supabase.from("chat_leads").upsert(current, { onConflict: "conversation_id" })
     if (error) throw error
     merged = current
