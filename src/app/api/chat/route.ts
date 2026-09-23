@@ -6,7 +6,7 @@ import { checkRateLimit } from "@/lib/core-chat/rate-limit"
 import { chooseGroqModel, groqChat, groqExtractLead } from "@/lib/core-chat/groq"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function clean(value: unknown, max: number) { return typeof value === "string" ? value.trim().slice(0, max) : "" }
 function validUuid(value: unknown) { return typeof value === "string" && UUID.test(value) }
