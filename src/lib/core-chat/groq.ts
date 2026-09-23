@@ -38,54 +38,33 @@ export async function groqExtractLead(apiKey: string, transcript: GroqChatMessag
     body: JSON.stringify({
       model: COST_EFFICIENT_MODEL,
       messages: [
-        {
-          role: "system",
-          content: "Extraia dados comerciais da conversa. Não invente. Se um campo não aparecer, retorne null. Responda apenas no schema JSON.",
-        },
+        { role: "system", content: "Extraia dados comerciais da conversa. Não invente. Se um campo não aparecer, retorne null. Responda somente JSON válido com os campos solicitados." },
         ...transcript,
       ],
       temperature: 0,
       max_tokens: 700,
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "viremarca_lead",
-          strict: true,
-          schema: {
-            type: "object",
-            additionalProperties: false,
-            properties: {
-              name: { type: ["string", "null"] },
-              whatsapp: { type: ["string", "null"] },
-              email: { type: ["string", "null"] },
-              business_name: { type: ["string", "null"] },
-              business_segment: { type: ["string", "null"] },
-              city: { type: ["string", "null"] },
-              has_website: { type: ["boolean", "null"] },
-              current_site_url: { type: ["string", "null"] },
-              demand_summary: { type: ["string", "null"] },
-              services_interest: { type: ["array", "null"], items: { type: "string" } },
-              urgency: { type: ["string", "null"] },
-              preferred_contact_time: { type: ["string", "null"] },
-              summary: { type: ["string", "null"] },
-              lead_score: { type: ["integer", "null"], minimum: 0, maximum: 100 },
-            },
-            required: ["name","whatsapp","email","business_name","business_segment","city","has_website","current_site_url","demand_summary","services_interest","urgency","preferred_contact_time","summary","lead_score"],
-          },
-        },
-      },
-      reasoning_format: "hidden",
+      response_format: { type: "json_object" },
     }),
     cache: "no-store",
   })
   const payload = await response.json().catch(() => null)
   if (!response.ok) throw new Error(payload?.error?.message || "Falha na extração estruturada.")
-  const content = parseGroqResponse(payload)
-  return JSON.parse(content) as {
-    name: string | null; whatsapp: string | null; email: string | null; business_name: string | null;
-    business_segment: string | null; city: string | null; has_website: boolean | null; current_site_url: string | null;
-    demand_summary: string | null; services_interest: string[] | null; urgency: string | null;
-    preferred_contact_time: string | null; summary: string | null; lead_score: number | null;
+  const content = JSON.parse(parseGroqResponse(payload))
+  return {
+    name: typeof content.name === "string" ? content.name : null,
+    whatsapp: typeof content.whatsapp === "string" ? content.whatsapp : null,
+    email: typeof content.email === "string" ? content.email : null,
+    business_name: typeof content.business_name === "string" ? content.business_name : null,
+    business_segment: typeof content.business_segment === "string" ? content.business_segment : null,
+    city: typeof content.city === "string" ? content.city : null,
+    has_website: typeof content.has_website === "boolean" ? content.has_website : null,
+    current_site_url: typeof content.current_site_url === "string" ? content.current_site_url : null,
+    demand_summary: typeof content.demand_summary === "string" ? content.demand_summary : null,
+    services_interest: Array.isArray(content.services_interest) ? content.services_interest.filter((item: unknown): item is string => typeof item === "string") : null,
+    urgency: typeof content.urgency === "string" ? content.urgency : null,
+    preferred_contact_time: typeof content.preferred_contact_time === "string" ? content.preferred_contact_time : null,
+    summary: typeof content.summary === "string" ? content.summary : null,
+    lead_score: typeof content.lead_score === "number" ? Math.max(0, Math.min(100, Math.round(content.lead_score))) : null,
   }
 }
 
