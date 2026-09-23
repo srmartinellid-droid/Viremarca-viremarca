@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { Bot, MessageCircle, Mic, Send, X, RotateCcw } from "lucide-react"
 
 type ChatConfig = { enabled: boolean; assistant_name: string; fallback_whatsapp: string }
@@ -109,7 +109,7 @@ export function CoreChat({ config }: { config: ChatConfig }) {
     void fetch("/api/chat/event", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event, visitor_id: visitorId, conversation_id: conversationIdRef.current || null, page_path: window.location.pathname }),
+      body: JSON.stringify({ event, visitor_id: visitorIdRef.current, conversation_id: conversationIdRef.current || null, page_path: window.location.pathname }),
     }).catch(() => {})
   }
 
