@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { Hero } from "@/components/Hero"
 import { PortfolioShowcase } from "@/components/PortfolioShowcase"
 import { Process } from "@/components/Process"
@@ -10,6 +11,8 @@ import { CommercialDiagnostic } from "@/components/CommercialDiagnostic"
 import { SectionDivider } from "@/components/SectionDivider"
 import { getFeaturedProjects, getPublicProjects } from "@/lib/projects"
 import { getPublicSiteContent } from "@/lib/site-content"
+
+export const metadata: Metadata = { alternates: { canonical: "/" } }
 
 export default async function HomePage() {
   const [projects, featuredProjects, content] = await Promise.all([getPublicProjects(), getFeaturedProjects(), getPublicSiteContent()])

@@ -19,7 +19,6 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL("https://www.viremarca.com.br"),
     title: { default: "VireMarca — Sites profissionais para o seu negócio", template: "%s · VireMarca" },
     description: "A VireMarca constrói sites profissionais, pensados para cada negócio, unindo design estratégico, tecnologia e estrutura sob medida.",
-    alternates: { canonical: "/" },
     keywords: ["sites profissionais", "criação de sites", "site para empresas", "site profissional", "VireMarca"],
     authors: [{ name: "VireMarca" }],
     openGraph: {
