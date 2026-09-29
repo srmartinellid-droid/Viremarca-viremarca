@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Inter, Space_Grotesk } from "next/font/google"
 import "./globals.css"
 import { Header } from "@/components/Header"
+import { OrganizationJsonLd } from "@/components/seo/OrganizationJsonLd"
 import { Footer } from "@/components/Footer"
 import { getPublicSiteContent } from "@/lib/site-content"
 import { CookieConsent } from "@/components/CookieConsent"
@@ -41,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const content = await getPublicSiteContent()
-  return <html lang="pt-BR" className={`${inter.variable} ${spaceGrotesk.variable}`}><body className="min-h-screen flex flex-col antialiased"><Header logo1={content.logo2} /><main className="flex-1">{children}</main><Footer /><CookieConsent /><AnalyticsGate /><CoreChat config={await getChatConfig()} /></body></html>
+  return <html lang="pt-BR" className={`${inter.variable} ${spaceGrotesk.variable}`}><body className="min-h-screen flex flex-col antialiased"><OrganizationJsonLd /><Header logo1={content.logo2} /><main className="flex-1">{children}</main><Footer /><CookieConsent /><AnalyticsGate /><CoreChat config={await getChatConfig()} /></body></html>
 }
 
 
