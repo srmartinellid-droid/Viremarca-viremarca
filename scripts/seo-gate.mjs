@@ -8,9 +8,10 @@ const getArg = (name) => {
 
 const base = (getArg("--base") || "").replace(/\/$/, "");
 const expectedSha = getArg("--sha");
+const strict = args.includes("--strict");
 
 if (!base || !expectedSha) {
-  console.error("Uso: npm run seo:gate -- --base https://www.viremarca.com.br --sha <commit>");
+  console.error("Uso: npm run seo:gate -- --base https://www.viremarca.com.br --sha <commit> [--strict]");
   process.exit(1);
 }
 
@@ -141,7 +142,9 @@ async function check() {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_READONLY_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseKey) {
-    note("NÃO VERIFICADO: Supabase read-only env não disponível para consistência de dados.");
+    const message = "NÃO VERIFICADO: Supabase read-only env não disponível para consistência de dados.";
+    if (strict) fail(message);
+    else note(message);
     note("A etapa permanece explicitamente NÃO VERIFICADO e requer revisão humana antes do release.");
   } else {
     try {
