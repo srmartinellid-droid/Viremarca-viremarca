@@ -182,9 +182,12 @@ async function check() {
       const result = await follow(base + path);
       const response = result.response;
       const html = await response.text();
-      if (response.status !== 200) fail(path + " final response -> " + response.status);
+      if (sitemapUrls.includes(base + path)) fail(path + " appears in sitemap");
+      else if (path === "/virelab") {
+        if (response.status !== 404) fail("/virelab final response -> " + response.status + ", expected 404 (rota removida)");
+        else pass("/virelab -> 404 and absent from sitemap");
+      } else if (response.status !== 200) fail(path + " final response -> " + response.status);
       else if (!hasNoindex(html, response.headers)) fail(path + " is missing noindex");
-      else if (sitemapUrls.includes(base + path)) fail(path + " appears in sitemap");
       else pass(path + " -> noindex and absent from sitemap");
     } catch (e) { fail(path + " check: " + e.message); }
   }
