@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { ArrowLeft, ExternalLink } from "lucide-react"
 import { getProjectBySlug, getPublicProjects } from "@/lib/projects"
+import { portfolioCanonicalUrl } from "@/lib/seo-url"
 import type { Metadata } from "next"
 
 const BASE_URL = "https://www.viremarca.com.br"
@@ -18,10 +19,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const project = await getProjectBySlug(slug)
   if (!project) return { title: "Projeto" }
+  const canonicalUrl = portfolioCanonicalUrl(slug)
   return {
     title: project.title,
     description: project.description,
-    alternates: { canonical: BASE_URL + "/portfolio/" + encodeURIComponent(slug) },
+    alternates: { canonical: canonicalUrl },
+    openGraph: { url: canonicalUrl },
   }
 }
 
