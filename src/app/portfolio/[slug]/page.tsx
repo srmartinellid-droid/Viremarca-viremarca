@@ -7,7 +7,6 @@ import { getProjectBySlug, getPublicProjects } from "@/lib/projects"
 import { portfolioCanonicalUrl } from "@/lib/seo-url"
 import type { Metadata } from "next"
 
-const BASE_URL = "https://www.viremarca.com.br"
 type Props = { params: Promise<{ slug: string }> }
 
 export async function generateStaticParams() {
