@@ -48,7 +48,7 @@ O gate só é considerado PASS quando todos os critérios verificáveis abaixo p
    - exatamente um h1.
 5. Consistência com Supabase: projetos portfolio_projects ativos/públicos devem corresponder exatamente às URLs /portfolio/* do sitemap. A consulta usa chave somente-leitura por variável de ambiente. Se as variáveis não estiverem disponíveis, o resultado é explicitamente NÃO VERIFICADO e exige revisão humana antes do release.
 6. https://viremarca.com.br/ deve começar com 308 para o domínio canônico e terminar em https://www.viremarca.com.br/ com 200. O mesmo teste é feito para http://viremarca.com.br/.
-7. /virelab deve responder 404 (rota removida) e /admin deve responder 200 com noindex; nenhum dos dois pode aparecer no sitemap.
+7. /virelab deve responder 404 (rota removida); /admin e /privacidade devem responder 200 com noindex; nenhum dos três pode aparecer no sitemap.
 8. O release só é concluído quando seo:gate passa em produção com o SHA correto.
 
 ### Proposta de job pós-deploy (GitHub Actions)

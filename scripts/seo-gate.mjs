@@ -177,7 +177,7 @@ async function check() {
     } catch (e) { fail(scheme + " apex redirect check: " + e.message); }
   }
 
-  for (const path of ["/virelab", "/admin"]) {
+  for (const path of ["/virelab", "/admin", "/privacidade"]) {
     try {
       const result = await follow(base + path);
       const response = result.response;

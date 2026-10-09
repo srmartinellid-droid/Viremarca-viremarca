@@ -14,7 +14,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   };
   const routes = [
     addUnique(BASE_URL),
-    addUnique(BASE_URL + "/privacidade"),
     ...projects
       .filter((project) => typeof project.slug === "string" && project.slug.trim().length > 0)
       .map((project) => {
