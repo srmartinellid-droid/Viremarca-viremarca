@@ -48,7 +48,7 @@ O gate só é considerado PASS quando todos os critérios verificáveis abaixo p
    - exatamente um h1.
 5. Consistência com Supabase: projetos portfolio_projects ativos/públicos devem corresponder exatamente às URLs /portfolio/* do sitemap. A consulta usa chave somente-leitura por variável de ambiente. Se as variáveis não estiverem disponíveis, o resultado é explicitamente NÃO VERIFICADO e exige revisão humana antes do release.
 6. https://viremarca.com.br/ deve começar com 308 para o domínio canônico e terminar em https://www.viremarca.com.br/ com 200. O mesmo teste é feito para http://viremarca.com.br/.
-7. /virelab e /admin devem responder com noindex e não podem aparecer no sitemap.
+7. /virelab deve responder 404 (rota removida) e /admin deve responder 200 com noindex; nenhum dos dois pode aparecer no sitemap.
 8. O release só é concluído quando seo:gate passa em produção com o SHA correto.
 
 ### Proposta de job pós-deploy (GitHub Actions)
@@ -83,7 +83,7 @@ Alterações de slug, migração de dados, redirects e normalização de caixa/a
 Se GitHub Actions for adotado, o job SEO deve rodar pós-deploy, recebendo a URL de produção e o SHA do commit por contexto do workflow. Chaves Supabase devem existir somente como secrets/variables do ambiente do GitHub, nunca no código ou logs.
 
 ## Política VireLab
-/virelab permanece fora do sitemap e com noindex enquanto for placeholder. A reversão exige conteúdo público de produção aprovado e decisão explícita de adicionar a rota ao sitemap.
+A rota /virelab foi removida e deve responder 404. Ela não deve aparecer no sitemap. Recriá-la exige decisão explícita do Daniel, conteúdo público aprovado e atualização deste gate.
 
 ## Rollback
 Se o gate falhar em produção, o release não é concluído. Corrigir na branch, repetir validações e promover novamente. Não fazer correção manual diretamente na produção.
