@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getPublicProjects } from "@/lib/projects";
+import { portfolioCanonicalUrl } from "@/lib/seo-url";
 
 const BASE_URL = "https://www.viremarca.com.br";
 export const revalidate = 3600;
@@ -17,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...projects
       .filter((project) => typeof project.slug === "string" && project.slug.trim().length > 0)
       .map((project) => {
-        const route = addUnique(BASE_URL + "/portfolio/" + encodeURIComponent(project.slug));
+        const route = addUnique(portfolioCanonicalUrl(project.slug));
         if (!route) return null;
         if (project.updated_at) route.lastModified = new Date(project.updated_at);
         return route;
