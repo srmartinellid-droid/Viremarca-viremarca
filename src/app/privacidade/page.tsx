@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 
-export const metadata: Metadata = { title: "Política de Privacidade", alternates: { canonical: "/privacidade" } }
+export const metadata: Metadata = { title: "Política de Privacidade", alternates: { canonical: "/privacidade" }, robots: { index: false, follow: true } }
 
 export default function PrivacidadePage() {
   return (

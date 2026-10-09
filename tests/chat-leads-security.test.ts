@@ -13,7 +13,8 @@ describe("chat_leads RLS integration", () => {
     const anon = createClient(url, anonKey, { auth: { persistSession: false } })
     const { data, error } = await anon.from("chat_leads").select("id").limit(1)
     assert.deepEqual(data, [])
-    assert.ok(error === null || /permission|row-level|policy/i.test(error.message))
+    const readError = error as { message?: string } | null
+    assert.ok(readError === null || /permission|row-level|policy/i.test(readError.message ?? ""))
   })
 
   it("server admin client can insert a clearly marked test lead", async () => {

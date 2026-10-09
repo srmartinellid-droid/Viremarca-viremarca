@@ -6,18 +6,22 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const projects = await getPublicProjects();
-
-  const staticRoutes: MetadataRoute.Sitemap = [
-    { url: BASE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
-    { url: BASE_URL + "/privacidade", lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
-  ];
-
-  const portfolioRoutes: MetadataRoute.Sitemap = projects.map((project) => ({
-    url: BASE_URL + "/portfolio/" + encodeURIComponent(project.slug),
-    lastModified: new Date(),
-    changeFrequency: "monthly",
-    priority: 0.6,
-  }));
-
-  return [...staticRoutes, ...portfolioRoutes];
+  const seen = new Set<string>();
+  const addUnique = (url: string): MetadataRoute.Sitemap[number] | null => {
+    if (seen.has(url)) return null;
+    seen.add(url);
+    return { url };
+  };
+  const routes = [
+    addUnique(BASE_URL),
+    ...projects
+      .filter((project) => typeof project.slug === "string" && project.slug.trim().length > 0)
+      .map((project) => {
+        const route = addUnique(BASE_URL + "/portfolio/" + encodeURIComponent(project.slug));
+        if (!route) return null;
+        if (project.updated_at) route.lastModified = new Date(project.updated_at);
+        return route;
+      }),
+  ].filter((route): route is MetadataRoute.Sitemap[number] => Boolean(route));
+  return routes;
 }
