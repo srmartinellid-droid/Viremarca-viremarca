@@ -61,7 +61,7 @@ export const DEMO_PROJECTS: PortfolioProject[] = [
 
 export const DEMO_CONTENT = {
   heroTitle: "Seu negócio merece uma presença digital à altura.",
-  heroSubtitle: "Sem molde pronto: estrutura, identidade e contato direto por WhatsApp, pensados para o seu caso.",
+  heroSubtitle: "Estrutura, identidade e painel de edição pensados para o seu negócio, com contato direto por WhatsApp.",
   aboutTitle: "Uma nova marca, construída sobre experiência real.",
   aboutBody: `A VireMarca nasce agora, mas não do zero.
 

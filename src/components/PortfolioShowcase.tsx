@@ -54,8 +54,8 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
                     <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/35 via-transparent to-transparent" />
                     <div className="absolute top-4 left-4"><span className="rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-[11px] font-medium text-vm-ink tracking-wide">{project.category}</span></div>
                     {real
-                      ? <div className="absolute top-4 right-4 rounded-full bg-vm-coral px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">Projeto real</div>
-                      : <div className="absolute top-4 right-4 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em] text-vm-muted backdrop-blur-sm">Demonstração</div>}
+                      ? <div className="absolute top-4 right-4 rounded-full bg-vm-coral px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">No ar</div>
+                      : <div className="absolute top-4 right-4 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em] text-vm-muted backdrop-blur-sm">Modelo · demonstração</div>}
                   </div>
                   <div className="flex items-start justify-between gap-3 p-5 md:p-6">
                     <div>

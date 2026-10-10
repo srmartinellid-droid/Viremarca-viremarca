@@ -8,6 +8,8 @@ import { ContactCTA } from "@/components/ContactCTA"
 import { CommercialPillars } from "@/components/CommercialPillars"
 import { CommercialSolutions } from "@/components/CommercialSolutions"
 import { CommercialDiagnostic } from "@/components/CommercialDiagnostic"
+import { Leadership } from "@/components/Leadership"
+import { FaqSection, DEFAULT_FAQ } from "@/components/FaqSection"
 import { SectionDivider } from "@/components/SectionDivider"
 import { getFeaturedProjects, getPublicProjects } from "@/lib/projects"
 import { getPublicSiteContent } from "@/lib/site-content"
@@ -16,5 +18,5 @@ export const metadata: Metadata = { alternates: { canonical: "/" } }
 
 export default async function HomePage() {
   const [projects, featuredProjects, content] = await Promise.all([getPublicProjects(), getFeaturedProjects(), getPublicSiteContent()])
-  return <><Hero content={content} featuredProjects={featuredProjects} /><SectionDivider config={content.dividerStyles.projects} /><PortfolioShowcase projects={projects} titleStyle={content.titleStyles.portfolio} /><SectionDivider config={content.dividerStyles.method} /><Process items={content.process} titleStyle={content.titleStyles.process} /><SectionDivider config={content.dividerStyles.presence} /><About content={content} /><Delivers items={content.delivers} titleStyle={content.titleStyles.delivers} /><CommercialPillars data={content.commercial.pillars} /><SectionDivider config={content.dividerStyles.solutions} /><CommercialSolutions data={content.commercial.solutions} whatsapp={content.contact.whatsapp} /><SectionDivider config={content.dividerStyles.diagnostic} /><CommercialDiagnostic data={content.commercial.diagnostic} whatsapp={content.contact.whatsapp} /><ContactCTA contact={content.contact} titleStyle={content.titleStyles.contact} /></>
+  return <><Hero content={content} featuredProjects={featuredProjects} /><SectionDivider config={content.dividerStyles.projects} /><PortfolioShowcase projects={projects} titleStyle={content.titleStyles.portfolio} /><SectionDivider config={content.dividerStyles.method} /><Process items={content.process} titleStyle={content.titleStyles.process} /><SectionDivider config={content.dividerStyles.presence} /><About content={content} /><Delivers items={content.delivers} titleStyle={content.titleStyles.delivers} /><Leadership /><CommercialPillars data={content.commercial.pillars} /><SectionDivider config={content.dividerStyles.solutions} /><CommercialSolutions data={content.commercial.solutions} whatsapp={content.contact.whatsapp} /><SectionDivider config={content.dividerStyles.diagnostic} /><CommercialDiagnostic data={content.commercial.diagnostic} whatsapp={content.contact.whatsapp} /><FaqSection items={content.faq ?? DEFAULT_FAQ} /><ContactCTA contact={content.contact} titleStyle={content.titleStyles.contact} /></>
 }

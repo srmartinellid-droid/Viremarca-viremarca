@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion, useReducedMotion as useFramerReducedMotion, useScroll, useTransform } from "framer-motion"
 import Image from "next/image"
-import { ArrowRight, ArrowUpRight } from "lucide-react"
+import { ArrowRight } from "lucide-react"
+import { WhatsAppIcon } from "@/components/WhatsAppIcon"
 import { MagneticButton } from "@/components/motion/MagneticButton"
 import { TitleBlock } from "@/components/TitleBlock"
 import { TrackedAnchor } from "@/components/TrackedAnchor"
@@ -99,13 +100,13 @@ export function Hero({ content, featuredProjects }: Props) {
       <motion.div style={{ y: framerReduced || reduced ? 0 : contentY }} className="relative z-10 mx-auto flex min-h-[92svh] max-w-[1400px] items-center px-5 pb-16 pt-28 sm:px-8 lg:px-12">
         <div className="grid w-full gap-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-center lg:gap-5 xl:grid-cols-[0.82fr_1.18fr]">
           <div className="relative z-40 max-w-3xl">
-            <motion.p initial={reduced ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05, ease }} className="mb-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-vm-coral"><span className="h-px w-8 bg-vm-coral" />Design + tecnologia para o seu negócio</motion.p>
+            <motion.p initial={reduced ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, delay: 0.05, ease }} className="mb-5 flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-vm-coral"><span className="h-px w-8 bg-vm-coral" />Estúdio de sites · Florianópolis, SC</motion.p>
             <motion.div initial={reduced ? false : { opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, delay: 0.12, ease }}>
               <TitleBlock style={heroStyle} size="display" as="h1" animated={false} highlightRule className="max-w-3xl !mx-0 !text-left" />
             </motion.div>
             <motion.p initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.28, ease }} className="mt-6 max-w-xl text-base leading-relaxed text-white/70 md:text-lg">{content.heroSubtitle}</motion.p>
-            <motion.div initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4, ease }} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"><TrackedAnchor href={`https://wa.me/${content.contact.whatsapp}?text=${encodeURIComponent("Olá! Quero criar um site com a VireMarca.")}`} target="_blank" rel="noopener noreferrer" eventName="contact_started" eventMetadata={{ location: "hero_whatsapp" }} eventStatus="production" contactContext="hero" className="inline-flex items-center justify-center gap-2 rounded-full bg-vm-coral px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-vm-coral-deep">Falar no WhatsApp<ArrowUpRight size={16} /></TrackedAnchor><MagneticButton href="/#sites" variant="secondary">Conheça nossos sites<ArrowRight size={16} /></MagneticButton></motion.div>
-            <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }} className="mt-8 flex max-w-xl items-center gap-3 text-xs text-white/45"><span className="h-px w-10 bg-white/25" />Uma base. Muitos negócios. Uma identidade para cada marca.</motion.div>
+            <motion.div initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4, ease }} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"><TrackedAnchor href={`https://wa.me/${content.contact.whatsapp}?text=${encodeURIComponent("Olá! Quero criar um site com a VireMarca.")}`} target="_blank" rel="noopener noreferrer" eventName="contact_started" eventMetadata={{ location: "hero_whatsapp" }} eventStatus="production" contactContext="hero" className="inline-flex items-center justify-center gap-2 rounded-full bg-vm-coral px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-vm-coral-deep"><WhatsAppIcon size={18} />Falar no WhatsApp</TrackedAnchor><MagneticButton href="/#diagnostico" variant="secondary">Diagnóstico gratuito do meu site<ArrowRight size={16} /></MagneticButton></motion.div>
+            <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }} className="mt-8 flex max-w-xl items-start gap-3 text-xs text-white/55"><span className="mt-2 h-px w-10 shrink-0 bg-white/25" /><ul className="flex flex-wrap gap-x-5 gap-y-1.5"><li>Contato direto no WhatsApp</li><li>Painel para você editar tudo</li><li>Banco de dados só seu</li><li>Diagnóstico técnico gratuito</li></ul></motion.div>
           </div>
 
           <div className="relative hidden min-h-[600px] lg:block" aria-label="Projetos da VireMarca">
