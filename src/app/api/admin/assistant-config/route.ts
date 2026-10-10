@@ -42,7 +42,7 @@ async function assertAdmin() {
 export async function GET() {
   try {
     if (!await assertAdmin()) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
-    const config = await new SupabaseAssistantConfigRepository().get()
+    const config = await new SupabaseAssistantConfigRepository().get({ admin: true })
     return NextResponse.json({ ...config, groq_configured: await hasGroqApiKey() })
   } catch (error) {
     console.error("[assistant-config] GET failed", error)

@@ -10,7 +10,7 @@ export type AssistantConfig = {
 }
 
 export type AssistantConfigRepository = {
-  get(): Promise<AssistantConfig>
+  get(options?: { admin?: boolean }): Promise<AssistantConfig>
   save(config: Partial<AssistantConfig>, options?: SaveOptions): Promise<AssistantConfig>
 }
 
@@ -41,6 +41,11 @@ export class KnowledgeBaseNotPersistedError extends Error {
     super("O banco não confirmou a gravação da base de conhecimento (o valor lido depois de salvar é diferente do enviado).")
     this.name = "KnowledgeBaseNotPersistedError"
   }
+}
+
+async function adminClient() {
+  const { createAdminClient } = await import("@/lib/supabase/admin")
+  return createAdminClient()
 }
 
 const DEFAULT_CONFIG: AssistantConfig = {
@@ -78,9 +83,9 @@ function normalize(rows: Row[] | null | undefined): AssistantConfig {
 }
 
 export class SupabaseAssistantConfigRepository implements AssistantConfigRepository {
-  async get() {
-    const { createClient } = await import("@/lib/supabase/server")
-    const supabase = await createClient()
+  /** Leitura pública (chat). `admin: true` lê com a chave de serviço, para o painel ver exatamente o que está no banco. */
+  async get(options: { admin?: boolean } = {}) {
+    const supabase = options.admin ? await adminClient() : await (async () => { const { createClient } = await import("@/lib/supabase/server"); return createClient() })()
     const { data, error } = await supabase.from("site_settings").select("key,value,updated_at").in("key", CONFIG_KEYS)
     if (error) throw error
     return normalize(data as Row[] | null)
@@ -91,8 +96,9 @@ export class SupabaseAssistantConfigRepository implements AssistantConfigReposit
    * para que salvar o nome do assistente nunca regrave a base com um valor antigo.
    */
   async save(config: Partial<AssistantConfig>, options: SaveOptions = {}) {
-    const { createClient } = await import("@/lib/supabase/server")
-    const supabase = await createClient()
+    // A autorização (admin logado) já foi verificada na rota. A gravação usa a chave de serviço
+    // para não depender de a função de permissão do banco (admin/editor) reconhecer o mesmo papel do painel (admin/owner).
+    const supabase = await adminClient()
     const now = new Date().toISOString()
     const rows: Array<{ key: string; value: string; updated_at: string }> = []
     const push = (key: string, value: string | undefined) => { if (value !== undefined) rows.push({ key, value, updated_at: now }) }
@@ -113,13 +119,14 @@ export class SupabaseAssistantConfigRepository implements AssistantConfigReposit
     push("assistant_model", config.model)
     push("assistant_knowledge_base", config.knowledge_base)
     push("assistant_fallback_whatsapp", config.fallback_whatsapp)
-    if (rows.length === 0) return this.get()
+    if (rows.length === 0) return this.get({ admin: true })
 
-    const { error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" })
+    const { data: written, error } = await supabase.from("site_settings").upsert(rows, { onConflict: "key" }).select("key")
     if (error) throw error
+    if (!written || written.length !== rows.length) throw new KnowledgeBaseNotPersistedError()
 
     // Relê do banco: o que volta é o que está gravado, não o que foi enviado.
-    const saved = await this.get()
+    const saved = await this.get({ admin: true })
     if (config.knowledge_base !== undefined && saved.knowledge_base !== config.knowledge_base) throw new KnowledgeBaseNotPersistedError()
     return saved
   }
