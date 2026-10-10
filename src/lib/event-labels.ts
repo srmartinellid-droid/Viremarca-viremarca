@@ -6,6 +6,7 @@ export const EVENT_LABELS: Record<string, string> = {
   virelab_click: "Clique no VireLab",
   portfolio_view: "Visualização de projeto",
   portfolio_external_click: "Acesso ao site do projeto",
+  portfolio_case_cta_click: "Clique em Quero um site assim",
   hero_project_click: "Visualização de projeto (via hero)",
   process_step_interaction: "Interação com etapa do processo",
   deliver_details_open: "Abertura de abordagem",

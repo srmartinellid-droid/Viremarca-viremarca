@@ -61,6 +61,16 @@ export default async function PortfolioProjectPage({ params }: Props) {
             </div>
           )}
         </div>
+        {project.site_url && <p className="mt-3 text-xs text-vm-muted">Se o preview não carregar, use o botão &ldquo;Visitar site&rdquo; para abrir o projeto em uma nova aba.</p>}
+        <div className="mt-10 flex flex-col items-start justify-between gap-5 rounded-2xl border border-vm-border bg-vm-sand/60 p-6 md:flex-row md:items-center md:p-8">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-vm-ink">Quer um site assim para o seu negócio?</h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-vm-muted">Conte o que você faz e como atende seus clientes. A VireMarca define a estrutura e a identidade visual para o seu caso.</p>
+          </div>
+          <TrackedAnchor eventName="portfolio_case_cta_click" eventMetadata={{ location: "portfolio_detail", slug }} eventStatus="production" href="/#contato" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-vm-coral px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-vm-coral-deep">
+            Quero um site assim
+          </TrackedAnchor>
+        </div>
       </div>
     </div>
   )

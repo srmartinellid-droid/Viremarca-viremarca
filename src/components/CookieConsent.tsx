@@ -39,13 +39,13 @@ export function CookieConsent() {
 
   return (
     <div className="fixed inset-x-3 bottom-3 z-[100] md:inset-x-auto md:right-5 md:w-[min(440px,calc(100vw-2rem))]">
-      <div className="rounded-[1.5rem] border border-vm-border bg-white p-5 shadow-[0_24px_80px_-30px_rgba(0,0,0,0.45)]">
+      <div className="rounded-[1.25rem] border border-vm-border bg-white p-4 md:p-5 shadow-[0_24px_80px_-30px_rgba(0,0,0,0.45)]">
         <div className="flex items-start gap-3">
           <div className="mt-0.5 rounded-xl bg-vm-sand p-2 text-vm-coral"><Cookie size={18} /></div>
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-vm-ink">Privacidade e cookies</h2>
             <p className="mt-1 text-xs leading-relaxed text-vm-muted">
-              Usamos cookies e armazenamento local necessários para o funcionamento do site. Com sua permissão, podemos usar recursos de análise para entender como a VireMarca é utilizada. A análise pode coletar a região aproximada da visita (país, estado e cidade) e usar esses dados de forma agregada para fins estatísticos, sem armazenar o endereço IP.
+              Usamos armazenamento necessário ao funcionamento do site. Com sua permissão, usamos análise agregada (região aproximada, sem guardar o IP) para entender como a VireMarca é usada. <Link href="/privacidade" className="font-semibold text-vm-coral hover:underline">Política de privacidade</Link>
             </p>
           </div>
           <button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="rounded-full p-1.5 text-vm-muted hover:bg-vm-bg"><X size={15} /></button>
@@ -67,12 +67,12 @@ export function CookieConsent() {
           </div>
         )}
 
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-          {!preferences && <button type="button" onClick={() => setPreferences(true)} className="inline-flex items-center justify-center gap-2 rounded-full border border-vm-border px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral"><Settings size={14} />Preferências</button>}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+          {!preferences && <button type="button" onClick={() => setPreferences(true)} className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 rounded-full border border-vm-border px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral"><Settings size={14} />Preferências</button>}
           {preferences ? (
-            <><button type="button" onClick={() => save(false)} className="rounded-full border border-vm-border px-4 py-2.5 text-xs font-semibold text-vm-ink">Recusar análise</button><button type="button" onClick={() => save(analytics)} className="rounded-full bg-vm-coral px-4 py-2.5 text-xs font-semibold text-white">Salvar preferências</button></>
+            <><button type="button" onClick={() => save(false)} className="rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Recusar análise</button><button type="button" onClick={() => save(analytics)} className="rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Salvar preferências</button></>
           ) : (
-            <><button type="button" onClick={() => save(false)} className="rounded-full border border-vm-border px-4 py-2.5 text-xs font-semibold text-vm-ink">Continuar sem análise</button><button type="button" onClick={() => save(true)} className="rounded-full bg-vm-coral px-4 py-2.5 text-xs font-semibold text-white">Aceitar análise</button></>
+            <><button type="button" onClick={() => save(false)} className="rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Recusar análise</button><button type="button" onClick={() => save(true)} className="rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Aceitar análise</button></>
           )}
         </div>
       </div>
