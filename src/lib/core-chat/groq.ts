@@ -48,10 +48,12 @@ export async function groqExtractLead(apiKey: string, transcript: GroqChatMessag
       ...transcript,
     ],
     temperature: 0,
-    max_completion_tokens: 320,
+    max_completion_tokens: 900,
+    reasoning_effort: "none",
     response_format: { type: "json_object" },
   })
-  const content = JSON.parse(parseGroqResponse(payload))
+  const raw = parseGroqResponse(payload).replace(/<think>[\s\S]*?<\/think>/g, "").trim()
+  const content = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1))
   return {
     name: typeof content.name === "string" ? content.name : null,
     whatsapp: typeof content.whatsapp === "string" ? content.whatsapp : null,
