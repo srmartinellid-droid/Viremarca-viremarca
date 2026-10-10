@@ -45,7 +45,7 @@ export function CookieConsent() {
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-vm-ink">Privacidade e cookies</h2>
             <p className="mt-1 text-xs leading-relaxed text-vm-muted">
-              Usamos armazenamento necessário ao funcionamento do site. Com sua permissão, usamos análise agregada (região aproximada, sem guardar o IP) para entender como a VireMarca é usada. <Link href="/privacidade" className="font-semibold text-vm-coral hover:underline">Política de privacidade</Link>
+              Usamos estatísticas anônimas para melhorar o site. <Link href="/privacidade" className="font-semibold text-vm-coral hover:underline">Política de privacidade</Link>
             </p>
           </div>
           <button type="button" onClick={() => setOpen(false)} aria-label="Fechar" className="rounded-full p-1.5 text-vm-muted hover:bg-vm-bg"><X size={15} /></button>
@@ -67,12 +67,12 @@ export function CookieConsent() {
           </div>
         )}
 
+        {!preferences && <button type="button" onClick={() => setPreferences(true)} className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-vm-muted underline-offset-2 hover:text-vm-coral hover:underline"><Settings size={12} />Preferências</button>}
         <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
-          {!preferences && <button type="button" onClick={() => setPreferences(true)} className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 rounded-full border border-vm-border px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral"><Settings size={14} />Preferências</button>}
           {preferences ? (
-            <><button type="button" onClick={() => save(false)} className="rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Recusar análise</button><button type="button" onClick={() => save(analytics)} className="rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Salvar preferências</button></>
+            <><button type="button" onClick={() => save(false)} className="flex-1 sm:flex-none rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Recusar análise</button><button type="button" onClick={() => save(analytics)} className="flex-1 sm:flex-none rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Salvar preferências</button></>
           ) : (
-            <><button type="button" onClick={() => save(false)} className="rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Recusar análise</button><button type="button" onClick={() => save(true)} className="rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Aceitar análise</button></>
+            <><button type="button" onClick={() => save(false)} className="flex-1 sm:flex-none rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Recusar análise</button><button type="button" onClick={() => save(true)} className="flex-1 sm:flex-none rounded-full border border-vm-border bg-white px-4 py-2.5 text-xs font-semibold text-vm-ink hover:border-vm-coral">Aceitar análise</button></>
           )}
         </div>
       </div>

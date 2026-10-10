@@ -5,6 +5,7 @@ import { Header } from "@/components/Header"
 import { OrganizationJsonLd } from "@/components/seo/OrganizationJsonLd"
 import { Footer } from "@/components/Footer"
 import { getPublicSiteContent } from "@/lib/site-content"
+import { LanguageProvider } from "@/lib/i18n"
 import { CookieConsent } from "@/components/CookieConsent"
 import { AnalyticsGate } from "@/components/AnalyticsGate"
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp"
@@ -43,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const content = await getPublicSiteContent()
-  return <html lang="pt-BR" className={`${inter.variable} ${spaceGrotesk.variable}`}><body className="min-h-screen flex flex-col antialiased"><OrganizationJsonLd /><Header logo1={content.logo2} /><main className="flex-1">{children}</main><Footer /><CookieConsent /><FloatingWhatsApp whatsapp={content.contact.whatsapp} /><AnalyticsGate /><CoreChat config={await getChatConfig()} /></body></html>
+  return <html lang="pt-BR" className={`${inter.variable} ${spaceGrotesk.variable}`}><body className="min-h-screen flex flex-col antialiased"><LanguageProvider><OrganizationJsonLd /><Header logo1={content.logo2} /><main className="flex-1">{children}</main><Footer /><CookieConsent /><FloatingWhatsApp whatsapp={content.contact.whatsapp} /><AnalyticsGate /><CoreChat config={await getChatConfig()} /></LanguageProvider></body></html>
 }
 
 
