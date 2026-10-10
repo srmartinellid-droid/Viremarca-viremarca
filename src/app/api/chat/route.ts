@@ -8,6 +8,8 @@ import { extractDeterministicLead } from "@/lib/core-chat/lead-extraction"
 import { sanitizeAssistantResponse } from "@/lib/core-chat/response-sanitizer"
 import { calculateLeadScore } from "@/lib/core-chat/lead-score"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getNamedSecret } from "@/lib/core-chat/secrets"
+import { getTranslationConfig, TRANSLATION_SECRET } from "@/lib/translation/engine"
 import { extractSiteUrl } from "@/lib/audit/url"
 import { leadGate, askLeadSentence } from "@/lib/audit/gate"
 import { unlockPendingAudits, pendingAudits } from "@/lib/audit/run"
@@ -183,10 +185,28 @@ export async function POST(request: NextRequest) {
     }
     const officialWhatsapp = config.fallback_whatsapp || "5548991410717"
     let answer = fallbackAnswer
+    const chatMessages = [{ role: "system", content: buildSystemPrompt(config, visitorContext) }, ...history]
+    let answered = false
     try {
-      answer = await groqChat(await getGroqApiKey(), model, [{ role: "system", content: buildSystemPrompt(config, visitorContext) }, ...history])
+      answer = await groqChat(await getGroqApiKey(), model, chatMessages)
+      answered = true
     } catch (error) {
       logAuxiliary("groq", error)
+      // Segunda chave (a da tradução, quando também é Groq): o chat não pode ficar mudo por causa de uma chave só.
+      try {
+        const cfg = await getTranslationConfig()
+        if (/groq\.com/.test(cfg.endpoint)) {
+          answer = await groqChat(await getNamedSecret(TRANSLATION_SECRET), model, chatMessages)
+          answered = true
+        }
+      } catch (fallbackError) { logAuxiliary("groq-fallback", fallbackError) }
+    }
+    if (!answered) {
+      // Sem IA disponível, o chat continua cobrando o contato em vez de repetir uma frase morta.
+      const gateNow = await leadGate(conversation.id)
+      answer = gateNow.complete
+        ? "Anotado! Estou com uma instabilidade para responder agora, mas a equipe da VireMarca já vê sua mensagem e te chama no WhatsApp."
+        : `Posso adiantar seu atendimento por aqui. ${askLeadSentence(gateNow.missing).replace("Para liberar o relatório, me diz", "Me diz")} Assim a equipe te chama já sabendo do seu caso.`
     }
     answer = sanitizeAssistantResponse(answer, officialWhatsapp, knownVisitorPhones)
 
