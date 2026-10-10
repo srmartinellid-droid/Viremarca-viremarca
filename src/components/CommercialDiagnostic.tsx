@@ -67,7 +67,7 @@ export function CommercialDiagnostic({ data, whatsapp }: { data: CommercialSecti
             </Reveal>)}
           </div>
           <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <TrackedAnchor href={wa} target="_blank" rel="noopener noreferrer" eventName="diagnostic_request" eventMetadata={{ location: "diagnostic_section" }} eventStatus="production" className="inline-flex items-center justify-center gap-2 rounded-full bg-vm-coral px-7 py-4 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">{data.cta}<ArrowUpRight size={16} /></TrackedAnchor>
+            <TrackedAnchor href={wa} target="_blank" rel="noopener noreferrer" eventName="diagnostic_request" eventMetadata={{ location: "diagnostic_section" }} eventStatus="production" onClick={(event) => { const detail = { handled: false }; window.dispatchEvent(new CustomEvent("viremarca:open-chat", { detail })); if (detail.handled) event.preventDefault() }} className="inline-flex items-center justify-center gap-2 rounded-full bg-vm-coral px-7 py-4 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">{data.cta}<ArrowUpRight size={16} /></TrackedAnchor>
             <p className="text-sm text-vm-muted">Ainda não tem site? <a href="#contato" className="font-semibold text-vm-ink hover:text-vm-coral">Fale com a gente</a></p>
           </div>
         </div>

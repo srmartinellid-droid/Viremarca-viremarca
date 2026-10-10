@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Bot, MessageCircle, Mic, RotateCcw, Send, X } from "lucide-react"
 
 type ChatConfig = { enabled: boolean; assistant_name: string; fallback_whatsapp: string }
@@ -51,6 +51,24 @@ export function CoreChat({ config }: { config: ChatConfig }) {
   const conversationId = useRef("")
   const recorder = useRef<MediaRecorder | null>(null)
 
+  const openChatRef = useRef<(() => void) | null>(null)
+  const chatEnabled = config.enabled
+
+  // Convite de diagnóstico: outras partes do site (ex.: botão "Solicitar meu diagnóstico") pedem para abrir o chat.
+  useEffect(() => {
+    if (!chatEnabled) return
+    const onOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ handled?: boolean }>).detail
+      if (detail) detail.handled = true
+      openChatRef.current?.()
+      if (!getConversationId()) {
+        setMessages(current => current.length ? current : [{ role: "assistant", content: "Oi! Vou analisar o seu site de graça. Me manda o endereço (link) dele aqui no chat, e se quiser já me diz seu nome. O relatório sai em PDF aqui mesmo." }])
+      }
+    }
+    window.addEventListener("viremarca:open-chat", onOpen)
+    return () => window.removeEventListener("viremarca:open-chat", onOpen)
+  }, [chatEnabled])
+
   if (!config.enabled) return config.fallback_whatsapp ? <Fallback whatsapp={config.fallback_whatsapp} /> : null
 
   const openChat = () => {
@@ -67,6 +85,8 @@ export function CoreChat({ config }: { config: ChatConfig }) {
       })
       .catch(() => {})
   }
+
+  openChatRef.current = openChat
 
   const STEP_LABEL: Record<string, string> = { collect: "Lendo o site e as páginas principais…", psi: "Medindo velocidade no celular…", analyze: "Analisando experiência, SEO e confiança…", render: "Montando o relatório em PDF…" }
 
