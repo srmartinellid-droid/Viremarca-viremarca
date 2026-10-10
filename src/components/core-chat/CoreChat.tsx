@@ -105,6 +105,7 @@ export function CoreChat({ config }: { config: ChatConfig }) {
         if (state.status === "running") await new Promise(r => setTimeout(r, 400))
       }
       if (state.status === "done" && state.pdf_ready) setMessages([...base, { role: "assistant", content: `${state.summary}\n\n[Relatório PDF gerado: /api/audit/${first.id}/pdf]` }])
+      else if (state.status === "done" && state.locked) setMessages([...base, { role: "assistant", content: state.locked_message }])
       else setMessages([...base, { role: "assistant", content: state.error || "Não consegui concluir a auditoria agora. Pode tentar de novo em instantes ou falar com a equipe no WhatsApp." }])
     } catch (error) {
       setMessages([...base, { role: "assistant", content: error instanceof Error ? error.message : "Não consegui concluir a auditoria agora." }])
@@ -137,7 +138,7 @@ export function CoreChat({ config }: { config: ChatConfig }) {
         conversationId.current = data.conversation_id
         saveConversationId(data.conversation_id)
       }
-      const withReply = [...next, { role: "assistant" as const, content: data.message }]
+      const withReply = [...next, { role: "assistant" as const, content: data.message }, ...(typeof data.audit_unlock === "string" && data.audit_unlock ? [{ role: "assistant" as const, content: data.audit_unlock }] : [])]
       setMessages(withReply)
       setNoticeVisible(false)
       if (typeof data.audit_url === "string") { setTyping(false); await runAudit(data.audit_url, withReply) }

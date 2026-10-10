@@ -6,6 +6,7 @@ import { buildReport, chatSummary } from "./score"
 import { buildPdf } from "./report-pdf"
 import { loadAudit, saveAudit, savePdf, pruneAudits, type AuditState } from "./store"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { leadGate, lockedAuditMessage } from "./gate"
 
 export async function createAudit(url: string, conversationId: string | null, visitorId: string | null): Promise<AuditState> {
   const now = new Date().toISOString()
@@ -61,16 +62,60 @@ export async function advance(id: string): Promise<AuditState | null> {
 }
 
 // Registra o resultado no histórico do chat (aparece no painel de atendimentos junto do PDF).
+// Sem nome e WhatsApp, o histórico recebe só o pedido de contato: resumo e PDF ficam travados até o lead existir.
 async function finishInChat(s: AuditState) {
   if (!s.conversation_id || s.lead_notified) return
   try {
     const db = createAdminClient()
-    await db.from("chat_messages").insert({ conversation_id: s.conversation_id, role: "assistant", content: `${s.summary}\n\n[Relatório PDF gerado: /api/audit/${s.id}/pdf]` })
+    const gate = await leadGate(s.conversation_id)
+    const content = gate.complete ? fullMessage(s) : lockedAuditMessage(s.host, gate.missing)
+    await db.from("chat_messages").insert({ conversation_id: s.conversation_id, role: "assistant", content })
     await db.from("chat_leads").update({ current_site_url: s.url }).eq("conversation_id", s.conversation_id)
+    s.delivered = gate.complete
     s.lead_notified = true
   } catch (e) { console.error("[audit chat]", e instanceof Error ? e.message : e) }
 }
 
+export const fullMessage = (s: AuditState) => `${s.summary}\n\n[Relatório PDF gerado: /api/audit/${s.id}/pdf]`
+
+/** Auditorias concluídas desta conversa que ainda não foram liberadas (mais recente primeiro). */
+export async function pendingAudits(conversationId: string): Promise<AuditState[]> {
+  const db = createAdminClient()
+  const { data } = await db.from("site_settings").select("key,value").like("key", "audit:%").ilike("value", `%"conversation_id":"${conversationId}"%`)
+  const pending: AuditState[] = []
+  for (const row of data ?? []) { try { const s = JSON.parse(row.value) as AuditState; if (s.status === "done" && s.pdf_ready && !s.delivered) pending.push(s) } catch {} }
+  return pending.sort((x, y) => y.created_at.localeCompare(x.created_at))
+}
+
+/** Entrega as auditorias prontas que ficaram travadas, assim que a conversa passa a ter nome e WhatsApp. */
+export async function unlockPendingAudits(conversationId: string): Promise<{ message: string } | null> {
+  const gate = await leadGate(conversationId)
+  if (!gate.complete) return null
+  const db = createAdminClient()
+  const pending = await pendingAudits(conversationId)
+  if (!pending.length) return null
+  const latest = pending[0]
+  for (const s of pending) { s.delivered = true; await saveAudit(s) }
+  const message = fullMessage(latest)
+  await db.from("chat_messages").insert({ conversation_id: conversationId, role: "assistant", content: message })
+  return { message }
+}
+
+// Visão pública. Resumo, nota e PDF só saem quando a trava de lead (nome + WhatsApp) está liberada.
+export async function auditView(s: AuditState) {
+  const done = s.status === "done" && !!s.pdf_ready
+  const gate = done ? await leadGate(s.conversation_id) : null
+  const unlocked = !!gate?.complete
+  return {
+    id: s.id, status: s.status, step: s.step, host: s.host, error: s.error,
+    summary: unlocked ? s.summary : undefined,
+    score: unlocked ? (s.report?.overall ?? null) : null,
+    pdf_ready: unlocked,
+    locked: done && !unlocked,
+    locked_message: done && !unlocked ? lockedAuditMessage(s.host, gate!.missing) : undefined,
+  }
+}
+
 export function publicView(s: AuditState) {
-  return { id: s.id, status: s.status, step: s.step, host: s.host, error: s.error, summary: s.summary, score: s.report?.overall ?? null, pdf_ready: !!s.pdf_ready }
+  return { id: s.id, status: s.status, step: s.step, host: s.host, error: s.error }
 }

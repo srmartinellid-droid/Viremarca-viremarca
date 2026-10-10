@@ -9,6 +9,8 @@ import { sanitizeAssistantResponse } from "@/lib/core-chat/response-sanitizer"
 import { calculateLeadScore } from "@/lib/core-chat/lead-score"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { extractSiteUrl } from "@/lib/audit/url"
+import { leadGate, askLeadSentence } from "@/lib/audit/gate"
+import { unlockPendingAudits, pendingAudits } from "@/lib/audit/run"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -107,7 +109,8 @@ export async function POST(request: NextRequest) {
     const auditUrl = extractSiteUrl(message)
     if (auditUrl) {
       const host = new URL(auditUrl).hostname.replace(/^www\./, "")
-      const reply = `Vou auditar ${host} agora: experiência do visitante, SEO, velocidade, celular e segurança. Leva cerca de 1 minuto e no fim você baixa o relatório em PDF aqui mesmo.`
+      const gate = await leadGate(conversation.id)
+      const reply = `Vou auditar ${host} agora: experiência do visitante, SEO, velocidade, celular e segurança. Leva cerca de 1 minuto. ` + (gate.complete ? "No fim você baixa o relatório em PDF aqui mesmo." : `O relatório em PDF é liberado em troca do contato: enquanto eu analiso, ${askLeadSentence(gate.missing).replace("Para liberar o relatório, me diz", "me diz")}`)
       if (supabase) {
         try {
           await supabase.from("chat_messages").insert({ conversation_id: conversation.id, role: "assistant", content: reply, model: "audit" })
@@ -273,8 +276,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Trava de lead: libera auditorias travadas assim que há nome + WhatsApp; antes disso, cobra o que falta.
+    let auditUnlock: { message: string } | null = null
+    let replyText = answer
+    if (supabase) {
+      try {
+        auditUnlock = await unlockPendingAudits(conversation.id)
+        if (!auditUnlock && (await pendingAudits(conversation.id)).length) {
+          const gate = await leadGate(conversation.id)
+          if (!gate.complete) replyText = `${answer}\n\n${askLeadSentence(gate.missing)}`
+        }
+      } catch (error) {
+        logAuxiliary("audit-gate", error)
+      }
+    }
+
     return NextResponse.json({
-      message: answer,
+      message: replyText,
+      audit_unlock: auditUnlock?.message ?? null,
       conversation_id: conversation.id,
       visitor_id: visitorId,
       commercial_intent: hasCommercialIntent(message),
