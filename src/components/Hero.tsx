@@ -107,11 +107,11 @@ function HeroDeck({ projects, reduced }: { projects: PortfolioProject[]; reduced
   if (!count) return null
 
   // Pilha: o card ativo fica na frente; os demais ficam atrás, deslocados, menores e mais apagados.
-  const layer = (rel: number): { z: number; opacity: number; transform: string; shadow: string } => {
-    if (rel === 0) return { z: 30, opacity: 1, transform: "translate(0%, 15%) rotate(-1deg) scale(1)", shadow: "0 30px 60px rgba(0,0,0,0.55)" }
-    if (rel === 1) return { z: 20, opacity: 0.75, transform: "translate(20%, 0%) rotate(3deg) scale(0.9)", shadow: "0 20px 40px rgba(0,0,0,0.4)" }
-    if (rel === 2) return { z: 10, opacity: 0.55, transform: "translate(-7.5%, -2.5%) rotate(-3deg) scale(0.86)", shadow: "0 20px 40px rgba(0,0,0,0.35)" }
-    return { z: 0, opacity: 0, transform: "translate(0%, 0%) scale(0.8)", shadow: "none" }
+  const layer = (rel: number): { z: number; opacity: number; dim: number; transform: string; shadow: string } => {
+    if (rel === 0) return { z: 30, opacity: 1, dim: 1, transform: "translate(0%, 15%) rotate(-1deg) scale(1)", shadow: "0 30px 60px rgba(0,0,0,0.55)" }
+    if (rel === 1) return { z: 20, opacity: 1, dim: 0.62, transform: "translate(20%, 0%) rotate(3deg) scale(0.9)", shadow: "0 20px 40px rgba(0,0,0,0.4)" }
+    if (rel === 2) return { z: 10, opacity: 1, dim: 0.42, transform: "translate(-7.5%, -2.5%) rotate(-3deg) scale(0.86)", shadow: "0 20px 40px rgba(0,0,0,0.35)" }
+    return { z: 0, opacity: 0, dim: 0.3, transform: "translate(0%, 0%) scale(0.8)", shadow: "none" }
   }
 
   return (
@@ -133,7 +133,7 @@ function HeroDeck({ projects, reduced }: { projects: PortfolioProject[]; reduced
                 void trackEvent("portfolio_view", { location: "hero", project: project.title }, "production")
               }}
               className="group absolute left-[4%] top-[4%] block w-[72%] overflow-hidden rounded-[14px] bg-vm-ink"
-              style={{ zIndex: l.z, opacity: l.opacity, transform: l.transform, boxShadow: l.shadow, transition: reduced ? "none" : "transform 700ms ease, opacity 700ms ease", pointerEvents: rel > 2 ? "none" : "auto" }}
+              style={{ zIndex: l.z, opacity: l.opacity, transform: l.transform, boxShadow: l.shadow, filter: `brightness(${l.dim})`, transition: reduced ? "none" : "transform 700ms ease, opacity 700ms ease, filter 700ms ease", pointerEvents: rel > 2 ? "none" : "auto" }}
             >
               <div className="flex h-7 items-center gap-1.5 bg-[#2A2D33] px-3">
                 <span className="h-2 w-2 rounded-full bg-[#E5584B]" /><span className="h-2 w-2 rounded-full bg-[#E8B63B]" /><span className="h-2 w-2 rounded-full bg-[#4BB866]" />
@@ -142,7 +142,7 @@ function HeroDeck({ projects, reduced }: { projects: PortfolioProject[]; reduced
               <div className="relative aspect-[16/10] overflow-hidden bg-black">
                 <Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(min-width: 1024px) 400px, 72vw" className="object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                <div className="absolute inset-x-4 bottom-3 text-white"><p className="text-[9px] uppercase tracking-[0.2em] text-white/65">{project.category}</p><p className="mt-0.5 text-lg font-semibold tracking-tight">{project.title}</p></div>
+                <div className={`absolute inset-x-4 bottom-3 text-white transition-opacity duration-500 ${front ? "opacity-100" : "opacity-0"}`}><p className="text-[9px] uppercase tracking-[0.2em] text-white/65">{project.category}</p><p className="mt-0.5 text-lg font-semibold tracking-tight">{project.title}</p></div>
               </div>
             </a>
           )
