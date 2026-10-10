@@ -37,7 +37,7 @@ async function groqCompletion(apiKey: string, body: Record<string, unknown>) {
 }
 
 export async function groqChat(apiKey: string, model: string, messages: GroqChatMessage[]) {
-  const payload = await groqCompletion(apiKey, { model, messages, temperature: 0.3, max_completion_tokens: 240, reasoning_effort: "low", include_reasoning: false })
+  const payload = await groqCompletion(apiKey, { model, messages, temperature: 0.5, max_completion_tokens: 420, reasoning_effort: "low", include_reasoning: false })
   return parseGroqResponse(payload)
 }
 export async function groqExtractLead(apiKey: string, transcript: GroqChatMessage[]) {
