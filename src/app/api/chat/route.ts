@@ -117,6 +117,17 @@ export async function POST(request: NextRequest) {
     const auditUrl = extractSiteUrl(message)
     if (auditUrl) {
       const host = new URL(auditUrl).hostname.replace(/^www\./, "")
+      // Nome/telefone/e-mail enviados junto com o link também contam (antes eram perdidos e o bot pedia de novo).
+      if (supabase) {
+        try {
+          const textWithoutUrl = message.replace(/(?:https?:\/\/)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:\/\S*)?/gi, " ").replace(/\s+/g, " ").trim()
+          const full = extractDeterministicLead(message, "")
+          const found = { ...full, name: extractDeterministicLead(textWithoutUrl, "").name }
+          if (found.name || found.whatsapp || found.email) {
+            await upsertLead(supabase, conversation.id, { ...found, current_site_url: auditUrl, has_website: true }, { messages: [{ role: "user", content: message }], whatsapp_clicked: Boolean(conversation.whatsapp_clicked) })
+          }
+        } catch (error) { logAuxiliary("persistence", error) }
+      }
       const gate = await leadGate(conversation.id)
       const reply = `Vou auditar ${host} agora: experiência do visitante, SEO, velocidade, celular e segurança. Leva cerca de 1 minuto. ` + (gate.complete ? "No fim você baixa o relatório em PDF aqui mesmo." : `O relatório em PDF é liberado em troca do contato: enquanto eu analiso, ${askLeadSentence(gate.missing).replace("Para liberar o relatório, me diz", "me diz")}`)
       if (supabase) {
