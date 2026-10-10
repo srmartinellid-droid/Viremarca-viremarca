@@ -3,7 +3,7 @@ import { Reveal } from "@/components/motion/Reveal"
 export type FaqItem = { q: string; a: string }
 
 export const DEFAULT_FAQ: FaqItem[] = [
-  { q: "O site fica realmente meu?", a: "Cada site é uma instalação própria, com repositório, banco de dados e painel só dele. Domínio e titularidade são alinhados com você antes de começar." },
+  { q: "O site fica realmente meu?", a: "Cada site é uma instalação própria, com repositório, banco de dados e painel só dele. O domínio (.com.br) é registrado no seu nome, com o seu CPF ou CNPJ: você é o titular e pode levá-lo para onde quiser. Os demais detalhes de titularidade são alinhados com você antes de começar." },
   { q: "Consigo editar o conteúdo sozinho?", a: "Sim. O site tem um painel para você atualizar textos, imagens e informações sem depender de ninguém." },
   { q: "Vocês atendem fora de Florianópolis?", a: "Estamos em Florianópolis, SC, mas o trabalho é feito de forma online, com contato direto por WhatsApp." },
   { q: "Como funciona o diagnóstico gratuito?", a: "Fazemos uma avaliação técnica e visual do seu site atual, com nota por critério e um plano claro do que corrigir." },

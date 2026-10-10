@@ -32,6 +32,7 @@ for (const slug of SLUGS) {
       const b = shot.locator(sel).first()
       if (await b.count()) { await b.click({ timeout: 1500 }).catch(() => {}); break }
     }
+    await shot.addStyleTag({ content: "a[href*='wa.me'][class*='fixed'],[class*='fixed'][class*='bottom'][class*='right'],[aria-label*='WhatsApp' i][class*='fixed']{display:none!important}" }).catch(() => {})
     await shot.waitForTimeout(800)
     const file = `${ascii(slug)}.jpg`
     await shot.screenshot({ path: `${out}/${file}`, type: "jpeg", quality: 82 })
