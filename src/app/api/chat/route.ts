@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
           if (data) conversation = data
         }
         if (!conversation || !conversation.id) throw new Error("Conversa indisponível.")
-        if (!conversation.created_at) {
+        if (!conversation.started_at) {
           const { data, error } = await supabase.from("chat_conversations").insert({
             id: conversationId,
             visitor_id: visitorId,

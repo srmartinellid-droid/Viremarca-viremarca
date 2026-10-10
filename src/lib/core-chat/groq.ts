@@ -37,8 +37,14 @@ async function groqCompletion(apiKey: string, body: Record<string, unknown>) {
 }
 
 export async function groqChat(apiKey: string, model: string, messages: GroqChatMessage[]) {
-  const payload = await groqCompletion(apiKey, { model, messages, temperature: 0.5, max_completion_tokens: 420, reasoning_effort: "low", include_reasoning: false })
-  return parseGroqResponse(payload)
+  const run = async (m: string) => parseGroqResponse(await groqCompletion(apiKey, { model: m, messages, temperature: 0.5, max_completion_tokens: 420, reasoning_effort: "low", include_reasoning: false }))
+  try {
+    return await run(model)
+  } catch (error) {
+    // Os modelos gpt-oss às vezes tentam chamar uma ferramenta que não existe e a Groq recusa. Tenta de novo no outro modelo.
+    if (!/tool/i.test(error instanceof Error ? error.message : "")) throw error
+    return await run(model === HIGH_CAPABILITY_MODEL ? COST_EFFICIENT_MODEL : HIGH_CAPABILITY_MODEL)
+  }
 }
 export async function groqExtractLead(apiKey: string, transcript: GroqChatMessage[]) {
   const payload = await groqCompletion(apiKey, {
