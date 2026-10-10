@@ -19,7 +19,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 function clean(value: unknown, max: number) { return typeof value === "string" ? value.trim().slice(0, max) : "" }
 function validUuid(value: unknown) { return typeof value === "string" && UUID.test(value) }
 function normalizeDevice(value: unknown) { return value === "mobile" || value === "tablet" || value === "desktop" ? value : "unknown" }
-function logAuxiliary(scope: string, error: unknown) { console.error("[core-chat " + scope + "]", error instanceof Error ? error.message : "unknown error") }
+function logAuxiliary(scope: string, error: unknown) {
+  // Erros do Supabase são objetos simples (message/code/details/hint), não Error: registrar o conteúdo real.
+  const e = error as { message?: unknown; code?: unknown; details?: unknown; hint?: unknown } | null
+  const text = error instanceof Error ? error.message : e && typeof e === "object" ? [e.message, e.code && "code=" + e.code, e.details, e.hint].filter(Boolean).join(" | ") || "unknown error" : "unknown error"
+  console.error("[core-chat " + scope + "]", text)
+}
 
 export async function GET(request: NextRequest) {
   const visitorId = request.nextUrl.searchParams.get("visitor_id") || ""
