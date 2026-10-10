@@ -5,6 +5,7 @@ import { getGroqApiKey } from "@/lib/core-chat/secrets"
 import { groqExtractLead } from "@/lib/core-chat/groq"
 import { extractDeterministicLead } from "@/lib/core-chat/lead-extraction"
 import { calculateLeadScore } from "@/lib/core-chat/lead-score"
+import { listAuditsForConversation } from "@/lib/audit/store"
 
 const allowedStatuses = new Set(["novo","em_atendimento","convertido","perdido","arquivado"])
 
@@ -19,7 +20,8 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
     supabase.from("chat_leads").select("*").eq("conversation_id", id).maybeSingle(),
     supabase.from("chat_messages").select("*").eq("conversation_id", id).order("created_at", { ascending: true }),
   ])
-  return NextResponse.json({ conversation, lead, messages: messages ?? [] })
+  const audits = await listAuditsForConversation(id).catch(() => [])
+  return NextResponse.json({ conversation, lead, messages: messages ?? [], audits })
 }
 
 

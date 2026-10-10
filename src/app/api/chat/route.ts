@@ -8,6 +8,7 @@ import { extractDeterministicLead } from "@/lib/core-chat/lead-extraction"
 import { sanitizeAssistantResponse } from "@/lib/core-chat/response-sanitizer"
 import { calculateLeadScore } from "@/lib/core-chat/lead-score"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { extractSiteUrl } from "@/lib/audit/url"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -101,6 +102,19 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         logAuxiliary("persistence", error)
       }
+    }
+
+    const auditUrl = extractSiteUrl(message)
+    if (auditUrl) {
+      const host = new URL(auditUrl).hostname.replace(/^www\./, "")
+      const reply = `Vou auditar ${host} agora: experiência do visitante, SEO, velocidade, celular e segurança. Leva cerca de 1 minuto e no fim você baixa o relatório em PDF aqui mesmo.`
+      if (supabase) {
+        try {
+          await supabase.from("chat_messages").insert({ conversation_id: conversation.id, role: "assistant", content: reply, model: "audit" })
+          await supabase.from("chat_conversations").update({ last_message_at: new Date().toISOString(), message_count: Number(conversation.message_count || 0) + 2, consent_at: conversation.consent_at || now }).eq("id", conversation.id)
+        } catch (error) { logAuxiliary("persistence", error) }
+      }
+      return NextResponse.json({ message: reply, conversation_id: conversation.id, visitor_id: visitorId, audit_url: auditUrl, commercial_intent: false, lead_captured: false })
     }
 
     let history: any[] = [{ role: "user", content: message }]

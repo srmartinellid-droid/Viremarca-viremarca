@@ -41,6 +41,7 @@ export default function AtendimentosPage() {
   const [items,setItems]=useState<Conversation[]>([])
   const [selected,setSelected]=useState<Conversation|null>(null)
   const [messages,setMessages]=useState<Message[]>([])
+  const [audits,setAudits]=useState<Array<{id:string;url:string;host:string;status:string;score:number|null;created_at:string}>>([])
   const [loading,setLoading]=useState(true)
   const [saving,setSaving]=useState(false),[reprocessing,setReprocessing]=useState(false)
   const [search,setSearch]=useState("")
@@ -86,6 +87,7 @@ export default function AtendimentosPage() {
     if(!r.ok){setNotice(d.error||"Falha ao abrir.");return}
     setSelected({...d.conversation,lead:d.lead||null})
     setMessages(d.messages||[])
+    setAudits(d.audits||[])
   }
 
   const patch=async(body:Record<string,unknown>)=>{
@@ -175,7 +177,7 @@ export default function AtendimentosPage() {
       <div className="mx-auto flex h-full max-w-6xl overflow-hidden rounded-[2rem] border border-vm-border bg-vm-bg shadow-2xl">
         <section className="flex min-w-0 flex-1 flex-col">
           <header className="flex items-center justify-between border-b border-vm-border bg-white px-5 py-4"><div><p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-vm-coral">Atendimento</p><h2 className="font-semibold text-vm-ink">{selected.lead?.name||"Sem nome"}</h2></div><button type="button" onClick={()=>setSelected(null)} className="rounded-full p-2 text-vm-muted hover:bg-vm-bg"><X size={20}/></button></header>
-          <div className="flex-1 space-y-3 overflow-y-auto p-4 md:p-6">{messages.map(m=><div key={m.id} className={cn("max-w-[82%] rounded-2xl px-4 py-3",m.role==="user"?"ml-auto bg-vm-coral text-white":"bg-white border border-vm-border text-vm-ink")}><p className="whitespace-pre-wrap text-sm leading-relaxed">{m.content}</p><p className={cn("mt-2 text-[10px]",m.role==="user"?"text-white/60":"text-vm-muted")}>{new Date(m.created_at).toLocaleString("pt-BR")}</p></div>)}</div>
+          <div className="flex-1 space-y-3 overflow-y-auto p-4 md:p-6">{messages.map(m=><div key={m.id} className={cn("max-w-[82%] rounded-2xl px-4 py-3",m.role==="user"?"ml-auto bg-vm-coral text-white":"bg-white border border-vm-border text-vm-ink")}><p className="whitespace-pre-wrap text-sm leading-relaxed">{m.content.replace(/\n*\[Relatório PDF gerado: [^\]]+\]/i,"")}</p>{/\[Relatório PDF gerado: (\/api\/audit\/[0-9a-f-]{36}\/pdf)\]/i.test(m.content)&&<a href={m.content.match(/\/api\/audit\/[0-9a-f-]{36}\/pdf/i)![0]} className="mt-2 inline-block rounded-lg bg-vm-coral px-3 py-1.5 text-xs font-semibold text-white">Baixar relatório PDF</a>}<p className={cn("mt-2 text-[10px]",m.role==="user"?"text-white/60":"text-vm-muted")}>{new Date(m.created_at).toLocaleString("pt-BR")}</p></div>)}</div>
           <div className="border-t border-vm-border bg-white p-4"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">Resumo gerado</p><p className="mt-1 text-sm text-vm-ink">{selected.summary||selected.lead?.demand_summary||"Sem resumo."}</p></div>
         </section>
         <aside className="hidden w-[390px] shrink-0 overflow-y-auto border-l border-vm-border bg-white p-5 lg:block">
@@ -196,6 +198,7 @@ export default function AtendimentosPage() {
             </div>
             <label className="block"><span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">Status</span><select value={selected.status} onChange={e=>setSelected(s=>s?{...s,status:e.target.value}:s)} className="w-full rounded-xl border border-vm-border px-3 py-2.5 text-sm">{statuses.slice(1).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>
             <div className="grid gap-2"><button type="button" disabled={reprocessing} onClick={()=>void reprocess()} className="rounded-xl border border-vm-border px-4 py-3 text-sm font-semibold text-vm-ink disabled:opacity-60">{reprocessing?"Reprocessando…":"Reprocessar ficha"}</button><button type="button" disabled={saving} onClick={()=>void patch({...((selected.lead)||{}),admin_notes:selected.admin_notes,status:selected.status})} className="rounded-xl bg-vm-coral px-4 py-3 text-sm font-semibold text-white disabled:opacity-60">Salvar alterações</button>{selected.lead?.whatsapp&&<a href={wa(selected.lead.whatsapp,selected.lead.name,selected.lead.demand_summary)} target="_blank" rel="noreferrer" onClick={()=>void patch({})} className="inline-flex items-center justify-center gap-2 rounded-xl border border-vm-border px-4 py-3 text-sm font-semibold text-vm-ink"><MessageSquare size={16}/>Abrir WhatsApp</a>}<button type="button" onClick={()=>void remove()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 px-4 py-3 text-sm font-semibold text-red-600"><Trash2 size={16}/>Excluir conversa</button></div>
+            {audits.length>0&&<div className="rounded-2xl border border-vm-border p-4"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-vm-muted">Auditorias entregues</p><ul className="mt-2 space-y-2">{audits.map(a=><li key={a.id} className="flex items-center justify-between gap-2 text-xs"><span className="min-w-0 truncate text-vm-ink">{a.host}{a.score!=null&&<b className="ml-1">· {a.score.toFixed(1)}</b>}{a.status!=="done"&&<em className="ml-1 text-vm-muted">({a.status})</em>}</span>{a.status==="done"&&<a href={`/api/audit/${a.id}/pdf`} className="shrink-0 rounded-lg bg-vm-coral px-2.5 py-1 font-semibold text-white">PDF</a>}</li>)}</ul></div>}
             <div className="rounded-2xl bg-vm-bg p-4 text-xs text-vm-muted">Mensagens: {selected.message_count} · Início: {new Date(selected.started_at).toLocaleString("pt-BR")} · WhatsApp clicado: {selected.whatsapp_clicked?"sim":"não"}</div>
           </div>
         </aside>

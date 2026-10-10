@@ -46,6 +46,7 @@ export function CoreChat({ config }: { config: ChatConfig }) {
   const [typing, setTyping] = useState(false)
   const [recording, setRecording] = useState(false)
   const [noticeVisible, setNoticeVisible] = useState(true)
+  const [auditStep, setAuditStep] = useState<string | null>(null)
   const visitorId = useRef("")
   const conversationId = useRef("")
   const recorder = useRef<MediaRecorder | null>(null)
@@ -65,6 +66,29 @@ export function CoreChat({ config }: { config: ChatConfig }) {
         if (Array.isArray(data.messages)) setMessages(data.messages.map((item: Message) => ({ role: item.role, content: item.content })))
       })
       .catch(() => {})
+  }
+
+  const STEP_LABEL: Record<string, string> = { collect: "Lendo o site e as páginas principais…", psi: "Medindo velocidade no celular…", analyze: "Analisando experiência, SEO e confiança…", render: "Montando o relatório em PDF…" }
+
+  // Auditoria em passos curtos e retomáveis: o servidor guarda o estado, o chat só pede o próximo passo até acabar.
+  const runAudit = async (url: string, base: Message[]) => {
+    setAuditStep("collect")
+    try {
+      const start = await fetch("/api/audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url, conversation_id: conversationId.current || undefined, visitor_id: visitorId.current }) })
+      const first = await start.json()
+      if (!start.ok) throw new Error(first.error || "Não foi possível iniciar a auditoria.")
+      let state = first
+      for (let i = 0; i < 60 && state.status === "running"; i++) {
+        setAuditStep(state.step)
+        const res = await fetch("/api/audit/step", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: first.id }) })
+        state = await res.json().catch(() => state)
+        if (state.status === "running") await new Promise(r => setTimeout(r, 400))
+      }
+      if (state.status === "done" && state.pdf_ready) setMessages([...base, { role: "assistant", content: `${state.summary}\n\n[Relatório PDF gerado: /api/audit/${first.id}/pdf]` }])
+      else setMessages([...base, { role: "assistant", content: state.error || "Não consegui concluir a auditoria agora. Pode tentar de novo em instantes ou falar com a equipe no WhatsApp." }])
+    } catch (error) {
+      setMessages([...base, { role: "assistant", content: error instanceof Error ? error.message : "Não consegui concluir a auditoria agora." }])
+    } finally { setAuditStep(null) }
   }
 
   const send = async () => {
@@ -93,8 +117,10 @@ export function CoreChat({ config }: { config: ChatConfig }) {
         conversationId.current = data.conversation_id
         saveConversationId(data.conversation_id)
       }
-      setMessages([...next, { role: "assistant", content: data.message }])
+      const withReply = [...next, { role: "assistant" as const, content: data.message }]
+      setMessages(withReply)
       setNoticeVisible(false)
+      if (typeof data.audit_url === "string") { setTyping(false); await runAudit(data.audit_url, withReply) }
     } catch (error) {
       setMessages([...next, { role: "assistant", content: error instanceof Error ? error.message : "Não foi possível responder agora." }])
     } finally {
@@ -168,7 +194,8 @@ export function CoreChat({ config }: { config: ChatConfig }) {
       </header>
       <div className="flex-1 space-y-3 overflow-y-auto bg-vm-bg p-4">
         {!messages.length && <div className="rounded-2xl border border-vm-border bg-white p-4 text-sm text-vm-muted">Olá! Sou o assistente da VireMarca 👋 Estou aqui para entender o seu negócio e adiantar seu atendimento com a equipe. Para começar, como posso te chamar?</div>}
-        {messages.map((message, index) => <div key={index} className={message.role === "user" ? "ml-8 rounded-2xl rounded-br-md bg-vm-coral px-4 py-3 text-sm text-white" : "mr-8 rounded-2xl rounded-bl-md bg-white px-4 py-3 text-sm text-vm-ink"}>{message.content}</div>)}
+        {messages.map((message, index) => <div key={index} className={message.role === "user" ? "ml-8 rounded-2xl rounded-br-md bg-vm-coral px-4 py-3 text-sm text-white" : "mr-8 rounded-2xl rounded-bl-md bg-white px-4 py-3 text-sm text-vm-ink"}><MessageBody text={message.content}/></div>)}
+        {auditStep && <div className="mr-8 rounded-2xl bg-white px-4 py-3 text-xs text-vm-muted"><p className="font-semibold text-vm-ink">Auditoria em andamento</p><p className="mt-1">{STEP_LABEL[auditStep] ?? "Finalizando…"}</p><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-vm-border"><div className="h-full rounded-full bg-vm-coral transition-all duration-500" style={{ width: ({ collect: "15%", psi: "40%", analyze: "65%", render: "90%" } as Record<string, string>)[auditStep] ?? "95%" }}/></div></div>}
         {typing && <div className="mr-8 rounded-2xl bg-white px-4 py-3 text-xs text-vm-muted">Digitando…</div>}
       </div>
       <div className="border-t border-vm-border bg-white p-3">
@@ -183,6 +210,14 @@ export function CoreChat({ config }: { config: ChatConfig }) {
     </section>}
     <button type="button" onClick={() => open ? setOpen(false) : openChat()} aria-label={open ? "Fechar assistente" : "Abrir assistente"} className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-vm-coral text-white shadow-lg">{open ? <X size={22}/> : <MessageCircle size={22}/>}</button>
   </div>
+}
+
+const PDF_MARK = /\n*\[Relatório PDF gerado: (\/api\/audit\/[0-9a-f-]{36}\/pdf)\]/i
+
+function MessageBody({ text }: { text: string }) {
+  const m = text.match(PDF_MARK)
+  if (!m) return <>{text}</>
+  return <><span className="whitespace-pre-line">{text.replace(PDF_MARK, "")}</span><a href={m[1]} download className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-vm-coral px-4 py-2.5 text-xs font-semibold text-white">Baixar relatório (PDF)</a></>
 }
 
 function Fallback({ whatsapp }: { whatsapp: string }) {
