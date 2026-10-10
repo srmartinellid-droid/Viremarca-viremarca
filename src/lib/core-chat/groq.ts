@@ -44,7 +44,7 @@ export async function groqExtractLead(apiKey: string, transcript: GroqChatMessag
   const payload = await groqCompletion(apiKey, {
     model: LEAD_EXTRACTION_MODEL,
     messages: [
-      { role: "system", content: "Extraia dados comerciais da conversa. Não invente. Se um campo não aparecer, retorne null. Responda somente JSON válido com name, whatsapp, email, business_name, business_segment, city, has_website, current_site_url, demand_summary, services_interest, urgency, preferred_contact_time, summary." },
+      { role: "system", content: "Você é o secretário comercial da VireMarca. Leia a conversa e preencha a ficha do visitante usando SOMENTE o que ele disse ou o que a conversa confirma. Nunca invente nome, telefone, e-mail, negócio ou cidade: se não aparecer, retorne null. Exceção: 'summary' e 'demand_summary' devem SEMPRE ser preenchidos, mesmo em conversa curta. summary = 1 a 2 frases sobre quem é o visitante e o que ele quer; demand_summary = o pedido dele em uma frase (ex.: 'Quer auditar o site X'). has_website = true se ele citou ou enviou um site; current_site_url = a URL completa do site que ele enviou (a mais recente). services_interest = lista curta dos serviços que ele pediu ou citou (ex.: 'Diagnóstico de site', 'Site profissional', 'Google Meu Negócio', 'Arte e conteúdo', 'Atendimento com IA', 'Loja virtual'); lista vazia se nenhum. whatsapp = apenas dígitos com DDD. urgency e preferred_contact_time só se ele disse. Responda somente JSON válido com as chaves: name, whatsapp, email, business_name, business_segment, city, has_website, current_site_url, demand_summary, services_interest, urgency, preferred_contact_time, summary." },
       ...transcript,
     ],
     temperature: 0,
