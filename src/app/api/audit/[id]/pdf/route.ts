@@ -12,6 +12,6 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (!s || !pdf) return new Response("Relatório indisponível", { status: 404 })
   // Trava de lead: só baixa quem já informou nome e WhatsApp na conversa (o admin logado sempre pode).
   const admin = await assertAdmin().catch(() => false)
-  if (!admin && !(await leadGate(s.conversation_id)).complete) return new Response("Para liberar o relatório, informe seu nome e WhatsApp no chat.", { status: 403 })
+  if (!admin && !s.free && !(await leadGate(s.conversation_id)).complete) return new Response("Para liberar o relatório, informe seu nome e WhatsApp no chat.", { status: 403 })
   return new Response(new Uint8Array(pdf), { headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="auditoria-${s.host}.pdf"`, "Cache-Control": "private, no-store" } })
 }

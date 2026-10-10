@@ -36,3 +36,19 @@ export function askLeadSentence(missing: string[]) {
 export function lockedAuditMessage(host: string, missing: string[]) {
   return `A análise de ${host} está pronta! Para liberar o resumo e o relatório em PDF, preciso de uma coisa em troca: ${missing.length === 2 ? "seu nome e seu WhatsApp" : missing[0] === "nome" ? "seu nome" : "seu WhatsApp"}. A equipe usa o contato para te explicar o plano de correção.`
 }
+
+/** A primeira auditoria de cada visitante sai liberada; da segunda em diante exige nome e WhatsApp. */
+export async function isFirstAuditOfVisitor(visitorId: string | null | undefined, auditId: string, createdAt: string): Promise<boolean> {
+  if (!visitorId) return false
+  try {
+    const db = createAdminClient()
+    const { data } = await db.from("site_settings").select("value").like("key", "audit:%").ilike("value", `%"visitor_id":"${visitorId}"%`)
+    for (const row of data ?? []) {
+      try {
+        const o = JSON.parse(row.value) as { id: string; created_at: string; status: string }
+        if (o.id !== auditId && o.status === "done" && o.created_at < createdAt) return false
+      } catch {}
+    }
+    return true
+  } catch { return false }
+}

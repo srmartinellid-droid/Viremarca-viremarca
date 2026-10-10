@@ -8,7 +8,7 @@ export type AuditState = {
   status: "running" | "done" | "failed"; step: "collect" | "psi" | "analyze" | "render" | "done"
   created_at: string; updated_at: string; lock_until?: number; attempts: Record<string, number>
   facts?: Facts; psi?: Psi | null; llm?: { A?: unknown; B?: unknown; routes?: string[] }
-  report?: Report; summary?: string; error?: string; pdf_ready?: boolean; lead_notified?: boolean; delivered?: boolean
+  report?: Report; summary?: string; error?: string; pdf_ready?: boolean; lead_notified?: boolean; delivered?: boolean; free?: boolean
 }
 
 const db = () => createAdminClient()

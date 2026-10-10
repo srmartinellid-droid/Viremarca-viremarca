@@ -6,7 +6,7 @@ import { buildReport, chatSummary } from "./score"
 import { buildPdf } from "./report-pdf"
 import { loadAudit, saveAudit, savePdf, pruneAudits, type AuditState } from "./store"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { leadGate, lockedAuditMessage } from "./gate"
+import { leadGate, lockedAuditMessage, isFirstAuditOfVisitor } from "./gate"
 
 export async function createAudit(url: string, conversationId: string | null, visitorId: string | null): Promise<AuditState> {
   const now = new Date().toISOString()
@@ -68,15 +68,19 @@ async function finishInChat(s: AuditState) {
   try {
     const db = createAdminClient()
     const gate = await leadGate(s.conversation_id)
-    const content = gate.complete ? fullMessage(s) : lockedAuditMessage(s.host, gate.missing)
+    // A primeira auditoria de cada visitante sai liberada; as seguintes exigem nome + WhatsApp.
+    s.free = !gate.complete && await isFirstAuditOfVisitor(s.visitor_id, s.id, s.created_at)
+    const released = gate.complete || s.free
+    const content = released ? fullMessage(s, s.free ? gate.missing : []) : lockedAuditMessage(s.host, gate.missing)
     await db.from("chat_messages").insert({ conversation_id: s.conversation_id, role: "assistant", content })
     await db.from("chat_leads").update({ current_site_url: s.url }).eq("conversation_id", s.conversation_id)
-    s.delivered = gate.complete
+    s.delivered = released
     s.lead_notified = true
   } catch (e) { console.error("[audit chat]", e instanceof Error ? e.message : e) }
 }
 
-export const fullMessage = (s: AuditState) => `${s.summary}\n\n[Relatório PDF gerado: /api/audit/${s.id}/pdf]`
+export const fullMessage = (s: AuditState, missing: string[] = []) =>
+  `${s.summary}${missing.length ? `\n\nPara a equipe te explicar o plano de correção, me diz ${missing.length === 2 ? "seu nome e seu WhatsApp (com DDD)" : missing[0] === "nome" ? "seu nome" : "seu WhatsApp (com DDD)"}.` : ""}\n\n[Relatório PDF gerado: /api/audit/${s.id}/pdf]`
 
 /** Auditorias concluídas desta conversa que ainda não foram liberadas (mais recente primeiro). */
 export async function pendingAudits(conversationId: string): Promise<AuditState[]> {
@@ -105,10 +109,10 @@ export async function unlockPendingAudits(conversationId: string): Promise<{ mes
 export async function auditView(s: AuditState) {
   const done = s.status === "done" && !!s.pdf_ready
   const gate = done ? await leadGate(s.conversation_id) : null
-  const unlocked = !!gate?.complete
+  const unlocked = !!gate?.complete || (done && !!s.free)
   return {
     id: s.id, status: s.status, step: s.step, host: s.host, error: s.error,
-    summary: unlocked ? s.summary : undefined,
+    summary: unlocked ? (s.free && gate && !gate.complete ? fullMessage(s, gate.missing).replace(/\n\n\[Relatório PDF gerado:[\s\S]*$/, "") : s.summary) : undefined,
     score: unlocked ? (s.report?.overall ?? null) : null,
     pdf_ready: unlocked,
     locked: done && !unlocked,

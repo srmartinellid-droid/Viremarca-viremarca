@@ -12,10 +12,15 @@ const NAME_PATTERNS = [
   /\b(?:sou|sou o|sou a)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’-]{1,}(?:\s+[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’-]{1,}){0,3})/i,
 ]
 
-function normalizePhone(value: string) {
-  const digits = value.replace(/\D/g, "")
-  if (digits.startsWith("55") && digits.length >= 12) return "+" + digits
-  return digits
+/** Celular/fixo brasileiro válido: DDD 11–99 + 8 dígitos (fixo) ou 9 dígitos começando em 9 (celular). Senão, null. */
+export function normalizePhone(value: string): string | null {
+  let digits = value.replace(/\D/g, "")
+  if (digits.startsWith("55") && digits.length >= 12) digits = digits.slice(2)
+  if (digits.length !== 10 && digits.length !== 11) return null
+  const ddd = Number(digits.slice(0, 2))
+  if (ddd < 11 || ddd > 99 || digits[1] === "0") return null
+  if (digits.length === 11 && digits[2] !== "9") return null
+  return "+55" + digits
 }
 
 function cleanName(value: string) {
@@ -39,5 +44,10 @@ export function extractDeterministicLead(message: string, previousAssistantMessa
   }
   const askedName = /\b(?:qual (?:é|e) o seu nome|seu nome|como (?:posso )?te chamar|como você se chama|como voce se chama)\b/i.test(previousAssistantMessage)
   if (!name && askedName && isShortNameAnswer(message)) name = cleanName(message)
+  // "daniel 48988023620": nome e telefone na mesma mensagem. Tira telefone/e-mail e vê se sobrou só um nome curto.
+  if (!name && (phoneMatch || emailMatch)) {
+    const rest = message.replace(PHONE, " ").replace(EMAIL, " ").replace(/[\d()+.\-,;:]+/g, " ").replace(/(?<![A-Za-zÀ-ÿ])(?:meu|nome|whatsapp|zap|telefone|celular|numero|número|é|e|o|a)(?![A-Za-zÀ-ÿ])/gi, " ").replace(/\s+/g, " ").trim()
+    if (rest && isShortNameAnswer(rest)) name = cleanName(rest).replace(/(^|\s)([a-zà-ÿ])/g, (_m, sp, ch) => sp + ch.toUpperCase())
+  }
   return { name: name || null, whatsapp: phoneMatch ? normalizePhone(phoneMatch[0]) : null, email: emailMatch ? emailMatch[0].trim().toLowerCase() : null }
 }
