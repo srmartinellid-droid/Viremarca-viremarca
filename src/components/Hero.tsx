@@ -43,7 +43,7 @@ export function Hero({ content, featuredProjects }: Props) {
     setBackgroundIndex(0)
   }, [desktopImages.length, mobileImages.length])
 
-  const deck = projects.slice(0, 3)
+  const deck = projects
   const overlay = content.heroOverlayIntensity / 100
   const bgPosition = content.heroBackgroundPosition || "center center"
   const desktopImage = desktopImages[backgroundIndex % desktopImages.length] || "/portfolio/magia-glass.jpg"
@@ -115,7 +115,7 @@ function HeroDeck({ projects, reduced }: { projects: PortfolioProject[]; reduced
   }
 
   return (
-    <div className="relative z-30 mx-auto w-full max-w-[560px] lg:mx-0 lg:justify-self-end" aria-label="Projetos da VireMarca" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
+    <div className="relative z-30 mx-auto w-full max-w-[660px] lg:mx-0 lg:justify-self-end" aria-label="Projetos da VireMarca" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
       <div className="relative aspect-[4/3] w-full">
         {projects.map((project, index) => {
           const rel = (index - active + count) % count
@@ -140,7 +140,7 @@ function HeroDeck({ projects, reduced }: { projects: PortfolioProject[]; reduced
                 <span className="ml-2 flex h-[18px] flex-1 items-center truncate rounded-full bg-[#1B1D22] px-2.5 text-[10px] text-[#9CA1A8]">{project.title} · {real ? "projeto real" : "modelo · demonstração"}</span>
               </div>
               <div className="relative aspect-[16/10] overflow-hidden bg-black">
-                <Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(min-width: 1024px) 400px, 72vw" className="object-cover" />
+                <Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(min-width: 1024px) 480px, 72vw" className="object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                 <div className={`absolute inset-x-4 bottom-3 text-white transition-opacity duration-500 ${front ? "opacity-100" : "opacity-0"}`}><p className="text-[9px] uppercase tracking-[0.2em] text-white/65">{project.category}</p><p className="mt-0.5 text-lg font-semibold tracking-tight">{project.title}</p></div>
               </div>
