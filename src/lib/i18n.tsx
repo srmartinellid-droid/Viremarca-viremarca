@@ -21,6 +21,8 @@ const LangContext = createContext<Ctx>({ lang: "pt", setLang: () => {}, tr: s =>
 const dyn: Record<"en" | "es", Map<string, string>> = { en: new Map(), es: new Map() }
 const loaded = new Set<string>()
 const failedUntil = new Map<string, number>()
+// Guarda o texto original (PT) de cada nó entre trocas de idioma; antes era recriado a cada troca e o PT se perdia.
+const originals = new WeakMap<Text, { orig: string; applied: string }>()
 const LS = (l: string) => "vm-tr-" + l
 
 function loadLocal(lang: "en" | "es") {
@@ -91,7 +93,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = HTML_LANG[lang]
-    const originals = new WeakMap<Text, { orig: string; applied: string }>()
     const skip = (el: Element | null) => !el || !!el.closest("script,style,textarea,[data-no-translate]")
 
     const apply = (node: Text) => {
