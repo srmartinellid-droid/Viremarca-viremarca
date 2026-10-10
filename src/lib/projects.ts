@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js"
 import { DEMO_PROJECTS } from "@/lib/demo-data"
 import type { PortfolioProject } from "@/types"
+import captures from "@/lib/captures.json"
+
+const withCapture = (projects: PortfolioProject[]): PortfolioProject[] => projects.map((p) => { const c = (captures as Record<string, string>)[p.slug]; return c ? { ...p, thumbnail: c } : p })
 
 const isProductionBuild = process.env.VERCEL_ENV === "production" || process.env.NODE_ENV === "production"
 
@@ -37,7 +40,7 @@ async function getProjects(): Promise<PortfolioProject[]> {
       return DEMO_PROJECTS.filter((p) => p.active)
     }
 
-    return data as PortfolioProject[]
+    return withCapture(data as PortfolioProject[])
   } catch (error) {
     if (isProductionBuild) throw error instanceof Error ? error : new Error("[projects] Failed to load public projects during production build.")
     return DEMO_PROJECTS.filter((p) => p.active)

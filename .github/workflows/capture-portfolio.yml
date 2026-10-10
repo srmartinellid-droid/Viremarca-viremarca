@@ -1,0 +1,29 @@
+name: Capturar portfólio
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm i --no-save playwright@1.49.1
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/capture-portfolio.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: public/portfolio/capturas
+      - name: Commit das capturas
+        run: |
+          git config user.name "viremarca-bot"
+          git config user.email "noreply@viremarca.com.br"
+          git add public/portfolio/capturas src/lib/captures.json
+          git diff --cached --quiet || (git commit -m "chore(portfolio): capturas reais dos sites" && git push origin HEAD:main)
