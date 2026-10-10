@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { cookies } from "next/headers"
-import { SupabaseAssistantConfigRepository } from "@/lib/core-chat/config"
+import { SupabaseAssistantConfigRepository, KnowledgeBaseTooLongError, StaleKnowledgeBaseError, KnowledgeBaseNotPersistedError, KNOWLEDGE_BASE_MAX_CHARS } from "@/lib/core-chat/config"
 import { hasGroqApiKey } from "@/lib/core-chat/secrets"
 
 async function assertAdmin() {
@@ -54,16 +54,29 @@ export async function PUT(request: NextRequest) {
   try {
     if (!await assertAdmin()) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
     const body = await request.json()
+    const knowledgeBase = typeof body.knowledge_base === "string" ? body.knowledge_base : undefined
+    if (knowledgeBase !== undefined && knowledgeBase.length > KNOWLEDGE_BASE_MAX_CHARS) {
+      return NextResponse.json({ error: new KnowledgeBaseTooLongError(knowledgeBase.length).message }, { status: 413 })
+    }
+    if (knowledgeBase !== undefined && knowledgeBase.trim() === "") {
+      return NextResponse.json({ error: "A base de conhecimento está vazia. Para não apagar a base por engano, nada foi salvo." }, { status: 400 })
+    }
     const config = await new SupabaseAssistantConfigRepository().save({
-      enabled: Boolean(body.enabled),
+      enabled: typeof body.enabled === "boolean" ? body.enabled : undefined,
       assistant_name: typeof body.assistant_name === "string" ? body.assistant_name.slice(0, 120) : undefined,
       model: typeof body.model === "string" ? body.model.slice(0, 160) : undefined,
-      knowledge_base: typeof body.knowledge_base === "string" ? body.knowledge_base.slice(0, 20000) : undefined,
+      knowledge_base: knowledgeBase,
       fallback_whatsapp: typeof body.fallback_whatsapp === "string" ? body.fallback_whatsapp.slice(0, 40) : undefined,
+    }, {
+      expectedKnowledgeBaseUpdatedAt: "knowledge_base_updated_at" in body ? (typeof body.knowledge_base_updated_at === "string" ? body.knowledge_base_updated_at : null) : undefined,
     })
     return NextResponse.json({ ...config, groq_configured: await hasGroqApiKey() })
   } catch (error) {
+    if (error instanceof StaleKnowledgeBaseError) return NextResponse.json({ error: error.message }, { status: 409 })
+    if (error instanceof KnowledgeBaseTooLongError) return NextResponse.json({ error: error.message }, { status: 413 })
+    if (error instanceof KnowledgeBaseNotPersistedError) return NextResponse.json({ error: error.message }, { status: 500 })
+    const detail = error && typeof error === "object" && "message" in error ? String((error as { message: unknown }).message) : "erro desconhecido"
     console.error("[assistant-config] PUT failed", error)
-    return NextResponse.json({ error: "Não foi possível salvar a configuração." }, { status: 500 })
+    return NextResponse.json({ error: `Não foi possível salvar a configuração: ${detail}` }, { status: 500 })
   }
 }
