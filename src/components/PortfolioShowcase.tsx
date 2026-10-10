@@ -3,7 +3,9 @@
 import Link from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
+import { useState } from "react"
 import { ArrowUpRight } from "lucide-react"
+import { WhatsAppIcon } from "@/components/WhatsAppIcon"
 import type { PortfolioProject } from "@/types"
 import type { TitleStyle } from "@/lib/visual-defaults"
 import { cn } from "@/lib/utils"
@@ -19,7 +21,11 @@ const isReal = (project: PortfolioProject) => project.description.startsWith("Pr
 export function PortfolioShowcase({ projects, titleStyle }: Props) {
   const reduced = useReducedMotion()
   // Projetos reais primeiro; a ordem original é preservada dentro de cada grupo.
-  const ordered = [...projects.filter(isReal), ...projects.filter(p => !isReal(p))]
+  const [filter, setFilter] = useState<"all" | "live" | "models">("all")
+  const sorted = [...projects.filter(isReal), ...projects.filter(p => !isReal(p))]
+  const ordered = sorted.filter(p => filter === "all" || (filter === "live" ? isReal(p) : !isReal(p)))
+  const filters = [{ id: "all", label: "Todos" }, { id: "live", label: "No ar" }, { id: "models", label: "Modelos por segmento" }] as const
+  const legacyTitle = !titleStyle || /constru|veja a viremarca/i.test(titleStyle.text)
 
   return (
     <section id="sites" className="py-20 md:py-24 bg-white relative">
@@ -27,8 +33,9 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
       <div className="mx-auto max-w-7xl px-5 sm:px-7 lg:px-10">
         <Reveal className="max-w-3xl mb-10">
           <p className="vm-eyebrow mb-3">Portfólio</p>
-          <TitleBlock style={titleStyle || { text: "Veja a VireMarca em ação", highlight: "VireMarca em ação", textColor: "#171717", highlightColor: "#E07A5F", highlightStyle: "color", fontWeight: 600 }} className="!mx-0" />
-          <p className="mt-3 text-vm-muted max-w-2xl leading-relaxed">Projetos e demonstrações desenvolvidos pela VireMarca para diferentes negócios, necessidades e experiências digitais.</p>
+          <TitleBlock style={!legacyTitle && titleStyle ? titleStyle : { text: "Uma base. Uma identidade para cada negócio.", highlight: "Uma identidade para cada negócio.", textColor: "#171717", highlightColor: "#E07A5F", highlightStyle: "color", fontWeight: 600 }} className="!mx-0" />
+          <p className="mt-3 text-vm-muted max-w-2xl leading-relaxed">Do site que já está no ar ao modelo pronto para o seu segmento: a mesma estrutura sólida, com a cara de cada marca.</p>
+          <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Filtrar portfólio">{filters.map(f => <button key={f.id} type="button" role="tab" aria-selected={filter === f.id} onClick={() => setFilter(f.id)} className={cn("rounded-full border px-4 py-2 text-sm font-medium transition-colors", filter === f.id ? "border-vm-ink bg-vm-ink text-white" : "border-vm-border bg-white text-vm-muted hover:border-vm-ink hover:text-vm-ink")}>{f.label}</button>)}</div>
         </Reveal>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
@@ -68,6 +75,10 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
               </motion.article>
             )
           })}
+        </div>
+        <div className="mt-10 flex flex-col items-start justify-between gap-5 rounded-2xl border border-vm-border bg-vm-sand/60 p-6 md:flex-row md:items-center md:p-8">
+          <div><p className="text-lg font-semibold text-vm-ink">O próximo pode ser o seu.</p><p className="mt-1 text-sm text-vm-muted">Conte o seu segmento e mostramos como ele ficaria na base VireMarca.</p></div>
+          <a href="https://wa.me/5548991410717?text=Ol%C3%A1!%20Quero%20ver%20como%20meu%20segmento%20ficaria%20na%20base%20VireMarca." target="_blank" rel="noopener noreferrer" onClick={() => void trackEvent("contact_started", { location: "portfolio_cta" }, "production")} className="inline-flex shrink-0 items-center gap-2 rounded-full bg-vm-coral px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-vm-coral-deep"><WhatsAppIcon size={18} />Falar no WhatsApp</a>
         </div>
       </div>
     </section>

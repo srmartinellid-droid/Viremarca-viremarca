@@ -74,7 +74,7 @@ export async function getPublicSiteContent(): Promise<PublicSiteContent> {
     const parseImages = (value: string | undefined, fallbackValue: string[]): string[] => { if (!value) return fallbackValue; try { const parsed: unknown = JSON.parse(value); if (Array.isArray(parsed)) { const images = parsed.filter((item): item is string => typeof item === "string" && !!item.trim()); if (images.length) return images } } catch { if (value.trim()) return [value.trim()] } return fallbackValue }
     const heroBackgroundImages = parseImages(config.hero_background_images, config.hero_image ? [config.hero_image] : fallback.heroBackgroundImages), heroMobileBackgroundImages = parseImages(config.hero_mobile_background_images, config.hero_mobile_image ? [config.hero_mobile_image] : fallback.heroMobileBackgroundImages)
     // Textos antigos gravados no banco não sobrescrevem o Hero aprovado (v2). Edições novas pelo /admin continuam valendo.
-    const LEGACY_HERO = /sites profissionais|pensados para o seu neg|seu neg[óo]cio merece|estrutura, identidade e painel/i
+    const LEGACY_HERO = /sites profissionais|pensados para o seu neg|seu neg[óo]cio merece|estrutura, identidade e painel|design estratégico, tecnologia/i
     const pickHero = (stored: string | undefined, fb: string) => (stored && !LEGACY_HERO.test(stored) ? stored : fb)
     const storedTitleStyles = parseJsonObject<Record<string, TitleStyle>>(config.title_styles, {})
     if (storedTitleStyles.hero && LEGACY_HERO.test(`${storedTitleStyles.hero.text ?? ""} ${storedTitleStyles.hero.highlight ?? ""}`)) delete storedTitleStyles.hero
