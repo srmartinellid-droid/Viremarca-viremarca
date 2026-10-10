@@ -14,7 +14,7 @@ import type { PublicSiteContent } from "@/lib/site-content"
 import { trackEvent } from "@/lib/track-event"
 
 const ease = [0.22, 1, 0.36, 1] as const
-const CARD_INTERVALS = [6500, 8000, 9100] as const
+const DECK_INTERVAL = 5500
 const HERO_IMAGE_INTERVAL = 6500
 
 type Props = { content: PublicSiteContent; featuredProjects: PortfolioProject[] }
@@ -23,7 +23,6 @@ export function Hero({ content, featuredProjects }: Props) {
   const reduced = useReducedMotion()
   const framerReduced = useFramerReducedMotion()
   const projects = useMemo(() => featuredProjects.length ? featuredProjects : [], [featuredProjects])
-  const [cardIndexes, setCardIndexes] = useState<number[]>(() => projects.length ? Array.from({ length: Math.min(3, projects.length) }, (_, index) => index) : [])
   const desktopImages = useMemo(() => content.heroBackgroundImages?.length ? content.heroBackgroundImages : [content.heroImage || cardsFallback(projects)], [content.heroBackgroundImages, content.heroImage, projects])
   const mobileImages = useMemo(() => content.heroMobileBackgroundImages?.length ? content.heroMobileBackgroundImages : desktopImages, [content.heroMobileBackgroundImages, desktopImages])
   const [backgroundIndex, setBackgroundIndex] = useState(0)
@@ -35,12 +34,6 @@ export function Hero({ content, featuredProjects }: Props) {
   const heroStyle = content.titleStyles?.hero ?? { text: `${content.heroTitle} ${content.heroAccent}`, highlight: content.heroAccent, textColor: "#FFFFFF", highlightColor: "#E07A5F", highlightStyle: "color" as const, align: "left" as const }
 
   useEffect(() => {
-    if (!projects.length) return setCardIndexes([])
-    const cardCount = Math.min(3, projects.length)
-    setCardIndexes((current) => current.length === cardCount && current.every((index) => index >= 0 && index < projects.length) ? current : Array.from({ length: cardCount }, (_, index) => index))
-  }, [projects.length])
-
-  useEffect(() => {
     if (reduced || desktopImages.length < 2) return
     const timer = window.setInterval(() => setBackgroundIndex((current) => (current + 1) % desktopImages.length), HERO_IMAGE_INTERVAL)
     return () => window.clearInterval(timer)
@@ -50,31 +43,9 @@ export function Hero({ content, featuredProjects }: Props) {
     setBackgroundIndex(0)
   }, [desktopImages.length, mobileImages.length])
 
-  useEffect(() => {
-    if (reduced || projects.length < 2 || cardIndexes.length < 3) return
-    const timers = CARD_INTERVALS.map((interval, cardIndex) => window.setInterval(() => {
-      setCardIndexes((current) => {
-        if (current.length < 3) return current
-        const occupied = new Set(current.filter((_, index) => index !== cardIndex))
-        const currentIndex = current[cardIndex]
-        for (let step = 1; step <= projects.length; step += 1) {
-          const nextIndex = (currentIndex + step) % projects.length
-          if (!occupied.has(nextIndex)) {
-            const next = [...current]
-            next[cardIndex] = nextIndex
-            return next
-          }
-        }
-        return current
-      })
-    }, interval))
-    return () => timers.forEach((timer) => window.clearInterval(timer))
-  }, [cardIndexes.length, projects.length, reduced])
-
-  const cards = cardIndexes.map((projectIndex) => projects[projectIndex]).filter(Boolean)
+  const deck = projects.slice(0, 3)
   const overlay = content.heroOverlayIntensity / 100
   const bgPosition = content.heroBackgroundPosition || "center center"
-  const motionAmount = content.heroCardsMotion / 100
   const desktopImage = desktopImages[backgroundIndex % desktopImages.length] || "/portfolio/magia-glass.jpg"
   const mobileImage = mobileImages[backgroundIndex % mobileImages.length] || desktopImage
 
@@ -109,14 +80,7 @@ export function Hero({ content, featuredProjects }: Props) {
             <motion.div initial={reduced ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4, ease }} className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"><TrackedAnchor href={`https://wa.me/${content.contact.whatsapp}?text=${encodeURIComponent("Olá! Quero criar um site com a VireMarca.")}`} target="_blank" rel="noopener noreferrer" eventName="contact_started" eventMetadata={{ location: "hero_whatsapp" }} eventStatus="production" contactContext="hero" className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-vm-coral px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-vm-coral-deep"><WhatsAppIcon size={18} />Falar no WhatsApp</TrackedAnchor><MagneticButton href="/#diagnostico" variant="secondary" className="whitespace-nowrap">Diagnóstico gratuito do seu site<ArrowRight size={16} /></MagneticButton></motion.div>
           </div>
 
-          <div className="relative hidden min-h-[520px] lg:block" aria-label="Projetos da VireMarca">
-            <div className="pointer-events-none absolute right-[8%] top-[7%] h-2 w-2 rounded-full bg-vm-coral shadow-[0_0_28px_rgba(224,122,95,0.9)]" aria-hidden />
-            {cards.map((project, index) => project && <HeroCard key={`hero-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} />)}
-          </div>
-
-          <div className="-mx-5 flex flex-col gap-5 px-5 pb-4 lg:hidden" aria-label="Projetos em destaque">
-            {cards.map((project, index) => project && <HeroCard key={`hero-mobile-card-${index}`} project={project} index={index} reduced={reduced} motionAmount={motionAmount} mobile />)}
-          </div>
+          <HeroDeck projects={deck} reduced={reduced} />
         </div>
             <motion.div initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.7 }} className="mt-12 flex w-full items-start gap-3 border-t border-white/10 pt-6 text-xs text-white/55"><ul className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4"><li><span className="block text-[13px] font-semibold text-white/85">Contato direto no WhatsApp</span><span className="mt-0.5 block text-xs text-white/50">Conte o seu caso e receba retorno</span></li><li><span className="block text-[13px] font-semibold text-white/85">Painel para você editar tudo</span><span className="mt-0.5 block text-xs text-white/50">Textos e imagens, sem depender de ninguém</span></li><li><span className="block text-[13px] font-semibold text-white/85">Banco de dados só seu</span><span className="mt-0.5 block text-xs text-white/50">Cada cliente tem o seu, isolado dos demais</span></li><li><span className="block text-[13px] font-semibold text-white/85">Diagnóstico técnico gratuito</span><span className="mt-0.5 block text-xs text-white/50">Nota por critério do seu site atual</span></li></ul></motion.div>
         </div>
@@ -129,24 +93,70 @@ function cardsFallback(projects: PortfolioProject[]) {
   return projects[0]?.thumbnail || "/portfolio/magia-glass.jpg"
 }
 
-function HeroCard({ project, index, reduced, motionAmount, mobile = false }: { project: PortfolioProject; index: number; reduced: boolean; motionAmount: number; mobile?: boolean }) {
-  const [displayedProject, setDisplayedProject] = useState(project)
+function HeroDeck({ projects, reduced }: { projects: PortfolioProject[]; reduced: boolean }) {
+  const [active, setActive] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const count = projects.length
+
   useEffect(() => {
-    if (displayedProject.thumbnail === project.thumbnail) return
-    setDisplayedProject(project)
-  }, [project, displayedProject.thumbnail])
-  const image = displayedProject.thumbnail || "/portfolio/magia-glass.jpg"
+    if (reduced || paused || count < 2) return
+    const timer = window.setInterval(() => setActive((current) => (current + 1) % count), DECK_INTERVAL)
+    return () => window.clearInterval(timer)
+  }, [count, paused, reduced])
 
-  if (mobile) return <motion.a href={`/portfolio/${project.slug}`} onClick={() => void trackEvent("portfolio_view", { location: "hero", project: project.title }, "production")} initial={reduced ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1, ease }} className="group relative w-full overflow-hidden rounded-[1.25rem] border border-white/70 bg-white shadow-[0_28px_70px_-35px_rgba(0,0,0,0.8)]"><div className="flex h-7 items-center gap-1.5 border-b border-black/10 bg-white px-3"><span className="h-1.5 w-1.5 rounded-full bg-vm-coral/75" /><span className="h-1.5 w-1.5 rounded-full bg-black/10" /><span className="h-1.5 w-1.5 rounded-full bg-black/10" /></div><div className="relative aspect-[16/10] overflow-hidden bg-black"><AnimatePresence initial={false} mode="sync"><motion.div key={image} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }} transition={{ duration: 1.15, ease }} className="absolute inset-0 z-10"><Image src={image} alt={displayedProject.title} fill sizes="(max-width: 767px) 100vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" /></motion.div></AnimatePresence><div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" /><div className="absolute bottom-4 left-4 text-white"><p className="text-[9px] uppercase tracking-[0.2em] text-white/60">{displayedProject.category}</p><p className="mt-1 text-lg font-semibold">{displayedProject.title}</p></div></div></motion.a>
+  if (!count) return null
 
-  const positions = [
-    "absolute right-[4%] top-[4%] z-30 w-[62%]",
-    "absolute right-[-2%] top-[44%] z-40 w-[40%]",
-    "absolute left-[6%] bottom-[6%] z-50 w-[42%]",
-  ]
+  // Pilha: o card ativo fica na frente; os demais ficam atrás, deslocados, menores e mais apagados.
+  const layer = (rel: number): { z: number; opacity: number; transform: string; shadow: string } => {
+    if (rel === 0) return { z: 30, opacity: 1, transform: "translate(0%, 15%) rotate(-1deg) scale(1)", shadow: "0 30px 60px rgba(0,0,0,0.55)" }
+    if (rel === 1) return { z: 20, opacity: 0.75, transform: "translate(20%, 0%) rotate(3deg) scale(0.9)", shadow: "0 20px 40px rgba(0,0,0,0.4)" }
+    if (rel === 2) return { z: 10, opacity: 0.55, transform: "translate(-7.5%, -2.5%) rotate(-3deg) scale(0.86)", shadow: "0 20px 40px rgba(0,0,0,0.35)" }
+    return { z: 0, opacity: 0, transform: "translate(0%, 0%) scale(0.8)", shadow: "none" }
+  }
 
-  return <motion.a href={`/portfolio/${project.slug}`} onClick={() => void trackEvent("portfolio_view", { location: "hero", project: project.title }, "production")} initial={reduced ? false : { opacity: 0, y: 32, scale: 0.94, rotate: index === 1 ? 2.4 : index === 2 ? -2.2 : -1.2 }} animate={reduced ? undefined : { opacity: 1, y: [0, (index === 1 ? 9 : -7) * motionAmount, 0], rotate: [index === 1 ? 2.4 : index === 2 ? -2.2 : -1.2, index === 1 ? 1.7 : index === 2 ? -1.5 : -0.5, index === 1 ? 2.4 : index === 2 ? -2.2 : -1.2], scale: 1 }} transition={{ opacity: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, scale: { duration: 0.7, delay: 0.28 + index * 0.12, ease }, y: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }, rotate: { duration: 7 + index, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 } }} className={`${positions[index] ?? positions[0]} group overflow-hidden rounded-[1.55rem] border border-white/75 bg-white shadow-[0_40px_100px_-45px_rgba(0,0,0,0.88)] transition-shadow duration-500 hover:shadow-[0_48px_110px_-42px_rgba(0,0,0,0.95)]`}>
-    <div className="flex h-8 items-center gap-1.5 border-b border-black/10 bg-white px-4"><span className="h-2 w-2 rounded-full bg-vm-coral/75" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="h-2 w-2 rounded-full bg-black/10" /><span className="ml-auto max-w-[70%] truncate text-[8px] font-medium uppercase tracking-[0.14em] text-black/45">{project.title} · {project.description.startsWith("Projeto real") ? "projeto real" : "modelo · demonstração"}</span></div>
-    <div className="relative aspect-[16/10] overflow-hidden bg-black"><AnimatePresence initial={false} mode="sync"><motion.div key={image} initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }} transition={{ duration: 1.15, ease }} className="absolute inset-0 z-10"><Image src={image} alt={displayedProject.title} fill sizes="(min-width: 1024px) 48vw, 100vw" className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" /></motion.div></AnimatePresence><div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-transparent" /><div className="absolute inset-x-5 bottom-5 text-white"><p className="text-[9px] uppercase tracking-[0.22em] text-white/60">{displayedProject.category}</p><p className="mt-1 text-xl font-semibold tracking-tight">{displayedProject.title}</p></div></div>
-  </motion.a>
+  return (
+    <div className="relative z-30 mx-auto w-full max-w-[560px] lg:mx-0 lg:justify-self-end" aria-label="Projetos da VireMarca" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
+      <div className="relative aspect-[4/3] w-full">
+        {projects.map((project, index) => {
+          const rel = (index - active + count) % count
+          const l = layer(rel)
+          const front = rel === 0
+          const real = project.description.startsWith("Projeto real")
+          return (
+            <a
+              key={project.id}
+              href={`/portfolio/${project.slug}`}
+              tabIndex={front ? 0 : -1}
+              aria-hidden={rel > 2 ? true : undefined}
+              onClick={(event) => {
+                if (!front) { event.preventDefault(); setActive(index); return }
+                void trackEvent("portfolio_view", { location: "hero", project: project.title }, "production")
+              }}
+              className="group absolute left-[4%] top-[4%] block w-[72%] overflow-hidden rounded-[14px] bg-vm-ink"
+              style={{ zIndex: l.z, opacity: l.opacity, transform: l.transform, boxShadow: l.shadow, transition: reduced ? "none" : "transform 700ms ease, opacity 700ms ease", pointerEvents: rel > 2 ? "none" : "auto" }}
+            >
+              <div className="flex h-7 items-center gap-1.5 bg-[#2A2D33] px-3">
+                <span className="h-2 w-2 rounded-full bg-[#E5584B]" /><span className="h-2 w-2 rounded-full bg-[#E8B63B]" /><span className="h-2 w-2 rounded-full bg-[#4BB866]" />
+                <span className="ml-2 flex h-[18px] flex-1 items-center truncate rounded-full bg-[#1B1D22] px-2.5 text-[10px] text-[#9CA1A8]">{project.title} · {real ? "projeto real" : "modelo · demonstração"}</span>
+              </div>
+              <div className="relative aspect-[16/10] overflow-hidden bg-black">
+                <Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(min-width: 1024px) 400px, 72vw" className="object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute inset-x-4 bottom-3 text-white"><p className="text-[9px] uppercase tracking-[0.2em] text-white/65">{project.category}</p><p className="mt-0.5 text-lg font-semibold tracking-tight">{project.title}</p></div>
+              </div>
+            </a>
+          )
+        })}
+      </div>
+      {count > 1 && (
+        <div className="mt-1 flex justify-center">
+          {projects.map((project, index) => (
+            <button key={project.id} type="button" onClick={() => setActive(index)} aria-label={`Mostrar ${project.title}`} aria-current={index === active ? "true" : undefined} className="flex h-11 w-11 items-center justify-center">
+              <span className={`block h-2 rounded-full transition-all duration-300 ${index === active ? "w-[26px] bg-vm-coral" : "w-2 bg-[#4A4E55]"}`} />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
