@@ -1,5 +1,6 @@
 import type { Facts } from "./collect"
 import type { Psi } from "./psi"
+import { cleanEvidence, dedupeFindings } from "./findings"
 
 export type Severity = "critico" | "atencao" | "info"
 export type Finding = { id: string; severity: Severity; criterion: string; title: string; evidence: string; impact: string; fix: string; source: "regra" | "ia" }
@@ -59,7 +60,7 @@ export function ruleChecks(f: Facts, psi: Psi | null): Record<CriterionId, Check
     confianca: [
       { label: "Conexão segura (HTTPS)", status: f.https ? "pass" : "fail", w: 3, sev: "critico", title: "O site não usa conexão segura (HTTPS)", evidence: `Endereço final: ${f.url}`, impact: "O navegador mostra aviso de “site não seguro” e o visitante desiste.", fix: "Ative certificado HTTPS e redirecione todo o tráfego.", strength: "Site em HTTPS" },
       { label: "Telefone ou e-mail visível", status: f.signals.phone || f.signals.email || f.links.whatsapp || f.links.tel || f.links.mailto ? "pass" : "fail", w: 2, sev: "critico", title: "Nenhum telefone ou e-mail visível", evidence: "Não encontrei telefone nem e-mail no texto da página inicial", impact: "Sem canal de contato claro, o visitante não confia.", fix: "Mostre telefone/WhatsApp e e-mail no topo e no rodapé." },
-      { label: "Endereço ou região de atuação", status: f.signals.address || f.signals.mapEmbed ? "pass" : "warn", w: 1, sev: "atencao", title: "Sem endereço ou região de atuação", evidence: "Nenhum endereço ou mapa identificado", impact: "Negócio local sem localização perde confiança e busca local.", fix: "Informe cidade/endereço e, se houver loja, incorpore o mapa." },
+      { label: "Endereço ou região de atuação", status: f.signals.address || f.signals.mapEmbed || f.signals.region ? "pass" : "warn", w: 1, sev: "atencao", title: "Sem endereço ou região de atuação", evidence: "Nenhum endereço, cidade/UF ou mapa identificado", impact: "Negócio local sem localização perde confiança e busca local.", fix: "Informe cidade/endereço e, se houver loja, incorpore o mapa." },
       { label: "Política de privacidade", status: f.signals.privacy ? "pass" : "warn", w: 2, sev: "atencao", title: "Sem política de privacidade acessível", evidence: "Nenhum link de privacidade/termos encontrado", impact: "Risco com a LGPD e sinal de site pouco profissional.", fix: "Publique a política e linke no rodapé." },
       { label: "Página sobre / quem somos", status: f.signals.about ? "pass" : "warn", w: 1, sev: "atencao", title: "Sem página “Quem somos”", evidence: "Nenhum link de Sobre/Quem somos", impact: "Pessoas contratam pessoas: sem história, a confiança é menor.", fix: "Conte quem está por trás da empresa, de forma honesta." },
       { label: "Provas sociais", status: f.signals.testimonials ? "pass" : "warn", w: 1, sev: "atencao", title: "Sem depoimentos ou avaliações visíveis", evidence: "Nenhuma seção de depoimentos/avaliações encontrada", impact: "Sem prova de que outros clientes foram bem atendidos, a decisão fica mais difícil.", fix: "Exiba avaliações reais (Google, clientes). Nunca invente depoimentos." },
@@ -158,20 +159,30 @@ export function buildReport(f: Facts, psi: Psi | null, a: LlmOut | null, b: LlmO
     return { id: c.id, label: c.label, pillar: c.pillar, weight: c.weight, rules, llm, score, why: rawLlm?.why ? String(rawLlm.why).slice(0, 320) : "", checks: list.map(x => ({ label: x.label, status: x.status })) }
   })
   const sevArr: Severity[] = ["critico", "atencao", "info"]
+  // A IA só recebe texto e medições: não vê o visual da página e não deve citar ferramentas específicas.
+  const NO_VISUAL = /espa[cç]amento|denso|visualmente|\bcores?\b|tipografia|\bfonte\b|layout|\bdesign\b/i
+  const NO_TECH = /\b(redis|memcached|varnish|nginx|apache|wordpress|cloudflare|wp[- ]?rocket)\b/i
   for (const o of [a, b]) for (const [i, x] of (o?.findings ?? []).slice(0, 6).entries()) {
     if (!x?.title || !x.fix) continue
+    if (NO_VISUAL.test(`${x.title} ${x.evidence ?? ""} ${x.fix}`) || NO_TECH.test(`${x.title} ${x.evidence ?? ""} ${x.fix}`)) continue
     const crit = CRITERIA.find(c => c.id === x.criterion)?.id ?? "clareza"
-    findings.push({ id: `ia-${crit}-${i}-${findings.length}`, severity: sevArr.includes(x.severity as Severity) ? (x.severity as Severity) : "atencao", criterion: crit, title: String(x.title).slice(0, 140), evidence: String(x.evidence ?? "").slice(0, 300), impact: String(x.impact ?? "").slice(0, 300), fix: String(x.fix).slice(0, 300), source: "ia" })
+    findings.push({ id: `ia-${crit}-${i}-${findings.length}`, severity: sevArr.includes(x.severity as Severity) ? (x.severity as Severity) : "atencao", criterion: crit, title: String(x.title).slice(0, 140), evidence: cleanEvidence(String(x.evidence ?? "").slice(0, 300)), impact: String(x.impact ?? "").slice(0, 300), fix: String(x.fix).slice(0, 300), source: "ia" })
   }
   for (const o of [a, b]) for (const s of o?.strengths ?? []) if (typeof s === "string" && s.length < 160) strengths.push(s)
   const rank = { critico: 0, atencao: 1, info: 2 }
-  findings.sort((x, y) => rank[x.severity] - rank[y.severity])
+  const wOf = (id: string) => CRITERIA.find(c => c.id === id)?.weight ?? 0
+  // cada problema aparece uma vez só (regra > IA) e a lista sai ordenada por gravidade e peso do critério
+  findings.splice(0, findings.length, ...dedupeFindings(findings))
+  findings.sort((x, y) => rank[x.severity] - rank[y.severity] || wOf(y.criterion) - wOf(x.criterion))
   const tw = criteria.reduce((s, c) => s + c.weight, 0)
   const overall = r1(criteria.reduce((s, c) => s + c.weight * c.score, 0) / tw)
   const pillar = (p: "experiencia" | "tecnico") => { const l = criteria.filter(c => c.pillar === p); return r1(l.reduce((s, c) => s + c.weight * c.score, 0) / l.reduce((s, c) => s + c.weight, 0)) }
   const real = findings.filter(x => x.severity !== "info")
-  const quickWins = [...new Set([...(b?.quick_wins ?? []).filter(x => typeof x === "string" && x.length < 200), ...real.slice(0, 6).map(x => x.fix)])].slice(0, 6)
-  const structural = [...new Set(real.slice(6, 14).map(x => x.fix))].slice(0, 6)
+  // "Começar por aqui" = o que dá para fazer rápido; o que depende de servidor/hospedagem vai para "Em seguida".
+  const HARD = /servidor|hospedagem|\bcdn\b|backend/i
+  const easy = real.filter(x => !HARD.test(x.title)), hard = real.filter(x => HARD.test(x.title))
+  const quickWins = [...new Set(easy.slice(0, 6).map(x => x.fix))]
+  const structural = [...new Set([...easy.slice(6), ...hard].map(x => x.fix))].filter(x => !quickWins.includes(x)).slice(0, 6)
   const limits = [
     "Auditoria automática feita em " + new Date().toLocaleDateString("pt-BR") + " a partir do que é visível ao público; não avalia áreas restritas, painel ou sistemas internos.",
     psi ? "Desempenho e acessibilidade medidos pelo Google PageSpeed Insights (celular), que pode variar entre medições." : "Não foi possível obter a medição do Google PageSpeed neste momento; desempenho avaliado só pelas medidas diretas do servidor.",

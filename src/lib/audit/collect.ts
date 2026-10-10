@@ -1,5 +1,6 @@
 import { parse } from "node-html-parser"
 import { safeFetch, type FetchResult } from "./safe-fetch"
+import { extractJsonLdTypes } from "./jsonld"
 
 export type Facts = {
   url: string; host: string; fetchedAt: string
@@ -13,7 +14,7 @@ export type Facts = {
   og: { title: boolean; description: boolean; image: boolean; imageOk: boolean | null }; twitterCard: boolean; jsonLdTypes: string[]; favicon: boolean
   links: { internal: number; external: number; tel: number; mailto: number; whatsapp: number; broken: { url: string; status: number }[]; checked: number; hash: number }
   nav: string[]; ctas: string[]; forms: number; formsWithLabels: number; buttons: number
-  signals: { phone: boolean; email: boolean; address: boolean; cnpj: boolean; privacy: boolean; about: boolean; testimonials: boolean; social: string[]; mapEmbed: boolean; footer: boolean; copyright: boolean; videoEmbed: boolean }
+  signals: { phone: boolean; email: boolean; address: boolean; region: boolean; cnpj: boolean; privacy: boolean; about: boolean; testimonials: boolean; social: string[]; mapEmbed: boolean; footer: boolean; copyright: boolean; videoEmbed: boolean }
   text: { words: number; excerpt: string; aboveFold: string }
   robotsTxt: { status: number; hasSitemap: boolean; blocksAll: boolean }
   sitemap: { status: number; urls: number }
@@ -23,6 +24,8 @@ export type Facts = {
 }
 
 const CTA_RE = /(whatsapp|fale|falar|contato|contate|chame|orçamento|orcamento|solicit|agende|agendar|comprar|compre|quero|peça|peca|reserv|ligar|ligue|baixar|cadastr|entre em|saiba mais|ver (mais|projetos|serviços)|conhe[cç]a|começ|comec|diagn[oó]stic)/i
+
+const UF_RE = /[A-ZÀ-Ú][\wà-úÀ-Ú]+(?:\s[\wà-úÀ-Ú]+){0,3}\s*[,\-–/]\s*(?:AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b/
 
 function clean(s: string, max = 400) { return s.replace(/\s+/g, " ").trim().slice(0, max) }
 
@@ -37,7 +40,7 @@ export async function collectFacts(inputUrl: string): Promise<Facts> {
 
   const meta = (sel: string) => root.querySelector(sel)?.getAttribute("content")?.trim() || ""
   const imgs = root.querySelectorAll("img")
-  const scripts = root.querySelectorAll("script")
+  const scripts = parse(home.body).querySelectorAll("script")
   const hostBase = u.hostname.replace(/^www\./, "")
   const isThird = (src: string) => { try { return !new URL(src, u).hostname.endsWith(hostBase) } catch { return false } }
   const anchors = root.querySelectorAll("a")
@@ -64,14 +67,7 @@ export async function collectFacts(inputUrl: string): Promise<Facts> {
   const mainHeading = root.querySelector("h1")
   const aboveFold = clean([mainHeading?.text, root.querySelector("h1 ~ p, header p, .hero p")?.text, ...root.querySelectorAll("header a, header button, nav a").slice(0, 8).map(n => n.text)].filter(Boolean).join(" · "), 500)
 
-  const jsonLdTypes: string[] = []
-  for (const s of root.querySelectorAll('script[type="application/ld+json"]')) {
-    try {
-      const j = JSON.parse(s.text)
-      const walk = (n: unknown) => { if (Array.isArray(n)) n.forEach(walk); else if (n && typeof n === "object") { const t = (n as Record<string, unknown>)["@type"]; if (typeof t === "string") jsonLdTypes.push(t); else if (Array.isArray(t)) jsonLdTypes.push(...t.map(String)); const g = (n as Record<string, unknown>)["@graph"]; if (g) walk(g) } }
-      walk(j)
-    } catch {}
-  }
+  const jsonLdTypes = extractJsonLdTypes(home.body)
 
   const lower = home.body.toLowerCase()
   const text = fullText
@@ -100,6 +96,7 @@ export async function collectFacts(inputUrl: string): Promise<Facts> {
     return { url: l, status: r.status, title: t, words: clean(d.text, 100000).split(" ").filter(Boolean).length }
   }))
   const title = clean(root.querySelector("title")?.text || "", 200)
+  const regionBlob = `${title} ${clean(meta('meta[name="description"]'), 400)} ${text}`
   const pages = pageResults.map(p => ({ ...p, titleDuplicate: !!p.title && p.title === title }))
   const broken = pages.filter(p => p.status === 0 || p.status >= 400).map(p => ({ url: p.url, status: p.status }))
 
@@ -128,14 +125,14 @@ export async function collectFacts(inputUrl: string): Promise<Facts> {
     scripts: { external: scripts.filter(s => s.getAttribute("src")).length, inlineBytes: scripts.filter(s => !s.getAttribute("src")).reduce((n, s) => n + s.text.length, 0), thirdParty: scripts.filter(s => s.getAttribute("src") && isThird(s.getAttribute("src")!)).length },
     stylesheets: root.querySelectorAll('link[rel="stylesheet"]').length,
     og: { title: !!meta('meta[property="og:title"]'), description: !!meta('meta[property="og:description"]'), image: !!meta('meta[property="og:image"]'), imageOk: ogImg ? ogImg.status < 400 : null },
-    twitterCard: !!meta('meta[name="twitter:card"]'), jsonLdTypes: [...new Set(jsonLdTypes)], favicon: !!root.querySelector('link[rel~="icon"]'),
+    twitterCard: !!meta('meta[name="twitter:card"]'), jsonLdTypes, favicon: !!root.querySelector('link[rel~="icon"]'),
     links: { internal: internalSet.size, external, tel, mailto, whatsapp: wa, broken, checked: pages.length, hash },
     nav: [...new Set(root.querySelectorAll("nav a, header a").map(a => clean(a.text, 40)).filter(t => t && t.length < 40))].slice(0, 14),
     ctas: [...new Set([...root.querySelectorAll("a, button")].map(n => clean(n.text, 60)).filter(t => t && CTA_RE.test(t)))].slice(0, 12),
     forms: forms.length, formsWithLabels, buttons: root.querySelectorAll("button, [role=button], .btn").length,
     signals: {
-      phone: tel > 0 || /\(?\b\d{2}\)?\s?9?\d{4}[-.\s]?\d{4}\b/.test(text), email: mailto > 0 || /[\w.+-]+@[\w-]+\.[\w.]+/.test(text),
-      address: /\b(rua|av\.|avenida|rodovia|travessa|alameda|estrada)\s+[^,]{3,}/i.test(text) || /endereço/i.test(text), cnpj: /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/.test(text),
+      phone: tel > 0 || wa > 0 || /\(?\b\d{2}\)?\s?9?\d{4}[-.\s]?\d{4}\b/.test(text), email: mailto > 0 || /[\w.+-]+@[\w-]+\.[\w.]+/.test(text),
+      address: /\b(rua|av\.|avenida|rodovia|travessa|alameda|estrada)\s+[^,]{3,}/i.test(text) || /endereço/i.test(text), region: UF_RE.test(regionBlob) || /\b(grande\s+[A-ZÀ-Ú]|regi[aã]o (de|da|do|metropolitana))/.test(regionBlob) || /\b(atendemos|atuamos|atendimento em)\b/i.test(text), cnpj: /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/.test(text),
       privacy: hrefs.some(h => /privacidade|privacy|lgpd|termos/i.test(h.href + h.text)), about: hrefs.some(h => /quem somos|sobre|about|nossa hist/i.test(h.text + h.href)),
       testimonials: /depoimento|avalia[cç][oõ]es|o que (nossos )?clientes|testimonial|clientes dizem/i.test(text), social, mapEmbed: /google\.com\/maps|maps\.google|openstreetmap/i.test(lower),
       footer: !!root.querySelector("footer"), copyright: /©|&copy;|copyright|todos os direitos/i.test(home.body), videoEmbed: /youtube\.com\/embed|player\.vimeo|<video/i.test(lower),

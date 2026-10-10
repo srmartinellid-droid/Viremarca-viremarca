@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type PDFImage, type RGB } from "pdf-lib"
 import { CRITERIA, type Report, type Finding } from "./score"
-import { LOGO_VM_DARK, LOGO_WORDMARK_DARK, LOGO_WORDMARK_LIGHT, LOGO_VM_LIGHT } from "./logos"
+import { LOGO_VM_DARK, LOGO_WORDMARK_DARK, LOGO_WORDMARK_LIGHT } from "./logos"
 
 const W = 595.28, H = 841.89, M = 44
 const C = { orange: rgb(0.945, 0.353, 0), ink: rgb(0.071, 0.071, 0.071), bg: rgb(0.984, 0.976, 0.965), line: rgb(0.906, 0.89, 0.871), mute: rgb(0.42, 0.42, 0.42), red: rgb(0.85, 0.19, 0.15), amber: rgb(0.91, 0.64, 0.09), green: rgb(0.18, 0.62, 0.36), white: rgb(1, 1, 1), card: rgb(1, 1, 1) }
@@ -15,10 +15,15 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
   const sets = new Map<PDFFont, Set<number>>([[reg, new Set(reg.getCharacterSet())], [bold, new Set(bold.getCharacterSet())]])
   const safe = (s: string, f: PDFFont) => {
     const ok = sets.get(f)!
-    return s.replace(/→/g, ">").replace(/≥/g, ">=").replace(/≤/g, "<=").replace(/[ -‏ ]/g, " ").replace(/✓|✔/g, "").split("").map(ch => ok.has(ch.codePointAt(0)!) ? ch : "").join("")
+    return s
+      .replace(/[\u2010-\u2015\u2212]/g, "-")
+      .replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, " ")
+      .replace(/[\u200B-\u200F\u2060\uFEFF]/g, "")
+      .replace(/→/g, ">").replace(/≥/g, ">=").replace(/≤/g, "<=").replace(/✓|✔/g, "")
+      .split("").map(ch => ok.has(ch.codePointAt(0)!) ? ch : "").join("")
   }
   const img = async (b64: string) => pdf.embedPng(Buffer.from(b64, "base64"))
-  const [wmDark, wmLight, vmDark, vmLight]: PDFImage[] = await Promise.all([img(LOGO_WORDMARK_DARK), img(LOGO_WORDMARK_LIGHT), img(LOGO_VM_DARK), img(LOGO_VM_LIGHT)])
+  const [wmDark, wmLight, vmDark]: PDFImage[] = await Promise.all([img(LOGO_WORDMARK_DARK), img(LOGO_WORDMARK_LIGHT), img(LOGO_VM_DARK)])
 
   let page!: PDFPage
   let y = 0
@@ -50,8 +55,8 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
   const newPage = (label: string) => {
     page = pdf.addPage([W, H]); pages.push(page); pageNo++
     page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: C.bg })
-    page.drawText("vire", { x: M, y: H - 42, size: 15, font: bold, color: C.ink })
-    page.drawText("marca", { x: M + bold.widthOfTextAtSize("vire", 15), y: H - 42, size: 15, font: bold, color: C.orange })
+    const hw = 84
+    page.drawImage(wmLight, { x: M, y: H - 46, width: hw, height: hw * (wmLight.height / wmLight.width) })
     const lab = safe(label.toUpperCase(), reg)
     page.drawText(lab, { x: W - M - reg.widthOfTextAtSize(lab, 7.5), y: H - 40, size: 7.5, font: reg, color: C.mute })
     page.drawLine({ start: { x: M, y: H - 52 }, end: { x: W - M, y: H - 52 }, thickness: 1.2, color: C.ink })
@@ -69,25 +74,37 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
   }
 
   // ---------- CAPA ----------
+  // Ordem: barra superior (wordmark + selo) > V/M grande centralizado > rótulo > título > subtítulo > ficha do relatório > contato.
   page = pdf.addPage([W, H]); pages.push(page); pageNo++
   page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: C.ink })
   for (const [rad, op] of [[300, 0.05], [230, 0.07], [160, 0.09]] as const) page.drawCircle({ x: W - 40, y: H - 40, size: rad, color: C.orange, opacity: op })
-  const wl = 24
-  page.drawText("vire", { x: M, y: H - 54 - wl / 2, size: wl, font: bold, color: rgb(1, 1, 1) })
-  page.drawText("marca", { x: M + bold.widthOfTextAtSize("vire", wl), y: H - 54 - wl / 2, size: wl, font: bold, color: C.orange })
+  const wmw = 132, wmh = wmw * (wmDark.height / wmDark.width)
+  page.drawImage(wmDark, { x: M, y: H - 46 - wmh, width: wmw, height: wmh })
   const tag = "AUDITORIA DE SITE · CONFIDENCIAL"
-  page.drawText(tag, { x: W - M - reg.widthOfTextAtSize(tag, 7.5), y: H - 62, size: 7.5, font: reg, color: rgb(0.7, 0.7, 0.7) })
-  const vw = 110
-  page.drawImage(vmDark, { x: (W - vw) / 2, y: H - 330, width: vw, height: vw * (vmDark.height / vmDark.width) })
-  page.drawText("RELATÓRIO DE AUDITORIA", { x: M, y: 330, size: 8.5, font: bold, color: C.orange })
+  page.drawText(tag, { x: W - M - reg.widthOfTextAtSize(tag, 7.5), y: H - 46 - wmh / 2 - 2.5, size: 7.5, font: reg, color: rgb(0.7, 0.7, 0.7) })
+  const vw = 300, vh = vw * (vmDark.height / vmDark.width)
+  page.drawImage(vmDark, { x: (W - vw) / 2, y: 505 - vh / 2, width: vw, height: vh })
+  page.drawText("RELATÓRIO DE AUDITORIA", { x: M, y: 352, size: 8.5, font: bold, color: C.orange })
   const t1 = lines("Como o seu site é visto, medido e encontrado.", bold, 27, W - 2 * M)
-  t1.forEach((l, i) => page.drawText(l, { x: M, y: 296 - i * 32, size: 27, font: bold, color: i === t1.length - 1 ? C.orange : C.white }))
+  t1.forEach((l, i) => page.drawText(l, { x: M, y: 318 - i * 32, size: 27, font: bold, color: i === t1.length - 1 ? C.orange : C.white }))
   const sub = "Análise de experiência do visitante, desempenho, SEO, segurança e conversão, com notas por critério e um plano de correção."
-  lines(sub, reg, 10.5, W - 2 * M - 40).forEach((l, i) => page.drawText(l, { x: M, y: 296 - t1.length * 32 - 8 - i * 15, size: 10.5, font: reg, color: rgb(0.82, 0.82, 0.82) }))
+  lines(sub, reg, 10.5, W - 2 * M - 40).forEach((l, i) => page.drawText(l, { x: M, y: 318 - t1.length * 32 - 8 - i * 15, size: 10.5, font: reg, color: rgb(0.82, 0.82, 0.82) }))
   page.drawRectangle({ x: M, y: 70, width: W - 2 * M, height: 62, color: rgb(0.11, 0.11, 0.11), borderColor: rgb(0.2, 0.2, 0.2), borderWidth: 0.8 })
   const meta: [string, string][] = [["SITE", r.host], ["DATA", new Date(r.generatedAt).toLocaleDateString("pt-BR")], ["NOTA GERAL", `${fmt(r.overall)} / 10`], ["VEREDITO", r.verdict.split(":")[0]]]
-  const cw = (W - 2 * M - 28) / 4
-  meta.forEach(([k, v], i) => { const x = M + 14 + i * cw; page.drawText(k, { x, y: 112, size: 6.5, font: reg, color: rgb(0.6, 0.6, 0.6) }); lines(v, bold, 9.5, cw - 8).slice(0, 2).forEach((l, j) => page.drawText(l, { x, y: 96 - j * 12, size: 9.5, font: bold, color: i === 2 ? C.orange : C.white })) })
+  const frac4 = [0.4, 0.17, 0.17, 0.26], inner = W - 2 * M - 28
+  let mx = M + 14
+  meta.forEach(([k, v], i) => {
+    const x = mx, cw = inner * frac4[i]; mx += cw
+    page.drawText(k, { x, y: 112, size: 6.5, font: reg, color: rgb(0.6, 0.6, 0.6) })
+    const col = i === 2 ? C.orange : C.white
+    if (i === 0) {
+      // endereço do site: uma linha só, reduz a fonte (e abrevia se preciso) para nunca invadir a coluna ao lado
+      let fs = 9.5, t = safe(v, bold)
+      while (bold.widthOfTextAtSize(t, fs) > cw - 12 && fs > 6.5) fs -= 0.5
+      while (bold.widthOfTextAtSize(t, fs) > cw - 12 && t.length > 4) t = t.slice(0, -2)
+      page.drawText(t, { x, y: 96, size: fs, font: bold, color: col })
+    } else lines(v, bold, 9.5, cw - 10).slice(0, 2).forEach((l, j) => page.drawText(l, { x, y: 96 - j * 12, size: 9.5, font: bold, color: col }))
+  })
   page.drawText("VireMarca — sites sob medida · viremarca.com.br · viremarca@gmail.com · (48) 99141-0717", { x: M, y: 40, size: 7.5, font: reg, color: rgb(0.6, 0.6, 0.6) })
 
   // ---------- RESUMO ----------
@@ -150,8 +167,8 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
     }
   }
   block("experiencia", "02 — O que o visitante vê", "Experiência do visitante", "Como alguém que chega pelo celular entende, confia e decide entrar em contato.")
-  newPage("Técnico e SEO · " + r.host)
-  kicker("03 — O que está por trás", "Desempenho, SEO e segurança", "Medições feitas no servidor e pelo Google PageSpeed Insights (celular).")
+  if (y - 330 < 50) newPage("Técnico e SEO · " + r.host); else y -= 16
+  kicker("03 — O que está por trás", "Desempenho, SEO e segurança", r.psi ? "Medições feitas no servidor e pelo Google PageSpeed Insights (celular)." : "Medições feitas diretamente no servidor do site. A medição do Google PageSpeed não estava disponível neste momento.")
   y -= 4
   const rows: [string, string][] = [["Primeira resposta do servidor", `${r.metrics.ttfbMs} ms`], ["Tamanho do HTML", `${r.metrics.htmlKb} KB`], ["Palavras na página inicial", String(r.metrics.words)], ["Imagens na página inicial", String(r.metrics.images)], ["Páginas internas testadas", String(r.metrics.internalChecked)]]
   if (r.psi) rows.push(["Google: desempenho (celular)", String(r.psi.performance ?? "n/d")], ["Google: acessibilidade", String(r.psi.accessibility ?? "n/d")], ["Google: boas práticas", String(r.psi.bestPractices ?? "n/d")], ["Google: SEO", String(r.psi.seo ?? "n/d")], ["Maior conteúdo visível (LCP)", r.psi.lcpMs != null ? `${(r.psi.lcpMs / 1000).toFixed(1).replace(".", ",")} s` : "n/d"], ["Bloqueio de interação (TBT)", r.psi.tbtMs != null ? `${Math.round(r.psi.tbtMs)} ms` : "n/d"], ["Estabilidade visual (CLS)", r.psi.cls != null ? r.psi.cls.toFixed(2).replace(".", ",") : "n/d"])
@@ -225,7 +242,7 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
   y -= 14
   ensure(96)
   page.drawRectangle({ x: M, y: y - 84, width: W - 2 * M, height: 84, color: C.ink })
-  page.drawImage(vmLight === vmLight ? vmDark : vmDark, { x: M + 16, y: y - 60, width: 56, height: 56 * (vmDark.height / vmDark.width) })
+  page.drawImage(vmDark, { x: M + 16, y: y - 42 - (62 * (vmDark.height / vmDark.width)) / 2, width: 62, height: 62 * (vmDark.height / vmDark.width) })
   text("Quer corrigir isso com quem entende?", { x: M + 90, yy: y - 8, size: 12.5, font: bold, color: C.white, maxW: W - 2 * M - 106 })
   text("A VireMarca transforma este diagnóstico em um plano e cuida da execução. Fale com a equipe:", { x: M + 90, yy: y - 28, size: 8.5, color: rgb(0.82, 0.82, 0.82), maxW: W - 2 * M - 106 })
   page.drawText("WhatsApp (48) 99141-0717  ·  viremarca@gmail.com  ·  viremarca.com.br", { x: M + 90, y: y - 70, size: 9, font: bold, color: C.orange })

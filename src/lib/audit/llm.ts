@@ -3,7 +3,7 @@ import { getTranslationConfig, TRANSLATION_SECRET } from "@/lib/translation/engi
 import type { Facts } from "./collect"
 import type { Psi } from "./psi"
 import type { LlmOut } from "./score"
-import { CRITERIA } from "./score"
+import { CRITERIA, ruleChecks } from "./score"
 
 type Provider = { name: "chave-chat" | "chave-traducao"; endpoint: string; key: string; model: string }
 
@@ -51,14 +51,19 @@ export async function routed(providers: Provider[], preferred: number, system: s
   return { out: null, route: tried.join(" → ") }
 }
 
-const RULES = "Regras: use APENAS os fatos fornecidos; nunca invente números, páginas, concorrentes ou problemas; se um dado não foi fornecido, diga que não foi possível avaliar. Seja um auditor sênior honesto e calibrado (um site típico de pequena empresa fica entre 5 e 7). Notas de 0 a 10 com uma casa decimal. Escreva em português do Brasil, simples, sem jargão. Responda SOMENTE com JSON."
+const RULES = "Regras: use APENAS os fatos fornecidos; nunca invente números, páginas, concorrentes ou problemas; se um dado não foi fornecido, diga que não foi possível avaliar. Seja um auditor sênior honesto e calibrado (um site típico de pequena empresa fica entre 5 e 7). Notas de 0 a 10 com uma casa decimal. Escreva em português do Brasil, simples, sem jargão. Coerência: a justificativa (why) NÃO pode contradizer `verificacoes_automaticas`: item 'em atenção' ou 'falhou' não pode ser descrito como correto, e item 'ok' não pode ser apontado como problema. Link de WhatsApp clicável conta como canal de contato. Você NÃO enxerga o visual da página (cores, espaçamento, layout, design): não opine sobre isso. Não cite ferramentas ou tecnologias específicas (Redis, plugins, nomes de hospedagem); descreva o resultado esperado. Em 'evidence' escreva frases naturais, nunca nomes de campos ou chaves do JSON recebido (como sinais_de_confianca ou phone:false). Não repita problemas já cobertos por `verificacoes_automaticas`: seus findings devem trazer só observações qualitativas novas. Responda SOMENTE com JSON."
+
+const verificacoes = (f: Facts, psi: Psi | null, pillar: "experiencia" | "tecnico") => {
+  const rc = ruleChecks(f, psi)
+  return Object.fromEntries(CRITERIA.filter(c => c.pillar === pillar).map(c => [c.id, rc[c.id].map(x => `${x.label}: ${x.status === "pass" ? "ok" : x.status === "warn" ? "em atenção" : "falhou"}`)]))
+}
 
 export function promptA(f: Facts) {
   const crit = CRITERIA.filter(c => c.pillar === "experiencia")
   const system = `Você audita a EXPERIÊNCIA DO VISITANTE de um site para a VireMarca. Avalie como um visitante real que chegou pelo celular: se entende, se confia, se contata, se se prende ao conteúdo. ${RULES}
 Critérios: ${crit.map(c => `${c.id} (${c.question})`).join("; ")}.
 Formato: {"criteria":{"clareza":{"score":0,"why":"1-2 frases com evidência"},"navegacao":{...},"confianca":{...},"conversao":{...},"conteudo":{...}},"findings":[{"severity":"critico|atencao|info","criterion":"id","title":"...","evidence":"trecho/fato real","impact":"efeito para o visitante","fix":"ação concreta"}],"strengths":["..."],"first_impression":"2 frases sobre a primeira impressão em 5 segundos"}. No máximo 5 findings e 3 strengths.`
-  const user = JSON.stringify({ site: f.url, titulo: f.title, descricao: f.description, h1: f.h1, h2: f.h2, menu: f.nav, chamadas_para_acao: f.ctas, primeira_dobra: f.text.aboveFold, sinais_de_confianca: f.signals, contato_clicavel: { whatsapp: f.links.whatsapp, tel: f.links.tel, mailto: f.links.mailto, formularios: f.forms }, palavras_home: f.text.words, imagens: f.images.total, paginas_amostradas: f.pages.map(p => ({ url: p.url, status: p.status, titulo: p.title, palavras: p.words })), links_quebrados: f.links.broken, texto_da_home: f.text.excerpt })
+  const user = JSON.stringify({ site: f.url, verificacoes_automaticas: verificacoes(f, null, "experiencia"), titulo: f.title, titulo_caracteres: f.title.length, descricao: f.description, h1: f.h1, h2: f.h2, menu: f.nav, chamadas_para_acao: f.ctas, primeira_dobra: f.text.aboveFold, sinais_de_confianca: f.signals, contato_clicavel: { whatsapp: f.links.whatsapp, tel: f.links.tel, mailto: f.links.mailto, formularios: f.forms }, palavras_home: f.text.words, imagens: f.images.total, paginas_amostradas: f.pages.map(p => ({ url: p.url, status: p.status, titulo: p.title, palavras: p.words })), links_quebrados: f.links.broken, texto_da_home: f.text.excerpt })
   return { system, user }
 }
 
@@ -66,7 +71,7 @@ export function promptB(f: Facts, psi: Psi | null) {
   const crit = CRITERIA.filter(c => c.pillar === "tecnico")
   const system = `Você audita o lado TÉCNICO e de SEO de um site para a VireMarca, interpretando medições reais. ${RULES}
 Critérios: ${crit.map(c => `${c.id} (${c.question})`).join("; ")}.
-Formato: {"criteria":{"desempenho":{"score":0,"why":"..."},"mobile":{...},"seo":{...},"seguranca":{...},"presenca":{...}},"findings":[{"severity":"critico|atencao|info","criterion":"id","title":"...","evidence":"medida real","impact":"...","fix":"ação concreta"}],"quick_wins":["ações rápidas, até 5, em ordem de impacto"],"strengths":["..."]}. No máximo 5 findings.`
-  const user = JSON.stringify({ site: f.url, https: f.https, http_redireciona_https: f.httpRedirectsToHttps, ttfb_ms: f.ttfbMs, tempo_total_ms: f.totalMs, html_kb: Math.round(f.htmlBytes / 1024), compressao: f.headers.encoding, cache_control: f.headers.cache, cabecalhos: { hsts: f.headers.hsts, csp: f.headers.csp, nosniff: f.headers.xcto, frame: f.headers.frame }, title: f.title, meta_description_len: f.description.length, h1: f.h1.length, canonical: !!f.canonical, lang: f.lang, viewport: f.viewport, robots_meta: f.robotsMeta, robots_txt: f.robotsTxt, sitemap: f.sitemap, jsonld: f.jsonLdTypes, og: f.og, imagens: f.images, scripts: f.scripts, folhas_de_estilo: f.stylesheets, pagespeed_celular: psi, links_quebrados: f.links.broken, soft404: f.soft404 })
+Formato: {"criteria":{"desempenho":{"score":0,"why":"..."},"mobile":{...},"seo":{...},"seguranca":{...},"presenca":{...}},"findings":[{"severity":"critico|atencao|info","criterion":"id","title":"...","evidence":"medida real","impact":"...","fix":"ação concreta"}],"strengths":["..."]}. No máximo 5 findings.`
+  const user = JSON.stringify({ site: f.url, verificacoes_automaticas: verificacoes(f, psi, "tecnico"), https: f.https, http_redireciona_https: f.httpRedirectsToHttps, ttfb_ms: f.ttfbMs, tempo_total_ms: f.totalMs, html_kb: Math.round(f.htmlBytes / 1024), compressao: f.headers.encoding, cache_control: f.headers.cache, cabecalhos: { hsts: f.headers.hsts, csp: f.headers.csp, nosniff: f.headers.xcto, frame: f.headers.frame }, title: f.title, title_caracteres: f.title.length, meta_description_len: f.description.length, h1: f.h1.length, canonical: !!f.canonical, lang: f.lang, viewport: f.viewport, robots_meta: f.robotsMeta, robots_txt: f.robotsTxt, sitemap: f.sitemap, jsonld: f.jsonLdTypes, og: f.og, imagens: f.images, scripts: f.scripts, folhas_de_estilo: f.stylesheets, pagespeed_celular: psi, links_quebrados: f.links.broken, soft404: f.soft404 })
   return { system, user }
 }
