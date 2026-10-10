@@ -27,10 +27,13 @@ async function groqCompletion(apiKey: string, body: Record<string, unknown>) {
     const payload = await response.json().catch(() => null)
     if (response.ok) return payload
     if (response.status === 429 && attempt === 0) {
-      attempt++
       const retryAfter = Number(response.headers.get("retry-after") || "1")
-      await new Promise(resolve => setTimeout(resolve, Math.min(Math.max(retryAfter, 1), 30) * 1000))
-      continue
+      // Espera longa não vale a pena: acima de 4s desiste na hora e deixa quem chamou tentar outro modelo/chave.
+      if (retryAfter <= 4) {
+        attempt++
+        await new Promise(resolve => setTimeout(resolve, Math.max(retryAfter, 1) * 1000))
+        continue
+      }
     }
     throw new Error(payload?.error?.message || "Falha ao consultar a Groq.")
   }
@@ -42,7 +45,7 @@ export async function groqChat(apiKey: string, model: string, messages: GroqChat
     return await run(model)
   } catch (error) {
     // Os modelos gpt-oss às vezes tentam chamar uma ferramenta que não existe e a Groq recusa. Tenta de novo no outro modelo.
-    if (!/tool/i.test(error instanceof Error ? error.message : "")) throw error
+    if (!/tool|rate limit|limit reached|too many/i.test(error instanceof Error ? error.message : "")) throw error
     return await run(model === HIGH_CAPABILITY_MODEL ? COST_EFFICIENT_MODEL : HIGH_CAPABILITY_MODEL)
   }
 }

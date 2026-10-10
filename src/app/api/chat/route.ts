@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse, after } from "next/server"
 import { SupabaseAssistantConfigRepository } from "@/lib/core-chat/config"
 import { getGroqApiKey } from "@/lib/core-chat/secrets"
 import { buildSystemPrompt, hasCommercialIntent } from "@/lib/core-chat/prompt"
@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const t0 = Date.now()
   try {
     const body = await request.json()
     const visitorId = clean(body?.visitor_id, 80)
@@ -127,48 +128,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: reply, conversation_id: conversation.id, visitor_id: visitorId, audit_url: auditUrl, commercial_intent: false, lead_captured: false })
     }
 
-    let history: any[] = [{ role: "user", content: message }]
-    if (supabase) {
-      try {
-        const { data, error } = await supabase.from("chat_messages").select("role,content").eq("conversation_id", conversation.id).order("created_at", { ascending: false }).limit(12)
-        if (error) throw error
-        history = (data ?? []).reverse()
-        if (!history.length) history = [{ role: "user", content: message }]
-      } catch (error) {
-        logAuxiliary("persistence", error)
-      }
-    }
-
-    let visitorContext: any = null
-    if (supabase) {
-      try {
-        const { data: previousConversations } = await supabase.from("chat_conversations").select("id,last_message_at").eq("visitor_id", visitorId).neq("id", conversation.id).order("last_message_at", { ascending: false }).limit(5)
-        if (previousConversations?.length) {
+    const [historyRows, visitorContext, config, existingLeadRow] = await Promise.all([
+      (async () => {
+        if (!supabase) return null
+        try {
+          const { data, error } = await supabase.from("chat_messages").select("role,content").eq("conversation_id", conversation.id).order("created_at", { ascending: false }).limit(12)
+          if (error) throw error
+          return (data ?? []).reverse()
+        } catch (error) { logAuxiliary("persistence", error); return null }
+      })(),
+      (async () => {
+        if (!supabase) return null
+        try {
+          const { data: previousConversations } = await supabase.from("chat_conversations").select("id,last_message_at").eq("visitor_id", visitorId).neq("id", conversation.id).order("last_message_at", { ascending: false }).limit(5)
+          if (!previousConversations?.length) return null
           const ids = previousConversations.map((row: any) => row.id)
           const { data: previousLeads } = await supabase.from("chat_leads").select("name,demand_summary,conversation_id").in("conversation_id", ids).not("name", "is", null).limit(5)
           const lead = previousLeads?.[0]
           const source = previousConversations.find((row: any) => row.id === lead?.conversation_id)
-          if (lead?.name && source) visitorContext = { name: lead.name, demand: lead.demand_summary || null, lastContact: new Date(source.last_message_at).toLocaleDateString("pt-BR") }
+          return lead?.name && source ? { name: lead.name, demand: lead.demand_summary || null, lastContact: new Date(source.last_message_at).toLocaleDateString("pt-BR") } : null
+        } catch (error) { logAuxiliary("persistence", error); return null }
+      })(),
+      (async () => {
+        try { return await new SupabaseAssistantConfigRepository().get() } catch (error) {
+          logAuxiliary("config", error)
+          return { enabled: true, assistant_name: "Assistente VireMarca", model: "auto", knowledge_base: "", fallback_whatsapp: "", secret_reference: "assistant_secrets.groq_api_key" } as any
         }
-      } catch (error) {
-        logAuxiliary("persistence", error)
-      }
-    }
-
-    let config: any
-    try {
-      config = await new SupabaseAssistantConfigRepository().get()
-    } catch (error) {
-      logAuxiliary("config", error)
-      config = {
-        enabled: true,
-        assistant_name: "Assistente VireMarca",
-        model: "auto",
-        knowledge_base: "",
-        fallback_whatsapp: "",
-        secret_reference: "assistant_secrets.groq_api_key",
-      }
-    }
+      })(),
+      (async () => {
+        if (!supabase) return null
+        try { const { data } = await supabase.from("chat_leads").select("whatsapp").eq("conversation_id", conversation.id).maybeSingle(); return data } catch (error) { logAuxiliary("persistence", error); return null }
+      })(),
+    ])
+    let history: any[] = historyRows && historyRows.length ? historyRows : [{ role: "user", content: message }]
     if (!config.enabled) return NextResponse.json({ error: "Assistente indisponível.", fallback_whatsapp: config.fallback_whatsapp }, { status: 503 })
 
     const selectedModel = config.model || "auto"
@@ -180,14 +172,7 @@ export async function POST(request: NextRequest) {
     const previousAssistantMessage = [...history].reverse().find(item => item.role === "assistant")?.content || ""
     const currentDeterministicLead = extractDeterministicLead(message, previousAssistantMessage)
     const knownVisitorPhones = currentDeterministicLead.whatsapp ? [currentDeterministicLead.whatsapp] : []
-    if (supabase) {
-      try {
-        const { data: existingLead } = await supabase.from("chat_leads").select("whatsapp").eq("conversation_id", conversation.id).maybeSingle()
-        if (existingLead?.whatsapp) knownVisitorPhones.push(existingLead.whatsapp)
-      } catch (error) {
-        logAuxiliary("persistence", error)
-      }
-    }
+    if (existingLeadRow?.whatsapp) knownVisitorPhones.push(existingLeadRow.whatsapp)
     const officialWhatsapp = config.fallback_whatsapp || "5548991410717"
     let answer = fallbackAnswer
     const chatMessages = [{ role: "system", content: buildSystemPrompt(config, visitorContext) }, ...history]
@@ -240,7 +225,6 @@ export async function POST(request: NextRequest) {
     }
 
     let deterministicLead: any = null
-    let extraction: any = null
     let userMessages: string[] = [message]
     if (supabase) {
       try {
@@ -271,34 +255,37 @@ export async function POST(request: NextRequest) {
     const basicDataPresent = Boolean(deterministicLead?.name || deterministicLead?.whatsapp || deterministicLead?.email)
     const userMessageCount = userMessages.length || Math.max(1, Math.ceil(Number(conversation.message_count || 0) / 2))
     const shouldRunLLM = Boolean(supabase && (commercialIntent || basicDataPresent || userMessageCount % 4 === 0))
-    if (shouldRunLLM && supabase) {
-      try {
-        const { data: extractionRows, error } = await supabase.from("chat_messages").select("role,content").eq("conversation_id", conversation.id).order("created_at", { ascending: true }).limit(24)
-        if (error) throw error
-        extraction = await groqExtractLead(await getGroqApiKey(), (extractionRows ?? []).map((row: any) => ({ role: row.role, content: row.content })))
-        const merged = await upsertLead(supabase, conversation.id, extraction, {
-          messages: userMessages.map(content => ({ role: "user", content })),
-          whatsapp_clicked: Boolean(conversation.whatsapp_clicked),
-        })
-        extraction = merged
-      } catch (error) {
-        logAuxiliary("extraction", error)
-      }
-    }
-
-    const lead = extraction || deterministicLead
-    const hasLead = Boolean(lead && (lead.name || lead.whatsapp || lead.email || lead.business_name || lead.business_segment || lead.city || lead.demand_summary || lead.current_site_url))
-    if (supabase && hasLead) {
-      try {
-        const { error } = await supabase.from("chat_conversations").update({
-          has_lead: true,
-          summary: lead.summary || lead.demand_summary || null,
-          expires_at: null,
-        }).eq("id", conversation.id)
-        if (error) throw error
-      } catch (error) {
-        logAuxiliary("persistence", error)
-      }
+    const hasLead = Boolean(basicDataPresent)
+    // A extração por IA (lenta) roda DEPOIS que a resposta já foi enviada ao visitante.
+    if (supabase) {
+      const sb = supabase
+      const conversationRef = conversation
+      after(async () => {
+        let extraction: any = null
+        if (shouldRunLLM) {
+          try {
+            const { data: extractionRows, error } = await sb.from("chat_messages").select("role,content").eq("conversation_id", conversationRef.id).order("created_at", { ascending: true }).limit(24)
+            if (error) throw error
+            const raw = await groqExtractLead(await getGroqApiKey(), (extractionRows ?? []).map((row: any) => ({ role: row.role, content: row.content })))
+            extraction = await upsertLead(sb, conversationRef.id, raw, {
+              messages: userMessages.map(content => ({ role: "user", content })),
+              whatsapp_clicked: Boolean(conversationRef.whatsapp_clicked),
+            })
+          } catch (error) {
+            logAuxiliary("extraction", error)
+          }
+        }
+        const lead = extraction || deterministicLead
+        const leadFound = Boolean(lead && (lead.name || lead.whatsapp || lead.email || lead.business_name || lead.business_segment || lead.city || lead.demand_summary || lead.current_site_url))
+        if (leadFound) {
+          try {
+            const { error } = await sb.from("chat_conversations").update({ has_lead: true, summary: lead.summary || lead.demand_summary || null, expires_at: null }).eq("id", conversationRef.id)
+            if (error) throw error
+          } catch (error) {
+            logAuxiliary("persistence", error)
+          }
+        }
+      })
     }
 
     // Trava de lead: libera auditorias travadas assim que há nome + WhatsApp; antes disso, cobra o que falta.
@@ -316,6 +303,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log("[core-chat timing] total_ms=" + (Date.now() - t0) + " model=" + model)
     return NextResponse.json({
       message: replyText,
       audit_unlock: auditUnlock?.message ?? null,
