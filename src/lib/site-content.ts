@@ -25,7 +25,7 @@ const fallbackCommercial: CommercialSections = {
   pillars: { eyebrow: "Como ajudamos", title: "Três frentes. Uma presença coerente.", highlight: "Uma presença coerente.", subtitle: "Seu negócio aparece para o cliente em vários lugares. Cuidamos de cada um deles com a mesma identidade.", items: [
     { title: "Site profissional", desc: "Seu site próprio, com painel para atualizar conteúdo, estrutura para ser encontrado e contato direto por WhatsApp." },
     { title: "Google Meu Negócio", desc: "Perfil configurado e organizado para apresentar seu negócio nas buscas e no mapa da sua região, com informações, fotos e horários corretos." },
-    { title: "Arte e conteúdo", desc: "Peças visuais para redes sociais, promoções e materiais impressos, alinhadas à identidade da sua marca." },
+    { title: "Arte e conteúdo", desc: "Criação de artes para promoções, divulgação e materiais impressos, alinhadas à identidade da sua marca." },
   ], note: "Contrate uma frente ou as três, conforme o momento do seu negócio." },
   solutions: { eyebrow: "Soluções inteligentes", title: "Seu site atende. Mesmo quando você não pode.", highlight: "Mesmo quando você não pode.", subtitle: "Recursos que transformam o site de vitrine em parte da operação do seu negócio.", items: [
     { title: "Atendimento com IA", desc: "Responde dúvidas a qualquer hora, com base nas informações do seu negócio, e encaminha para o seu WhatsApp quando precisa de você." },
@@ -61,7 +61,7 @@ const fallbackDividers: Record<string, DividerStyle> = { solutions: { label: "At
 
 export async function getPublicSiteContent(): Promise<PublicSiteContent> {
   const fallbackImages = ["/portfolio/magia-glass.jpg"]
-  const fallback: PublicSiteContent = { heroTitle: "Seu negócio merece uma", heroAccent: "presença digital à altura.", heroSubtitle: DEMO_CONTENT.heroSubtitle, heroAccentIntensity: 100, heroImage: fallbackImages[0], heroMobileImage: "", heroBackgroundImages: fallbackImages, heroMobileBackgroundImages: [], heroOverlayIntensity: 58, heroBackgroundPosition: "center center", heroBackgroundScale: 103, heroCardsMotion: 100, logo1: "/logo-vm.png", logo2: "/logo-wordmark.png", titleStyles: DEFAULT_TITLE_STYLES, dividerStyles: fallbackDividers, aboutTitle: DEMO_CONTENT.aboutTitle, aboutBody: DEMO_CONTENT.aboutBody, process: fallbackProcess, delivers: fallbackDelivers, commercial: fallbackCommercial, contact: { ...DEMO_CONTENT.contact } }
+  const fallback: PublicSiteContent = { heroTitle: "Sites profissionais feitos sob medida para o", heroAccent: "seu negócio.", heroSubtitle: DEMO_CONTENT.heroSubtitle, heroAccentIntensity: 100, heroImage: fallbackImages[0], heroMobileImage: "", heroBackgroundImages: fallbackImages, heroMobileBackgroundImages: [], heroOverlayIntensity: 58, heroBackgroundPosition: "center center", heroBackgroundScale: 103, heroCardsMotion: 100, logo1: "/logo-vm.png", logo2: "/logo-wordmark.png", titleStyles: DEFAULT_TITLE_STYLES, dividerStyles: fallbackDividers, aboutTitle: DEMO_CONTENT.aboutTitle, aboutBody: DEMO_CONTENT.aboutBody, process: fallbackProcess, delivers: fallbackDelivers, commercial: fallbackCommercial, contact: { ...DEMO_CONTENT.contact } }
   try {
     const supabase = await createClientOptional(); if (!supabase) return fallback
     const [{ data: content }, { data: settings }] = await Promise.all([supabase.from("site_content").select("key,value"), supabase.from("site_settings").select("key,value")])

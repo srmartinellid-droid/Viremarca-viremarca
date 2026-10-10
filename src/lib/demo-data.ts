@@ -61,11 +61,11 @@ export const DEMO_PROJECTS: PortfolioProject[] = [
 
 export const DEMO_CONTENT = {
   heroTitle: "Seu negócio merece uma presença digital à altura.",
-  heroSubtitle: "A VireMarca cria sites profissionais, pensados para cada negócio, unindo design estratégico, tecnologia e estrutura sob medida.",
+  heroSubtitle: "Sem molde pronto: estrutura, identidade e contato direto por WhatsApp, pensados para o seu caso.",
   aboutTitle: "Uma nova marca, construída sobre experiência real.",
   aboutBody: `A VireMarca nasce agora, mas não do zero.
 
-Mais de duas décadas trabalhando com tecnologia, atendimento e operação de soluções técnicas formaram a base. Agora essa bagagem é direcionada para um propósito claro: transformar negócios locais em marcas digitais profissionais.
+Mais de 20 anos de experiência em tecnologia, atendimento e operação de soluções técnicas formaram a base. Agora essa bagagem é direcionada para um propósito claro: transformar negócios locais em marcas digitais profissionais.
 
 Não somos uma fábrica de sites genéricos. Não somos uma agência de marketing. Criamos presenças digitais que respeitam o negócio de cada cliente e conversam com o público certo.`,
   process: [
