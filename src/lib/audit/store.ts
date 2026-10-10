@@ -39,7 +39,7 @@ export async function loadPdf(id: string): Promise<Buffer | null> {
 }
 
 // Cota diária global (proteção de custo) — mesma tabela de configurações, sem migração.
-export async function takeAuditQuota(cap = 60) {
+export async function takeAuditQuota(cap = 500) {
   const today = new Date().toISOString().slice(0, 10)
   const { data } = await db().from("site_settings").select("value").eq("key", "audit_usage").maybeSingle()
   let used = 0
