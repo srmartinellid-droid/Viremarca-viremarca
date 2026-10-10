@@ -41,15 +41,19 @@ export function decryptSecret(input: { ciphertext: string; iv: string; authTag: 
 }
 
 export async function getGroqApiKey() {
+  return getNamedSecret(SECRET_NAME, "Chave da API Groq não configurada.")
+}
+
+export async function getNamedSecret(name: string, missingMessage = "Segredo não configurado.") {
   const supabase = createAdminClient()
   const { data, error } = await supabase
     .from("assistant_secrets")
     .select("ciphertext,iv,auth_tag")
-    .eq("secret_name", SECRET_NAME)
+    .eq("secret_name", name)
     .maybeSingle()
 
   if (error) throw error
-  if (!data) throw new Error("Chave da API Groq não configurada.")
+  if (!data) throw new Error(missingMessage)
   return decryptSecret({ ciphertext: data.ciphertext, iv: data.iv, authTag: data.auth_tag })
 }
 
@@ -60,6 +64,22 @@ export async function hasGroqApiKey() {
   } catch {
     return false
   }
+}
+
+export async function saveNamedSecret(name: string, value: string) {
+  const normalized = value.trim()
+  if (!normalized) throw new Error("O segredo não pode estar vazio.")
+  if (normalized.length > 512) throw new Error("O segredo é inválido.")
+  const encrypted = encryptSecret(normalized)
+  const { error } = await createAdminClient().from("assistant_secrets").upsert({
+    secret_name: name, ciphertext: encrypted.ciphertext, iv: encrypted.iv, auth_tag: encrypted.authTag, updated_at: new Date().toISOString(),
+  }, { onConflict: "secret_name" })
+  if (error) throw error
+}
+
+export async function deleteNamedSecret(name: string) {
+  const { error } = await createAdminClient().from("assistant_secrets").delete().eq("secret_name", name)
+  if (error) throw error
 }
 
 export async function saveGroqApiKey(value: string) {
