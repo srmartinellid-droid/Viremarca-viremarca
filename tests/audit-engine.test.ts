@@ -103,6 +103,14 @@ describe("Motor de auditoria v2", () => {
     for (const f of r.findings) assert.doesNotMatch(`${f.title} ${f.evidence} ${f.fix}`, /ranking|perde|derruba|desiste|fatal|clientes todos/i, f.id)
     for (const f of r.findings) assert.ok(f.howTo, `sem “como conferir”: ${f.id}`)
   })
+  it("“como conferir” é portátil: sem grep, pipe ou barra invertida", () => {
+    const bad = facts({ https: false, headers: { ...facts().headers, encoding: null, hsts: false, csp: false, xcto: false, frame: false } })
+    const r = buildReport(bad, null, null, NOW)
+    for (const f of r.findings) assert.doesNotMatch(f.howTo, /grep|\||\\/, f.id)
+    const h = r.findings.find(f => f.id === "seguranca:headers")
+    assert.ok(h, "achado de cabeçalhos ausente")
+    assert.match(h.howTo, /content-security-policy, x-content-type-options, x-frame-options/)
+  })
   it("cache do HTML não vira achado; cache de estáticos curto vira recomendação", () => {
     const html = buildReport(facts({ headers: { ...facts().headers, cache: "private, no-cache, no-store" } }), psi, null, NOW)
     assert.ok(!ids(html).some(i => i.includes("cache")))
