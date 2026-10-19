@@ -1,11 +1,12 @@
 import { randomUUID } from "crypto"
 import { collectFacts } from "./collect"
 import { runPsi } from "./psi"
-import { getProviders, promptA, promptB, routed } from "./llm"
+import { getProviders, promptNotes, routed } from "./llm"
 import { buildReport, chatSummary } from "./score"
 import { buildPdf } from "./report-pdf"
 import { loadAudit, saveAudit, savePdf, pruneAudits, type AuditState } from "./store"
 import { createAdminClient } from "@/lib/supabase/admin"
+import type { AiNotes } from "./types"
 import { leadGate, lockedAuditMessage, isFirstAuditOfVisitor } from "./gate"
 
 export async function createAudit(url: string, conversationId: string | null, visitorId: string | null): Promise<AuditState> {
@@ -34,12 +35,13 @@ export async function advance(id: string): Promise<AuditState | null> {
     } else if (step === "psi") {
       try { s.psi = await runPsi(s.url, process.env.PAGESPEED_API_KEY) } catch { s.psi = null }
     } else if (step === "analyze") {
-      const providers = await getProviders()
-      const a = promptA(s.facts!), b = promptB(s.facts!, s.psi ?? null)
-      const [ra, rb] = await Promise.all([routed(providers, 0, a.system, a.user), routed(providers, 1, b.system, b.user)])
-      s.llm = { A: ra.out, B: rb.out, routes: [ra.route, rb.route] }
+      // A nota já é decidida pelas regras; a IA só redige os comentários sobre resultados prontos.
+      const base = buildReport(s.facts!, s.psi ?? null, null)
+      const p = promptNotes(s.facts!, base.criteria)
+      const r = await routed(await getProviders(), p.system, p.user)
+      s.llm = { notes: r.out, route: r.route }
     } else if (step === "render") {
-      s.report = buildReport(s.facts!, s.psi ?? null, (s.llm?.A as any) ?? null, (s.llm?.B as any) ?? null)
+      s.report = buildReport(s.facts!, s.psi ?? null, (s.llm?.notes as AiNotes | null | undefined) ?? null)
       const pdf = await buildPdf(s.report)
       await savePdf(s.id, pdf)
       s.pdf_ready = true
@@ -52,7 +54,7 @@ export async function advance(id: string): Promise<AuditState | null> {
     if (step === "collect" && s.attempts[step] >= 2) { s.status = "failed"; s.error = "Não foi possível abrir o site informado." }
     else if (s.attempts[step] >= 3) {
       if (step === "psi") s.step = "analyze"
-      else if (step === "analyze") { s.llm = { routes: ["falhou — relatório só com medições"] }; s.step = "render" }
+      else if (step === "analyze") { s.llm = { notes: null, route: "falhou — comentários por regras" }; s.step = "render" }
       else { s.status = "failed"; s.error = "Falha ao gerar o relatório." }
     }
   }
