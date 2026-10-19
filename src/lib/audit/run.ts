@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto"
 import { collectFacts } from "./collect"
-import { runPsi } from "./psi"
+import { runPsiDetailed } from "./psi"
 import { getProviders, promptNotes, routed } from "./llm"
 import { buildReport, chatSummary } from "./score"
 import { buildPdf } from "./report-pdf"
@@ -33,15 +33,15 @@ export async function advance(id: string): Promise<AuditState | null> {
     if (step === "collect") {
       s.facts = await collectFacts(s.url)
     } else if (step === "psi") {
-      try { s.psi = await runPsi(s.url, process.env.PAGESPEED_API_KEY) } catch { s.psi = null }
+      try { const r = await runPsiDetailed(s.url, process.env.PAGESPEED_API_KEY); s.psi = r.psi; s.psiError = r.error ?? undefined } catch { s.psi = null; s.psiError = "falha inesperada" }
     } else if (step === "analyze") {
       // A nota já é decidida pelas regras; a IA só redige os comentários sobre resultados prontos.
-      const base = buildReport(s.facts!, s.psi ?? null, null)
+      const base = buildReport(s.facts!, s.psi ?? null, null, new Date(), s.psiError ?? null)
       const p = promptNotes(s.facts!, base.criteria)
       const r = await routed(await getProviders(), p.system, p.user)
       s.llm = { notes: r.out, route: r.route }
     } else if (step === "render") {
-      s.report = buildReport(s.facts!, s.psi ?? null, (s.llm?.notes as AiNotes | null | undefined) ?? null)
+      s.report = buildReport(s.facts!, s.psi ?? null, (s.llm?.notes as AiNotes | null | undefined) ?? null, new Date(), s.psiError ?? null)
       const pdf = await buildPdf(s.report)
       await savePdf(s.id, pdf)
       s.pdf_ready = true

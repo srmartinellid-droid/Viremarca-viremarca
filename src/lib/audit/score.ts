@@ -34,7 +34,8 @@ export function scoreCriterion(id: CriterionId, checks: Check[]): Scored {
   const coverage = tw / total
   if (!tested.length) return { id, label: c.label, pillar: c.pillar, weight: c.weight, score: null, coverage: 0, partial: true, checks }
   const raw = 10 * tested.reduce((s, x) => s + x.w * STATUS_VALUE[x.status as keyof typeof STATUS_VALUE], 0) / tw
-  const partial = coverage < COVERAGE.minFull
+  const requiredMissing = COVERAGE.requiredMissingPartial && checks.some(x => x.required && x.status === "untested")
+  const partial = coverage < COVERAGE.minFull || requiredMissing
   return { id, label: c.label, pillar: c.pillar, weight: c.weight, score: r1(partial ? Math.min(raw, COVERAGE.partialCap) : raw), coverage, partial, checks }
 }
 
@@ -49,12 +50,12 @@ function summarize(s: Scored): string {
     fail.length ? `Falha: ${fail.join("; ")}.` : "",
     warn.length ? `Em atenção: ${warn.join("; ")}.` : "",
     nt ? `${nt} não testada${nt > 1 ? "s" : ""}.` : "",
-    s.partial && t.length ? "Critério parcial: nota limitada pela baixa cobertura." : "",
+    s.partial && t.length ? "Critério parcial: falta uma medição essencial ou a cobertura é baixa; nota limitada." : "",
   ].filter(Boolean).join(" ")
 }
 
-export function buildReport(f: Facts, psi: Psi | null, ai: AiNotes | null, now = new Date()): Report {
-  const checks = ruleChecks(f, psi)
+export function buildReport(f: Facts, psi: Psi | null, ai: AiNotes | null, now = new Date(), psiError: string | null = null): Report {
+  const checks = ruleChecks(f, psi, psiError)
   const scored = CRITERIA.map(c => scoreCriterion(c.id, checks[c.id]))
   const withScore = scored.filter((s): s is Scored & { score: number } => s.score != null)
   const wsum = withScore.reduce((s, x) => s + x.weight, 0) || 1
@@ -97,11 +98,11 @@ export function buildReport(f: Facts, psi: Psi | null, ai: AiNotes | null, now =
   const when = now.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
   const limits = [
     `Auditoria automática feita em ${when} a partir do que é visível ao público. ${SCOPE_STATEMENT}`,
-    psi ? "Desempenho e acessibilidade foram medidos pelo PageSpeed Insights (celular), que varia entre medições." : "O PageSpeed Insights não respondeu: os itens que dependem dele aparecem como “não testados” e a confiança da nota cai.",
+    psi ? "Desempenho e acessibilidade foram medidos pelo PageSpeed Insights (celular), que varia entre medições." : `O PageSpeed Insights não respondeu${psiError ? ` (${psiError})` : ""}: os itens que dependem dele aparecem como “não testados”, os critérios afetados ficam “parciais” e a confiança da nota cai.`,
     ai ? "Os comentários em texto foram redigidos por IA a partir dos resultados acima e não alteram nenhuma nota." : "Os comentários em texto automáticos foram gerados por regras; a IA não esteve disponível.",
     ...f.warnings,
   ]
-  const formula = `Cada verificação vale ok = 1, atenção = 0,5, falha = 0; as não testadas ficam fora. Nota do critério = 10 × soma(peso × valor) ÷ soma dos pesos testados. Nota geral = média dos critérios ponderada pelos pesos da política ${POLICY_VERSION}. Critérios com menos de ${Math.round(COVERAGE.minFull * 100)}% de cobertura são limitados a ${COVERAGE.partialCap}. Falhas objetivas aplicam tetos${caps.length ? ` (aplicado: ${caps.map(k => `${k.label} → máx. ${fmt(k.limit)}`).join("; ")})` : " (nenhum aplicado)"}.`
+  const formula = `Cada verificação vale ok = 1, atenção = 0,5, falha = 0; as não testadas ficam fora. Nota do critério = 10 × soma(peso × valor) ÷ soma dos pesos testados. Nota geral = média dos critérios ponderada pelos pesos da política ${POLICY_VERSION}. Critérios com menos de ${Math.round(COVERAGE.minFull * 100)}% de cobertura, ou sem uma medição essencial (como o PageSpeed), são limitados a ${COVERAGE.partialCap}. Falhas objetivas aplicam tetos${caps.length ? ` (aplicado: ${caps.map(k => `${k.label} → máx. ${fmt(k.limit)}`).join("; ")})` : " (nenhum aplicado)"}.`
 
   return {
     policyVersion: POLICY_VERSION, url: f.url, host: f.host, generatedAt: now.toISOString(),
@@ -109,7 +110,7 @@ export function buildReport(f: Facts, psi: Psi | null, ai: AiNotes | null, now =
     pillars: { experiencia: mean(withScore.filter(x => x.pillar === "experiencia")) == null ? null : r1(mean(withScore.filter(x => x.pillar === "experiencia"))!), tecnico: mean(withScore.filter(x => x.pillar === "tecnico")) == null ? null : r1(mean(withScore.filter(x => x.pillar === "tecnico"))!) },
     criteria, findings, strengths: [...new Set(strengths)].slice(0, 10), untested, quickWins, structural, psi,
     firstImpression: cleanAiText(ai?.first_impression, 420), aiUsed: !!ai, limits,
-    metrics: { ttfbMs: f.ttfbMs, ttfbSamples: f.ttfbSamples, htmlKb: Math.round(f.htmlBytes / 1024), words: f.text.words, images: f.images.total, internalChecked: f.links.checked },
+    metrics: { ttfbMs: f.ttfbMs, ttfbSamples: f.ttfbSamples, htmlCache: f.headers.cache, htmlKb: Math.round(f.htmlBytes / 1024), words: f.text.words, images: f.images.total, internalChecked: f.links.checked },
   }
 }
 

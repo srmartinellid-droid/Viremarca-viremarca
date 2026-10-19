@@ -12,6 +12,8 @@ export type Check = {
   id: string; label: string; status: Status; w: number; kind: FindingKind
   title: string; evidence: string; howTo: string; fix: string; ref?: string
   strength?: string; effort?: "rapido" | "estrutural"; gate?: GateId
+  /** Medição essencial do critério: se não foi testada, o critério vira "parcial". */
+  required?: boolean
   /** Motivo, quando status = untested. */
   reason?: string
 }
@@ -35,7 +37,7 @@ export type Report = {
   criteria: CriterionResult[]; findings: Finding[]; strengths: string[]; untested: Untested[]
   quickWins: string[]; structural: string[]
   psi: Psi | null; firstImpression: string | null; aiUsed: boolean; limits: string[]
-  metrics: { ttfbMs: number; ttfbSamples: number[]; htmlKb: number; words: number; images: number; internalChecked: number }
+  metrics: { ttfbMs: number; ttfbSamples: number[]; htmlCache: string | null; htmlKb: number; words: number; images: number; internalChecked: number }
 }
 
 export type AiNotes = { notes?: Partial<Record<CriterionId, string>>; first_impression?: string }
