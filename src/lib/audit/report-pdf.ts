@@ -1,11 +1,19 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type PDFImage, type RGB } from "pdf-lib"
-import { CRITERIA, type Report, type Finding } from "./score"
+import { CRITERIA, SCOPE_STATEMENT } from "./policy"
+import type { Finding, FindingKind, Report, Status, CriterionResult } from "./types"
 import { LOGO_VM_DARK, LOGO_WORDMARK_DARK, LOGO_WORDMARK_LIGHT } from "./logos"
 
 const W = 595.28, H = 841.89, M = 44
 const C = { orange: rgb(0.945, 0.353, 0), ink: rgb(0.071, 0.071, 0.071), bg: rgb(0.984, 0.976, 0.965), line: rgb(0.906, 0.89, 0.871), mute: rgb(0.42, 0.42, 0.42), red: rgb(0.85, 0.19, 0.15), amber: rgb(0.91, 0.64, 0.09), green: rgb(0.18, 0.62, 0.36), white: rgb(1, 1, 1), card: rgb(1, 1, 1) }
-const fmt = (n: number) => n.toFixed(1).replace(".", ",")
-const scoreColor = (n: number): RGB => (n >= 7.5 ? C.green : n >= 5 ? C.amber : C.red)
+const fmt = (n: number | null) => (n == null ? "n/t" : n.toFixed(1).replace(".", ","))
+const scoreColor = (n: number | null): RGB => (n == null ? C.mute : n >= 7.5 ? C.green : n >= 5 ? C.amber : C.red)
+const onDark = (n: number | null): RGB => (n == null ? rgb(0.75, 0.75, 0.75) : n >= 7.5 ? rgb(0.5, 0.9, 0.62) : n >= 5 ? rgb(1, 0.78, 0.35) : rgb(1, 0.5, 0.45))
+const statusColor = (s: Status): RGB => (s === "pass" ? C.green : s === "warn" ? C.amber : s === "fail" ? C.red : C.mute)
+const statusSuffix = (s: Status) => (s === "pass" ? "" : s === "warn" ? " (atenção)" : s === "fail" ? " (falha)" : " (não testado)")
+const KIND: Record<FindingKind, { label: string; color: RGB }> = { defeito: { label: "DEFEITO", color: C.red }, recomendacao: { label: "RECOMENDAÇÃO", color: C.amber }, oportunidade: { label: "OPORTUNIDADE", color: C.mute } }
+const CONF = { alta: "alta", media: "média", baixa: "baixa" } as const
+const dateBR = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
+const ms = (n: number) => (n >= 1000 ? (n / 1000).toFixed(1).replace(".", ",") + " s" : Math.round(n) + " ms")
 
 export async function buildPdf(r: Report): Promise<Uint8Array> {
   const pdf = await PDFDocument.create()
@@ -73,43 +81,41 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
     if (sub) { text(sub, { size: 9.5, color: C.mute }); y -= 6 }
   }
 
+
   // ---------- CAPA ----------
-  // Ordem: barra superior (wordmark + selo) > V/M grande centralizado > rótulo > título > subtítulo > ficha do relatório > contato.
   page = pdf.addPage([W, H]); pages.push(page); pageNo++
   page.drawRectangle({ x: 0, y: 0, width: W, height: H, color: C.ink })
   for (const [rad, op] of [[300, 0.05], [230, 0.07], [160, 0.09]] as const) page.drawCircle({ x: W - 40, y: H - 40, size: rad, color: C.orange, opacity: op })
   const wmw = 132, wmh = wmw * (wmDark.height / wmDark.width)
   page.drawImage(wmDark, { x: M, y: H - 46 - wmh, width: wmw, height: wmh })
-  const tag = "AUDITORIA DE SITE · CONFIDENCIAL"
+  const tag = "AUDITORIA TÉCNICA SIMPLES"
   page.drawText(tag, { x: W - M - reg.widthOfTextAtSize(tag, 7.5), y: H - 46 - wmh / 2 - 2.5, size: 7.5, font: reg, color: rgb(0.7, 0.7, 0.7) })
   const vw = 300, vh = vw * (vmDark.height / vmDark.width)
   page.drawImage(vmDark, { x: (W - vw) / 2, y: 505 - vh / 2, width: vw, height: vh })
   page.drawText("RELATÓRIO DE AUDITORIA", { x: M, y: 352, size: 8.5, font: bold, color: C.orange })
-  const t1 = lines("Como o seu site é visto, medido e encontrado.", bold, 27, W - 2 * M)
+  const t1 = lines("O que dá para medir no seu site, e como conferir.", bold, 27, W - 2 * M)
   t1.forEach((l, i) => page.drawText(l, { x: M, y: 318 - i * 32, size: 27, font: bold, color: i === t1.length - 1 ? C.orange : C.white }))
-  const sub = "Análise de experiência do visitante, desempenho, SEO, segurança e conversão, com notas por critério e um plano de correção."
-  lines(sub, reg, 10.5, W - 2 * M - 40).forEach((l, i) => page.drawText(l, { x: M, y: 318 - t1.length * 32 - 8 - i * 15, size: 10.5, font: reg, color: rgb(0.82, 0.82, 0.82) }))
+  lines(SCOPE_STATEMENT, reg, 10, W - 2 * M - 40).forEach((l, i) => page.drawText(l, { x: M, y: 318 - t1.length * 32 - 8 - i * 14.5, size: 10, font: reg, color: rgb(0.82, 0.82, 0.82) }))
   page.drawRectangle({ x: M, y: 70, width: W - 2 * M, height: 62, color: rgb(0.11, 0.11, 0.11), borderColor: rgb(0.2, 0.2, 0.2), borderWidth: 0.8 })
-  const meta: [string, string][] = [["SITE", r.host], ["DATA", new Date(r.generatedAt).toLocaleDateString("pt-BR")], ["NOTA GERAL", `${fmt(r.overall)} / 10`], ["VEREDITO", r.verdict.split(":")[0]]]
-  const frac4 = [0.4, 0.17, 0.17, 0.26], inner = W - 2 * M - 28
+  const meta: [string, string][] = [["SITE", r.host], ["DATA", dateBR(r.generatedAt)], ["NOTA E FAIXA", `${fmt(r.overall)} (${fmt(r.range.low)} a ${fmt(r.range.high)})`], ["CONFIANÇA", CONF[r.confidence]]]
+  const frac4 = [0.36, 0.17, 0.3, 0.17], inner = W - 2 * M - 28
   let mx = M + 14
   meta.forEach(([k, v], i) => {
     const x = mx, cw = inner * frac4[i]; mx += cw
     page.drawText(k, { x, y: 112, size: 6.5, font: reg, color: rgb(0.6, 0.6, 0.6) })
     const col = i === 2 ? C.orange : C.white
     if (i === 0) {
-      // endereço do site: uma linha só, reduz a fonte (e abrevia se preciso) para nunca invadir a coluna ao lado
       let fs = 9.5, t = safe(v, bold)
       while (bold.widthOfTextAtSize(t, fs) > cw - 12 && fs > 6.5) fs -= 0.5
       while (bold.widthOfTextAtSize(t, fs) > cw - 12 && t.length > 4) t = t.slice(0, -2)
       page.drawText(t, { x, y: 96, size: fs, font: bold, color: col })
     } else lines(v, bold, 9.5, cw - 10).slice(0, 2).forEach((l, j) => page.drawText(l, { x, y: 96 - j * 12, size: 9.5, font: bold, color: col }))
   })
-  page.drawText("VireMarca — sites sob medida · viremarca.com.br · viremarca@gmail.com · (48) 99141-0717", { x: M, y: 40, size: 7.5, font: reg, color: rgb(0.6, 0.6, 0.6) })
+  page.drawText(`VireMarca · viremarca.com.br · política de avaliação ${r.policyVersion}`, { x: M, y: 40, size: 7.5, font: reg, color: rgb(0.6, 0.6, 0.6) })
 
   // ---------- RESUMO ----------
-  newPage("Resumo executivo · " + r.host)
-  kicker("01 — Resumo executivo", "Como o site está hoje", `Auditoria de ${r.url}`)
+  newPage("Resumo · " + r.host)
+  kicker("01 — Resumo", "Como o site está hoje", `Auditoria de ${r.url}`)
   y -= 4
   const cy = y - 62, cx = M + 62
   page.drawCircle({ x: cx, y: cy, size: 52, borderColor: C.line, borderWidth: 9, color: C.card })
@@ -121,106 +127,105 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
   const tx = M + 150, tw = W - M - tx
   let ty = y - 8
   text(r.verdict, { x: tx, yy: ty, size: 13, font: bold, maxW: tw }); ty -= textH(r.verdict, 13, tw, bold)
-  const para = r.firstImpression || "Resultado das verificações automáticas de experiência, desempenho, SEO, segurança e conversão feitas no site."
-  text(para, { x: tx, yy: ty - 4, size: 9.5, color: C.mute, maxW: tw }); ty -= 4 + textH(para, 9.5, tw)
-  ;[["Experiência do visitante", r.pillars.experiencia], ["Técnico e SEO", r.pillars.tecnico]].forEach(([k, v], i) => {
+  const range = `Faixa provável: ${fmt(r.range.low)} a ${fmt(r.range.high)} · confiança ${CONF[r.confidence]}`
+  text(range, { x: tx, yy: ty - 2, size: 9, font: bold, color: C.orange, maxW: tw }); ty -= 2 + textH(range, 9, tw, bold)
+  const para = r.firstImpression ? "Leitura automática do texto da página: " + r.firstImpression : "Resultado das verificações automáticas de experiência, desempenho, SEO, segurança e contato."
+  text(para, { x: tx, yy: ty - 4, size: 9, color: C.mute, maxW: tw }); ty -= 4 + textH(para, 9, tw)
+  ;([["Experiência do visitante", r.pillars.experiencia], ["Técnico e SEO", r.pillars.tecnico]] as [string, number | null][]).forEach(([k, v], i) => {
     const yy = ty - 12 - i * 22
-    page.drawText(String(k), { x: tx, y: yy, size: 8.5, font: bold }); page.drawText(fmt(v as number), { x: W - M - 20, y: yy, size: 9, font: bold, color: scoreColor(v as number) })
-    page.drawRectangle({ x: tx, y: yy - 8, width: tw - 30, height: 4, color: C.line }); page.drawRectangle({ x: tx, y: yy - 8, width: (tw - 30) * ((v as number) / 10), height: 4, color: scoreColor(v as number) })
+    page.drawText(k, { x: tx, y: yy, size: 8.5, font: bold }); page.drawText(fmt(v), { x: W - M - 20, y: yy, size: 9, font: bold, color: scoreColor(v) })
+    page.drawRectangle({ x: tx, y: yy - 8, width: tw - 30, height: 4, color: C.line }); page.drawRectangle({ x: tx, y: yy - 8, width: (tw - 30) * ((v ?? 0) / 10), height: 4, color: scoreColor(v) })
   })
   y = Math.min(cy - 70, ty - 62) - 4
   const gw = (W - 2 * M - 14) / 2
   r.criteria.forEach((c, i) => {
     const col = i % 2
-    if (col === 0) { ensure(78); }
-    const x = M + col * (gw + 14), top = y
-    const why = c.why || (r.findings.find(f => f.criterion === c.id && f.source === "regra")?.title ?? "Sem ressalvas relevantes nas verificações.")
-    const h = 68
+    if (col === 0) ensure(78)
+    const x = M + col * (gw + 14), top = y, h = 68
     page.drawRectangle({ x, y: top - h, width: gw, height: h, color: C.card, borderColor: C.line, borderWidth: 0.8 })
-    page.drawText(safe(c.label, bold), { x: x + 10, y: top - 17, size: 9.5, font: bold })
+    page.drawText(safe(c.label + (c.partial ? " (parcial)" : ""), bold), { x: x + 10, y: top - 17, size: 9.5, font: bold })
     const sc = fmt(c.score); page.drawText(sc, { x: x + gw - 10 - bold.widthOfTextAtSize(sc, 14), y: top - 19, size: 14, font: bold, color: scoreColor(c.score) })
-    page.drawRectangle({ x: x + 10, y: top - 28, width: gw - 20, height: 4, color: C.line }); page.drawRectangle({ x: x + 10, y: top - 28, width: (gw - 20) * (c.score / 10), height: 4, color: scoreColor(c.score) })
-    lines(why, reg, 7.5, gw - 20).slice(0, 3).forEach((l, j) => page.drawText(l, { x: x + 10, y: top - 41 - j * 10, size: 7.5, font: reg, color: C.mute }))
+    page.drawRectangle({ x: x + 10, y: top - 28, width: gw - 20, height: 4, color: C.line }); page.drawRectangle({ x: x + 10, y: top - 28, width: (gw - 20) * ((c.score ?? 0) / 10), height: 4, color: scoreColor(c.score) })
+    lines(c.summary, reg, 7.5, gw - 20).slice(0, 3).forEach((l, j) => page.drawText(l, { x: x + 10, y: top - 41 - j * 10, size: 7.5, font: reg, color: C.mute }))
     if (col === 1 || i === r.criteria.length - 1) y -= h + 10
   })
+  ensure(90)
+  text("POR QUE ESTA NOTA", { size: 8, font: bold, color: C.orange }); y -= 2
+  text(r.formula, { size: 8.5, color: C.mute }); y -= 4
 
-  // ---------- BLOCOS POR PILAR ----------
-  const block = (pillar: "experiencia" | "tecnico", k: string, title: string, sub: string) => {
-    newPage((pillar === "experiencia" ? "Experiência do visitante" : "Técnico e SEO") + " · " + r.host)
-    kicker(k, title, sub); y -= 4
-    for (const c of r.criteria.filter(x => x.pillar === pillar)) {
-      const q = CRITERIA.find(x => x.id === c.id)!.question
-      const checkH = c.checks.length * 11.5
-      ensure(46 + checkH + (c.why ? textH(c.why, 8.5, W - 2 * M - 20) : 0))
-      page.drawRectangle({ x: M, y: y - 22, width: W - 2 * M, height: 22, color: C.ink })
-      page.drawText(safe(c.label, bold), { x: M + 10, y: y - 15, size: 10, font: bold, color: C.white })
-      const sc = `${fmt(c.score)} / 10`; page.drawText(sc, { x: W - M - 10 - bold.widthOfTextAtSize(sc, 10), y: y - 15, size: 10, font: bold, color: scoreColor(c.score) === C.red ? rgb(1, 0.5, 0.45) : scoreColor(c.score) === C.amber ? rgb(1, 0.78, 0.35) : rgb(0.5, 0.9, 0.62) })
-      y -= 22 + 6
-      text(q, { size: 8, color: C.mute, font: reg }); y -= 2
-      if (c.why) { text(c.why, { size: 8.5 }); y -= 2 }
-      for (const ck of c.checks) {
-        const col = ck.status === "pass" ? C.green : ck.status === "warn" ? C.amber : C.red
-        page.drawCircle({ x: M + 5, y: y - 6, size: 2.6, color: col })
-        text(ck.label + (ck.status === "pass" ? "" : ck.status === "warn" ? " (atenção)" : " (falhou)"), { x: M + 14, size: 8.5, lh: 11.5, color: ck.status === "pass" ? C.ink : col })
-      }
-      y -= 10
+  // ---------- CRITÉRIOS ----------
+  const criterionBlock = (c: CriterionResult) => {
+    const q = CRITERIA.find(x => x.id === c.id)!.question
+    ensure(46 + c.checks.length * 11.5 + textH(c.summary, 8.5, W - 2 * M - 20) + (c.aiNote ? textH(c.aiNote, 8.5, W - 2 * M - 20) : 0))
+    page.drawRectangle({ x: M, y: y - 22, width: W - 2 * M, height: 22, color: C.ink })
+    page.drawText(safe(c.label + (c.partial ? " (parcial)" : ""), bold), { x: M + 10, y: y - 15, size: 10, font: bold, color: C.white })
+    const sc = c.score == null ? "não testado" : `${fmt(c.score)} / 10`; page.drawText(sc, { x: W - M - 10 - bold.widthOfTextAtSize(sc, 10), y: y - 15, size: 10, font: bold, color: onDark(c.score) })
+    y -= 28
+    text(q, { size: 8, color: C.mute }); y -= 2
+    text(c.summary, { size: 8.5 }); y -= 2
+    if (c.aiNote) { text("Comentário automático: " + c.aiNote, { size: 8.5, color: C.mute }); y -= 2 }
+    for (const ck of c.checks) {
+      page.drawCircle({ x: M + 5, y: y - 6, size: 2.6, color: statusColor(ck.status) })
+      text(ck.label + statusSuffix(ck.status), { x: M + 14, size: 8.5, lh: 11.5, color: ck.status === "pass" ? C.ink : statusColor(ck.status) })
     }
+    y -= 10
   }
-  block("experiencia", "02 — O que o visitante vê", "Experiência do visitante", "Como alguém que chega pelo celular entende, confia e decide entrar em contato.")
-  if (y - 330 < 50) newPage("Técnico e SEO · " + r.host); else y -= 16
-  kicker("03 — O que está por trás", "Desempenho, SEO e segurança", r.psi ? "Medições feitas no servidor e pelo Google PageSpeed Insights (celular)." : "Medições feitas diretamente no servidor do site. A medição do Google PageSpeed não estava disponível neste momento.")
+  newPage("Experiência do visitante · " + r.host)
+  kicker("02 — O que o visitante encontra", "Experiência do visitante", "Indícios lidos no HTML público: o motor não vê o visual da página.")
   y -= 4
-  const rows: [string, string][] = [["Primeira resposta do servidor", `${r.metrics.ttfbMs} ms`], ["Tamanho do HTML", `${r.metrics.htmlKb} KB`], ["Palavras na página inicial", String(r.metrics.words)], ["Imagens na página inicial", String(r.metrics.images)], ["Páginas internas testadas", String(r.metrics.internalChecked)]]
-  if (r.psi) rows.push(["Google: desempenho (celular)", String(r.psi.performance ?? "n/d")], ["Google: acessibilidade", String(r.psi.accessibility ?? "n/d")], ["Google: boas práticas", String(r.psi.bestPractices ?? "n/d")], ["Google: SEO", String(r.psi.seo ?? "n/d")], ["Maior conteúdo visível (LCP)", r.psi.lcpMs != null ? `${(r.psi.lcpMs / 1000).toFixed(1).replace(".", ",")} s` : "n/d"], ["Bloqueio de interação (TBT)", r.psi.tbtMs != null ? `${Math.round(r.psi.tbtMs)} ms` : "n/d"], ["Estabilidade visual (CLS)", r.psi.cls != null ? r.psi.cls.toFixed(2).replace(".", ",") : "n/d"])
+  r.criteria.filter(c => c.pillar === "experiencia").forEach(criterionBlock)
+
+  newPage("Técnico e SEO · " + r.host)
+  kicker("03 — O que está por trás", "Desempenho, SEO e segurança", r.psi ? "Medições feitas no servidor e pelo PageSpeed Insights do Google (celular)." : "Medições feitas diretamente no servidor. O PageSpeed Insights não estava disponível neste momento.")
+  y -= 4
+  const rows: [string, string][] = [
+    [`Tempo até os cabeçalhos (mediana de ${r.metrics.ttfbSamples.length})`, `${ms(r.metrics.ttfbMs)} (${r.metrics.ttfbSamples.map(ms).join(", ")})`],
+    ["Tamanho do HTML", `${r.metrics.htmlKb} KB`], ["Palavras na página inicial", String(r.metrics.words)], ["Imagens na página inicial", String(r.metrics.images)], ["Páginas internas testadas", String(r.metrics.internalChecked)],
+  ]
+  if (r.psi) rows.push(["Google: desempenho (celular)", String(r.psi.performance ?? "n/d")], ["Google: acessibilidade", String(r.psi.accessibility ?? "n/d")], ["Google: boas práticas", String(r.psi.bestPractices ?? "n/d")], ["Google: SEO", String(r.psi.seo ?? "n/d")], ["Maior conteúdo visível (LCP)", r.psi.lcpMs != null ? ms(r.psi.lcpMs) : "n/d"], ["Bloqueio de interação (TBT)", r.psi.tbtMs != null ? ms(r.psi.tbtMs) : "n/d"], ["Estabilidade visual (CLS)", r.psi.cls != null ? r.psi.cls.toFixed(2).replace(".", ",") : "n/d"])
   const half = (W - 2 * M - 12) / 2
   page.drawRectangle({ x: M, y: y - 16, width: W - 2 * M, height: 16, color: C.ink })
   page.drawText("MEDIÇÃO", { x: M + 8, y: y - 11, size: 7.5, font: bold, color: C.white }); page.drawText("RESULTADO", { x: M + half + 20, y: y - 11, size: 7.5, font: bold, color: C.white })
   y -= 16
   rows.forEach(([k, v], i) => { page.drawRectangle({ x: M, y: y - 16, width: W - 2 * M, height: 16, color: i % 2 ? C.bg : C.card, borderColor: C.line, borderWidth: 0.4 }); page.drawText(safe(k, reg), { x: M + 8, y: y - 11, size: 8.5, font: reg }); page.drawText(safe(v, bold), { x: M + half + 20, y: y - 11, size: 8.5, font: bold }); y -= 16 })
   y -= 14
-  for (const c of r.criteria.filter(x => x.pillar === "tecnico")) {
-    const q = CRITERIA.find(x => x.id === c.id)!.question
-    ensure(46 + c.checks.length * 11.5 + (c.why ? textH(c.why, 8.5, W - 2 * M - 20) : 0))
-    page.drawRectangle({ x: M, y: y - 22, width: W - 2 * M, height: 22, color: C.ink })
-    page.drawText(safe(c.label, bold), { x: M + 10, y: y - 15, size: 10, font: bold, color: C.white })
-    const sc = `${fmt(c.score)} / 10`; page.drawText(sc, { x: W - M - 10 - bold.widthOfTextAtSize(sc, 10), y: y - 15, size: 10, font: bold, color: scoreColor(c.score) === C.red ? rgb(1, 0.5, 0.45) : scoreColor(c.score) === C.amber ? rgb(1, 0.78, 0.35) : rgb(0.5, 0.9, 0.62) })
-    y -= 28
-    text(q, { size: 8, color: C.mute }); y -= 2
-    if (c.why) { text(c.why, { size: 8.5 }); y -= 2 }
-    for (const ck of c.checks) {
-      const col = ck.status === "pass" ? C.green : ck.status === "warn" ? C.amber : C.red
-      page.drawCircle({ x: M + 5, y: y - 6, size: 2.6, color: col })
-      text(ck.label + (ck.status === "pass" ? "" : ck.status === "warn" ? " (atenção)" : " (falhou)"), { x: M + 14, size: 8.5, lh: 11.5, color: ck.status === "pass" ? C.ink : col })
-    }
-    y -= 10
-  }
+  r.criteria.filter(c => c.pillar === "tecnico").forEach(criterionBlock)
 
   // ---------- ACHADOS ----------
   newPage("Achados · " + r.host)
-  kicker("04 — Achados priorizados", "O que mais pesa na nota", "Vermelho: crítico. Âmbar: atenção. Cada item traz a evidência encontrada e como corrigir.")
+  kicker("04 — Achados", "O que foi encontrado e como conferir", "Defeito: falha objetiva. Recomendação: boa prática. Oportunidade: depende do tipo de negócio. Nada aqui prevê resultado de vendas ou de ranking.")
   y -= 4
-  const list: Finding[] = r.findings.filter(x => x.severity !== "info").slice(0, 22)
+  const list: Finding[] = r.findings.slice(0, 30)
   list.forEach((fd, i) => {
-    const col = fd.severity === "critico" ? C.red : C.amber
-    const bw = W - 2 * M - 22
-    const hh = 16 + textH(fd.title, 10, bw, bold) + (fd.evidence ? textH("Evidência: " + fd.evidence, 8.5, bw) : 0) + (fd.impact ? textH("Impacto: " + fd.impact, 8.5, bw) : 0) + textH("Como corrigir: " + fd.fix, 8.5, bw) + 8
+    const k = KIND[fd.kind], bw = W - 2 * M - 22
+    const parts: [string, string][] = [["Observado", fd.evidence.replace(/^Observado:?\s*/i, "")], ["Como conferir", fd.howTo], ["Sugestão", fd.fix]]
+    const hh = 14 + textH(fd.title, 10, bw, bold) + parts.reduce((s, [a, b]) => s + (b ? textH(`${a}: ${b}`, 8.5, bw) : 0), 0) + (fd.ref ? textH("Fonte: " + fd.ref, 7.5, bw) : 0) + 6
     ensure(hh + 8)
     page.drawRectangle({ x: M, y: y - hh, width: W - 2 * M, height: hh, color: C.card, borderColor: C.line, borderWidth: 0.6 })
-    page.drawRectangle({ x: M, y: y - hh, width: 4, height: hh, color: col })
-    const top = y; y -= 6
+    page.drawRectangle({ x: M, y: y - hh, width: 4, height: hh, color: k.color })
+    const top = y; y -= 5
+    text(k.label + (fd.level === "atencao" && fd.kind === "defeito" ? " · EM ATENÇÃO" : ""), { x: M + 14, size: 6.5, font: bold, color: k.color, maxW: bw })
     text(`${i + 1}. ${fd.title}`, { x: M + 14, size: 10, font: bold, maxW: bw })
-    if (fd.evidence) text("Evidência: " + fd.evidence, { x: M + 14, size: 8.5, color: C.mute, maxW: bw })
-    if (fd.impact) text("Impacto: " + fd.impact, { x: M + 14, size: 8.5, maxW: bw })
-    text("Como corrigir: " + fd.fix, { x: M + 14, size: 8.5, font: bold, color: C.ink, maxW: bw })
+    parts.forEach(([a, b]) => { if (b) text(`${a}: ${b}`, { x: M + 14, size: 8.5, color: a === "Sugestão" ? C.ink : C.mute, font: a === "Sugestão" ? bold : reg, maxW: bw }) })
+    if (fd.ref) text("Fonte: " + fd.ref, { x: M + 14, size: 7.5, color: C.mute, maxW: bw })
     y = top - hh - 8
   })
-  if (!list.length) text("Nenhum problema relevante foi encontrado nas verificações automáticas.", { size: 10 })
+  if (!list.length) text("Nenhum ponto a corrigir foi encontrado nas verificações automáticas.", { size: 10 })
+
+  // ---------- NÃO TESTADO ----------
+  if (r.untested.length) {
+    ensure(60)
+    y -= 6
+    text("NÃO TESTADO NESTA AUDITORIA", { size: 8, font: bold, color: C.orange }); y -= 2
+    text("Estes itens ficaram fora da nota. Não significam que estejam certos ou errados.", { size: 8.5, color: C.mute }); y -= 4
+    r.untested.forEach(u => { ensure(16); page.drawCircle({ x: M + 4, y: y - 6.5, size: 2, color: C.mute }); text(`${u.label}: ${u.reason}`, { x: M + 14, size: 8.5, maxW: W - 2 * M - 14 }) })
+  }
 
   // ---------- PLANO ----------
   newPage("Plano de ação · " + r.host)
-  kicker("05 — Plano de ação", "O que já funciona e o que fazer primeiro")
+  kicker("05 — Plano de ação", "O que já funciona e o que ver primeiro")
   y -= 6
-  text("O QUE JÁ FUNCIONA BEM", { size: 8, font: bold, color: C.green }); y -= 3
+  text("O QUE JÁ FUNCIONA", { size: 8, font: bold, color: C.green }); y -= 3
   ;(r.strengths.length ? r.strengths : ["Nenhum ponto forte se destacou nas verificações automáticas."]).forEach(s => { page.drawCircle({ x: M + 4, y: y - 7, size: 2.6, color: C.green }); text(s, { x: M + 14, size: 9.5, maxW: W - 2 * M - 14 }) })
   y -= 12
   const steps = (title: string, tag: string, arr: string[], col: RGB) => {
@@ -229,22 +234,22 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
     arr.forEach((s, i) => { ensure(textH(s, 9.5, W - 2 * M - 30) + 8); const top = y; page.drawCircle({ x: M + 9, y: top - 11, size: 8, color: C.ink }); page.drawText(String(i + 1), { x: M + 9 - bold.widthOfTextAtSize(String(i + 1), 8) / 2, y: top - 14, size: 8, font: bold, color: C.white }); text(s, { x: M + 26, size: 9.5, maxW: W - 2 * M - 26 }); y -= 5 })
     y -= 8
   }
-  steps("COMEÇAR POR AQUI", "Ações rápidas, de maior impacto e menor esforço.", r.quickWins, C.orange)
-  steps("EM SEGUIDA", "Melhorias estruturais para consolidar o resultado.", r.structural, C.ink)
+  steps("PARA VER PRIMEIRO", "Itens de menor esforço entre defeitos e recomendações.", r.quickWins, C.orange)
+  steps("EM SEGUIDA", "Itens que dependem de servidor, hospedagem ou mais trabalho.", r.structural, C.ink)
 
-  // ---------- METODOLOGIA + CONTRACAPA ----------
+  // ---------- METODOLOGIA ----------
   ensure(190)
   y -= 6
   text("COMO AVALIAMOS", { size: 8, font: bold, color: C.orange }); y -= 2
-  text("Dez critérios em dois grupos, com pesos diferentes na nota geral: " + CRITERIA.map(c => `${c.label} (${c.weight}%)`).join(", ") + ".", { size: 8.5, color: C.mute }); y -= 6
+  text("Dez critérios com pesos: " + CRITERIA.map(c => `${c.label} (${c.weight}%)`).join(", ") + ".", { size: 8.5, color: C.mute }); y -= 4
+  text(r.formula, { size: 8.5, color: C.mute }); y -= 6
   text("LIMITES DESTA AUDITORIA", { size: 8, font: bold, color: C.orange }); y -= 2
-  r.limits.forEach(l => { page.drawCircle({ x: M + 4, y: y - 6.5, size: 2, color: C.mute }); text(l, { x: M + 14, size: 8, color: C.mute, maxW: W - 2 * M - 14 }) })
+  r.limits.forEach(l => { ensure(14); page.drawCircle({ x: M + 4, y: y - 6.5, size: 2, color: C.mute }); text(l, { x: M + 14, size: 8, color: C.mute, maxW: W - 2 * M - 14 }) })
   y -= 14
-  ensure(96)
-  page.drawRectangle({ x: M, y: y - 84, width: W - 2 * M, height: 84, color: C.ink })
-  page.drawImage(vmDark, { x: M + 16, y: y - 42 - (62 * (vmDark.height / vmDark.width)) / 2, width: 62, height: 62 * (vmDark.height / vmDark.width) })
-  text("Quer corrigir isso com quem entende?", { x: M + 90, yy: y - 8, size: 12.5, font: bold, color: C.white, maxW: W - 2 * M - 106 })
-  text("A VireMarca transforma este diagnóstico em um plano e cuida da execução. Fale com a equipe:", { x: M + 90, yy: y - 28, size: 8.5, color: rgb(0.82, 0.82, 0.82), maxW: W - 2 * M - 106 })
-  page.drawText("WhatsApp (48) 99141-0717  ·  viremarca@gmail.com  ·  viremarca.com.br", { x: M + 90, y: y - 70, size: 9, font: bold, color: C.orange })
+  ensure(70)
+  page.drawRectangle({ x: M, y: y - 56, width: W - 2 * M, height: 56, color: C.ink })
+  page.drawImage(vmDark, { x: M + 16, y: y - 28 - (46 * (vmDark.height / vmDark.width)) / 2, width: 46, height: 46 * (vmDark.height / vmDark.width) })
+  text("Relatório informativo.", { x: M + 80, yy: y - 6, size: 11, font: bold, color: C.white, maxW: W - 2 * M - 96 })
+  text("Gerado automaticamente pela VireMarca. Confira os itens com os passos indicados antes de decidir qualquer mudança.", { x: M + 80, yy: y - 24, size: 8.5, color: rgb(0.82, 0.82, 0.82), maxW: W - 2 * M - 96 })
   return pdf.save()
 }

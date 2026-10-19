@@ -1,20 +1,22 @@
 import { parse } from "node-html-parser"
 import { safeFetch, type FetchResult } from "./safe-fetch"
 import { extractJsonLdTypes } from "./jsonld"
+import { imageHasReservedSpace } from "./html-signals"
 
 export type Facts = {
   url: string; host: string; fetchedAt: string
   https: boolean; httpRedirectsToHttps: boolean | null
-  status: number; ttfbMs: number; totalMs: number; htmlBytes: number; truncated: boolean; redirects: string[]
+  status: number; ttfbMs: number; ttfbSamples: number[]; totalMs: number; htmlBytes: number; truncated: boolean; redirects: string[]
   headers: { encoding: string | null; cache: string | null; hsts: boolean; csp: boolean; xcto: boolean; frame: boolean; server: string | null }
   title: string; description: string; lang: string; viewport: boolean; canonical: string; robotsMeta: string
   h1: string[]; h2: string[]; h3Count: number
-  images: { total: number; noAlt: number; noDims: number; lazy: number; modernFormat: number }
+  images: { total: number; noAlt: number; noDims: number; fill: number; lazy: number; modernFormat: number }
+  assets: { url: string; kind: "css" | "js" | "img"; status: number; cache: string | null }[]
   scripts: { external: number; inlineBytes: number; thirdParty: number }; stylesheets: number
   og: { title: boolean; description: boolean; image: boolean; imageOk: boolean | null }; twitterCard: boolean; jsonLdTypes: string[]; favicon: boolean
   links: { internal: number; external: number; tel: number; mailto: number; whatsapp: number; broken: { url: string; status: number }[]; checked: number; hash: number }
   nav: string[]; ctas: string[]; forms: number; formsWithLabels: number; buttons: number
-  signals: { phone: boolean; email: boolean; address: boolean; region: boolean; cnpj: boolean; privacy: boolean; about: boolean; testimonials: boolean; social: string[]; mapEmbed: boolean; footer: boolean; copyright: boolean; videoEmbed: boolean }
+  signals: { phone: boolean; email: boolean; address: boolean; region: boolean; cnpj: boolean; privacy: boolean; about: boolean; testimonials: boolean; social: string[]; mapEmbed: boolean; chat: boolean; footer: boolean; copyright: boolean; videoEmbed: boolean }
   text: { words: number; excerpt: string; aboveFold: string }
   robotsTxt: { status: number; hasSitemap: boolean; blocksAll: boolean }
   sitemap: { status: number; urls: number }
@@ -27,6 +29,11 @@ const CTA_RE = /(whatsapp|fale|falar|contato|contate|chame|orçamento|orcamento|
 
 const UF_RE = /[A-ZÀ-Ú][\wà-úÀ-Ú]+(?:\s[\wà-úÀ-Ú]+){0,3}\s*[,\-–/]\s*(?:AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b/
 
+const CHAT_WIDGET_RE = /(tawk\.to|crisp\.chat|intercom|zendesk|zopim|hubspot.*conversations|jivosite|drift\.com|livechat|tidio|smartsupp|chatwoot|botpress)/i
+const CHAT_LABEL_RE = /\b(chat|assistente|atendimento online|fale conosco)\b/i
+
+const median = (a: number[]) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)] ?? 0 }
+
 function clean(s: string, max = 400) { return s.replace(/\s+/g, " ").trim().slice(0, max) }
 
 export async function collectFacts(inputUrl: string): Promise<Facts> {
@@ -36,6 +43,9 @@ export async function collectFacts(inputUrl: string): Promise<Facts> {
   if (!/html|xml/i.test(home.headers["content-type"] || "text/html")) throw new Error("O endereço não parece ser uma página de site (HTML).")
   const u = new URL(home.url)
   const origin = u.origin
+  // TTFB: mediana de 3 amostras (a primeira é a do carregamento principal). Mede o tempo até os cabeçalhos.
+  const ttfbSamples = [home.ttfbMs]
+  for (let i = 0; i < 2; i++) { const r = await safeFetch(home.url, { timeoutMs: 8000, maxBytes: 10_000 }).catch(() => null); if (r && r.status < 500) ttfbSamples.push(r.ttfbMs) }
   const root = parse(home.body, { blockTextElements: { script: false, style: false, noscript: false } })
 
   const meta = (sel: string) => root.querySelector(sel)?.getAttribute("content")?.trim() || ""
@@ -95,6 +105,17 @@ export async function collectFacts(inputUrl: string): Promise<Facts> {
     d.querySelectorAll("script,style,noscript,svg").forEach(n => n.remove())
     return { url: l, status: r.status, title: t, words: clean(d.text, 100000).split(" ").filter(Boolean).length }
   }))
+  // cache dos arquivos estáticos: 1 CSS, 1 JS e 1 imagem do mesmo domínio (o HTML é avaliado à parte)
+  const sameOrigin = (src: string | undefined) => { if (!src || /^data:/i.test(src)) return null; try { const x = new URL(src, u); return x.origin === origin ? x.toString() : null } catch { return null } }
+  const assetCandidates: { url: string; kind: "css" | "js" | "img" }[] = []
+  const css = sameOrigin(root.querySelector('link[rel="stylesheet"]')?.getAttribute("href")); if (css) assetCandidates.push({ url: css, kind: "css" })
+  const jsList = scripts.map(s => sameOrigin(s.getAttribute("src"))).filter((x): x is string => !!x)
+  const js = jsList.find(x => /_next\/static|\/assets\//.test(x)) ?? jsList[0]; if (js) assetCandidates.push({ url: js, kind: "js" })
+  const img = imgs.map(i => sameOrigin(i.getAttribute("src"))).find(x => x && !/_next\/image/.test(x)); if (img) assetCandidates.push({ url: img, kind: "img" })
+  const assets = await Promise.all(assetCandidates.map(async a => {
+    const r = await safeFetch(a.url, { timeoutMs: 6000, method: "HEAD" }).catch(() => null)
+    return { ...a, status: r?.status ?? 0, cache: r?.headers["cache-control"] ?? null }
+  }))
   const title = clean(root.querySelector("title")?.text || "", 200)
   const regionBlob = `${title} ${clean(meta('meta[name="description"]'), 400)} ${text}`
   const pages = pageResults.map(p => ({ ...p, titleDuplicate: !!p.title && p.title === title }))
@@ -107,7 +128,7 @@ export async function collectFacts(inputUrl: string): Promise<Facts> {
   return {
     url: home.url, host: u.hostname, fetchedAt: new Date().toISOString(),
     https: u.protocol === "https:", httpRedirectsToHttps: u.protocol === "https:" ? (httpRes ? httpRes.url.startsWith("https:") : null) : null,
-    status: home.status, ttfbMs: home.ttfbMs, totalMs: home.totalMs, htmlBytes: home.bytes, truncated: home.truncated, redirects: home.redirects,
+    status: home.status, ttfbMs: median(ttfbSamples), ttfbSamples, totalMs: home.totalMs, htmlBytes: home.bytes, truncated: home.truncated, redirects: home.redirects,
     headers: {
       encoding: home.headers["content-encoding"] || null, cache: home.headers["cache-control"] || null,
       hsts: !!home.headers["strict-transport-security"], csp: !!home.headers["content-security-policy"], xcto: !!home.headers["x-content-type-options"],
@@ -117,11 +138,12 @@ export async function collectFacts(inputUrl: string): Promise<Facts> {
     canonical: root.querySelector('link[rel="canonical"]')?.getAttribute("href") || "", robotsMeta: meta('meta[name="robots"]'),
     h1: root.querySelectorAll("h1").map(h => clean(h.text, 160)).filter(Boolean), h2: root.querySelectorAll("h2").map(h => clean(h.text, 120)).filter(Boolean).slice(0, 14), h3Count: root.querySelectorAll("h3").length,
     images: {
-      total: imgs.length, noAlt: imgs.filter(i => i.getAttribute("alt") === undefined || i.getAttribute("alt") === null).length,
-      noDims: imgs.filter(i => !(i.getAttribute("width") && i.getAttribute("height")) && !/aspect|fill/i.test(i.getAttribute("style") || "")).length,
+      total: imgs.length, fill: imgs.filter(i => i.getAttribute("data-nimg") === "fill").length, noAlt: imgs.filter(i => i.getAttribute("alt") === undefined || i.getAttribute("alt") === null).length,
+      noDims: imgs.filter(i => !imageHasReservedSpace(i.attributes)).length,
       lazy: imgs.filter(i => i.getAttribute("loading") === "lazy").length,
       modernFormat: imgs.filter(i => /\.(webp|avif)|f=webp|f=avif|fm=webp|fm=avif|_next\/image/i.test((i.getAttribute("src") || "") + (i.getAttribute("srcset") || ""))).length,
     },
+    assets,
     scripts: { external: scripts.filter(s => s.getAttribute("src")).length, inlineBytes: scripts.filter(s => !s.getAttribute("src")).reduce((n, s) => n + s.text.length, 0), thirdParty: scripts.filter(s => s.getAttribute("src") && isThird(s.getAttribute("src")!)).length },
     stylesheets: root.querySelectorAll('link[rel="stylesheet"]').length,
     og: { title: !!meta('meta[property="og:title"]'), description: !!meta('meta[property="og:description"]'), image: !!meta('meta[property="og:image"]'), imageOk: ogImg ? ogImg.status < 400 : null },
@@ -132,9 +154,10 @@ export async function collectFacts(inputUrl: string): Promise<Facts> {
     forms: forms.length, formsWithLabels, buttons: root.querySelectorAll("button, [role=button], .btn").length,
     signals: {
       phone: tel > 0 || wa > 0 || /\(?\b\d{2}\)?\s?9?\d{4}[-.\s]?\d{4}\b/.test(text), email: mailto > 0 || /[\w.+-]+@[\w-]+\.[\w.]+/.test(text),
-      address: /\b(rua|av\.|avenida|rodovia|travessa|alameda|estrada)\s+[^,]{3,}/i.test(text) || /endereço/i.test(text), region: UF_RE.test(regionBlob) || /\b(grande\s+[A-ZÀ-Ú]|regi[aã]o (de|da|do|metropolitana))/.test(regionBlob) || /\b(atendemos|atuamos|atendimento em)\b/i.test(text), cnpj: /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/.test(text),
+      address: /\b(rua|av\.|avenida|rodovia|travessa|alameda|estrada)\s+[^,]{3,}/i.test(text), region: UF_RE.test(regionBlob) || /\b(grande\s+[A-ZÀ-Ú]|regi[aã]o (de|da|do|metropolitana))/.test(regionBlob) || /\b(atendemos|atuamos|atendimento em)\b/i.test(text), cnpj: /\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/.test(text),
       privacy: hrefs.some(h => /privacidade|privacy|lgpd|termos/i.test(h.href + h.text)), about: hrefs.some(h => /quem somos|sobre|about|nossa hist/i.test(h.text + h.href)),
       testimonials: /depoimento|avalia[cç][oõ]es|o que (nossos )?clientes|testimonial|clientes dizem/i.test(text), social, mapEmbed: /google\.com\/maps|maps\.google|openstreetmap/i.test(lower),
+      chat: root.querySelectorAll("button, [role=button], a, div, iframe, script").some(n => CHAT_WIDGET_RE.test(n.getAttribute("src") || "") || (/^(button|a|div)$/i.test(n.tagName) && CHAT_LABEL_RE.test((n.getAttribute("aria-label") || "") + " " + (n.getAttribute("id") || "")))),
       footer: !!root.querySelector("footer"), copyright: /©|&copy;|copyright|todos os direitos/i.test(home.body), videoEmbed: /youtube\.com\/embed|player\.vimeo|<video/i.test(lower),
     },
     text: { words, excerpt: fullText.slice(0, 2800), aboveFold },
