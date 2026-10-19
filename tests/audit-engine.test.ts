@@ -120,6 +120,34 @@ describe("Motor de auditoria v2", () => {
     assert.match(txt, /não substitui a análise de um profissional/)
     assert.doesNotMatch(txt, /urgente|perdendo|orçamento/i)
   })
+  it("sem PageSpeed, Desempenho e Celular ficam parciais e limitados", () => {
+    const r = buildReport(facts(), null, null, NOW, "limite de uso da API (429)")
+    for (const id of ["desempenho", "mobile"] as const) {
+      const c = r.criteria.find(x => x.id === id)!
+      assert.equal(c.partial, true, id)
+      assert.ok((c.score ?? 99) <= COVERAGE.partialCap, id)
+    }
+    assert.ok(r.overall < buildReport(facts(), psi, null, NOW).overall)
+    assert.match(r.untested.find(u => u.label.includes("desempenho"))!.reason, /429/)
+  })
+  it("TTFB com oscilação grande vira atenção e mostra o intervalo", () => {
+    const r = buildReport(facts({ ttfbMs: 762, ttfbSamples: [3300, 762, 692] }), psi, null, NOW)
+    const f = r.findings.find(x => x.id === "desempenho:ttfb")
+    assert.ok(f)
+    assert.match(f!.evidence, /oscilou entre 692 ms e 3,3 s/)
+    const ok = buildReport(facts({ ttfbMs: 300, ttfbSamples: [280, 300, 320] }), psi, null, NOW)
+    assert.ok(!ok.findings.some(x => x.id === "desempenho:ttfb"))
+  })
+  it("texto de IA com adjetivo de qualidade é descartado; descritivo passa", () => {
+    for (const t of ["A proposta está apresentada de forma clara na página inicial.", "Os botões estão bem posicionados na primeira tela.", "O formulário permite retorno imediato ao visitante.", "As chamadas para ação foram corretamente configuradas."]) assert.equal(cleanAiText(t), null, t)
+    assert.ok(cleanAiText("Foram identificadas chamadas para ação e um menu com quatro itens no HTML."))
+  })
+  it("chamada para ação não é contada duas vezes", () => {
+    const r = buildReport(facts(), psi, null, NOW)
+    const labels = r.criteria.flatMap(c => c.checks.map(x => x.label)).filter(l => /chamadas|botões/i.test(l))
+    assert.equal(labels.length, 1)
+    assert.equal(new Set(r.strengths).size, r.strengths.length)
+  })
   it("faixas de leitura são neutras", () => {
     for (const n of [9, 7.5, 6, 4.5, 2]) assert.doesNotMatch(verdictFor(n), /urgente|perdendo/i)
   })

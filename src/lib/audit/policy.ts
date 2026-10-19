@@ -23,7 +23,9 @@ export const STATUS_VALUE = { pass: 1, warn: 0.5, fail: 0 } as const
 
 export const COVERAGE = {
   /** Abaixo disso o critério é "parcial". */
-  minFull: 0.6,
+  minFull: 0.75,
+  /** Também vira "parcial" quando uma verificação obrigatória não foi testada. */
+  requiredMissingPartial: true,
   /** Nota máxima de um critério parcial. */
   partialCap: 8,
 }
@@ -53,7 +55,7 @@ export const VERDICTS: { min: number; label: string }[] = [
 
 /** Limiares das medições (referências públicas: web.dev / Google). */
 export const THRESHOLDS = {
-  ttfbGoodMs: 800, ttfbWarnMs: 1800,
+  ttfbGoodMs: 800, ttfbWarnMs: 1800, ttfbUnstableRatio: 3,
   htmlWarnBytes: 200_000, htmlFailBytes: 500_000,
   titleMin: 25, titleMax: 65, descMin: 80, descMax: 175,
   wordsGood: 300, wordsWarn: 150,
@@ -67,4 +69,4 @@ export const THRESHOLDS = {
 export const SCOPE_STATEMENT = "Auditoria técnica simples. Lê o que é público no site e mede o que é mensurável. Cada item indica como conferir. Não avalia visual nem concorrência, não prevê resultados de vendas ou tráfego e não substitui a análise de um profissional."
 
 /** Trechos que o texto gerado por IA não pode conter (consequências não provadas, visual, comparações, números). */
-export const FORBIDDEN_AI = /\d|perd(e|em|a|endo|er)\b|clientes?\b|ranking|posi[cç][aã]o|vend(a|as|er|e)\b|faturamento|dinheiro|concorr|urgente|cr[ií]tic|fatal|grave|garant|certeza|design|\bcor(es)?\b|tipografia|layout|espa[cç]amento|visual|contra[sz]te|nota\b|redis|cloudflare|wordpress|wp[- ]?rocket/i
+export const FORBIDDEN_AI = /\d|\b(clar[ao]s?|bem|bom|boa|boas|bons|[óo]tim[ao]s?|excelente|adequad[ao]s?|corret[ao]s?(mente)?|correta?mente|relevantes?|imediat[ao]s?|posicionad[ao]s?|eficientes?|profissionais?|atrativ[ao]s?|intuitiv[ao]s?|facilita(m|ndo)?|melhor(es)?|ideal|ideais|fort(e|es)|fracos?|robust[ao]s?|sólid[ao]s?|solid[ao]s?|agrad[aá]ve(l|is)|convincentes?)\b|perd(e|em|a|endo|er)\b|clientes?\b|ranking|posi[cç][aã]o|vend(a|as|er|e)\b|faturamento|dinheiro|concorr|urgente|cr[ií]tic|fatal|grave|garant|certeza|design|\bcor(es)?\b|tipografia|layout|espa[cç]amento|visual|contra[sz]te|nota\b|redis|cloudflare|wordpress|wp[- ]?rocket/i

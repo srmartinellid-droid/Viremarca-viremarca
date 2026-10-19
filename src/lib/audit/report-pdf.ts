@@ -74,6 +74,8 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
     page.drawText(pn, { x: W - M - reg.widthOfTextAtSize(pn, 7), y: 22, size: 7, font: reg, color: C.mute })
     y = H - 70
   }
+  /** Começa uma seção na mesma página se houver espaço; senão, página nova (evita páginas quase vazias). */
+  const startSection = (label: string, need = 240) => { if (y - need < 50) newPage(label + " · " + r.host); else y -= 22 }
   const ensure = (h: number, label = "Auditoria") => { if (y - h < 50) newPage(label + " · " + r.host) }
   const kicker = (k: string, title: string, sub?: string) => {
     text(k.toUpperCase(), { size: 8, font: bold, color: C.orange }); y -= 2
@@ -175,11 +177,12 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
   y -= 4
   r.criteria.filter(c => c.pillar === "experiencia").forEach(criterionBlock)
 
-  newPage("Técnico e SEO · " + r.host)
+  startSection("Técnico e SEO", 330)
   kicker("03 — O que está por trás", "Desempenho, SEO e segurança", r.psi ? "Medições feitas no servidor e pelo PageSpeed Insights do Google (celular)." : "Medições feitas diretamente no servidor. O PageSpeed Insights não estava disponível neste momento.")
   y -= 4
   const rows: [string, string][] = [
     [`Tempo até os cabeçalhos (mediana de ${r.metrics.ttfbSamples.length})`, `${ms(r.metrics.ttfbMs)} (${r.metrics.ttfbSamples.map(ms).join(", ")})`],
+    ["Cache do HTML (informativo, fora da nota)", r.metrics.htmlCache ?? "não informado"],
     ["Tamanho do HTML", `${r.metrics.htmlKb} KB`], ["Palavras na página inicial", String(r.metrics.words)], ["Imagens na página inicial", String(r.metrics.images)], ["Páginas internas testadas", String(r.metrics.internalChecked)],
   ]
   if (r.psi) rows.push(["Google: desempenho (celular)", String(r.psi.performance ?? "n/d")], ["Google: acessibilidade", String(r.psi.accessibility ?? "n/d")], ["Google: boas práticas", String(r.psi.bestPractices ?? "n/d")], ["Google: SEO", String(r.psi.seo ?? "n/d")], ["Maior conteúdo visível (LCP)", r.psi.lcpMs != null ? ms(r.psi.lcpMs) : "n/d"], ["Bloqueio de interação (TBT)", r.psi.tbtMs != null ? ms(r.psi.tbtMs) : "n/d"], ["Estabilidade visual (CLS)", r.psi.cls != null ? r.psi.cls.toFixed(2).replace(".", ",") : "n/d"])
@@ -187,12 +190,12 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
   page.drawRectangle({ x: M, y: y - 16, width: W - 2 * M, height: 16, color: C.ink })
   page.drawText("MEDIÇÃO", { x: M + 8, y: y - 11, size: 7.5, font: bold, color: C.white }); page.drawText("RESULTADO", { x: M + half + 20, y: y - 11, size: 7.5, font: bold, color: C.white })
   y -= 16
-  rows.forEach(([k, v], i) => { page.drawRectangle({ x: M, y: y - 16, width: W - 2 * M, height: 16, color: i % 2 ? C.bg : C.card, borderColor: C.line, borderWidth: 0.4 }); page.drawText(safe(k, reg), { x: M + 8, y: y - 11, size: 8.5, font: reg }); page.drawText(safe(v, bold), { x: M + half + 20, y: y - 11, size: 8.5, font: bold }); y -= 16 })
+  rows.forEach(([k, v], i) => { page.drawRectangle({ x: M, y: y - 16, width: W - 2 * M, height: 16, color: i % 2 ? C.bg : C.card, borderColor: C.line, borderWidth: 0.4 }); page.drawText(safe(k, reg), { x: M + 8, y: y - 11, size: 8.5, font: reg }); let fs = 8.5; const vv = safe(v, bold), room = W - M - (M + half + 20) - 6; while (bold.widthOfTextAtSize(vv, fs) > room && fs > 6) fs -= 0.5; page.drawText(vv, { x: M + half + 20, y: y - 11, size: fs, font: bold }); y -= 16 })
   y -= 14
   r.criteria.filter(c => c.pillar === "tecnico").forEach(criterionBlock)
 
   // ---------- ACHADOS ----------
-  newPage("Achados · " + r.host)
+  startSection("Achados", 200)
   kicker("04 — Achados", "O que foi encontrado e como conferir", "Defeito: falha objetiva. Recomendação: boa prática. Oportunidade: depende do tipo de negócio. Nada aqui prevê resultado de vendas ou de ranking.")
   y -= 4
   const list: Finding[] = r.findings.slice(0, 30)
@@ -222,7 +225,7 @@ export async function buildPdf(r: Report): Promise<Uint8Array> {
   }
 
   // ---------- PLANO ----------
-  newPage("Plano de ação · " + r.host)
+  startSection("Plano de ação", 260)
   kicker("05 — Plano de ação", "O que já funciona e o que ver primeiro")
   y -= 6
   text("O QUE JÁ FUNCIONA", { size: 8, font: bold, color: C.green }); y -= 3

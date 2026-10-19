@@ -7,7 +7,7 @@ export type AuditState = {
   id: string; url: string; host: string; conversation_id: string | null; visitor_id: string | null
   status: "running" | "done" | "failed"; step: "collect" | "psi" | "analyze" | "render" | "done"
   created_at: string; updated_at: string; lock_until?: number; attempts: Record<string, number>
-  facts?: Facts; psi?: Psi | null; llm?: { notes?: unknown; route?: string }
+  facts?: Facts; psi?: Psi | null; psiError?: string; llm?: { notes?: unknown; route?: string }
   report?: Report; summary?: string; error?: string; pdf_ready?: boolean; lead_notified?: boolean; delivered?: boolean; free?: boolean
 }
 
