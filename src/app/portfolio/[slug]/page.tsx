@@ -5,6 +5,7 @@ import Image from "next/image"
 import { ArrowLeft, ExternalLink } from "lucide-react"
 import { getProjectBySlug, getPublicProjects } from "@/lib/projects"
 import { portfolioCanonicalUrl } from "@/lib/seo-url"
+import { getPortfolioStatus, PORTFOLIO_STATUS_LABELS } from "@/lib/portfolio-status"
 import type { Metadata } from "next"
 
 type Props = { params: Promise<{ slug: string }> }
@@ -31,6 +32,7 @@ export default async function PortfolioProjectPage({ params }: Props) {
   const { slug } = await params
   const project = await getProjectBySlug(slug)
   if (!project) notFound()
+  const status = getPortfolioStatus(project.slug)
   return (
     <div className="pt-24 pb-20">
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
@@ -38,6 +40,7 @@ export default async function PortfolioProjectPage({ params }: Props) {
         <div className="mb-8">
           <p className="text-sm font-medium text-vm-coral mb-2">{project.category}</p>
           <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-vm-ink">{project.title}</h1>
+          {status === "pilot" && <span className="mt-3 inline-flex rounded-full bg-amber-100 px-3 py-1.5 text-xs font-semibold tracking-wide text-amber-900">{PORTFOLIO_STATUS_LABELS.pilot}</span>}
           <p className="mt-4 text-vm-muted max-w-2xl leading-relaxed">{project.description}</p>
           {project.site_url && (
             <TrackedAnchor eventName="portfolio_external_click" eventMetadata={{ location: "portfolio_detail" }} eventStatus="production" href={project.site_url} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-full bg-vm-coral px-5 py-2.5 text-sm font-semibold text-white hover:bg-vm-coral-deep transition-colors">
@@ -61,7 +64,17 @@ export default async function PortfolioProjectPage({ params }: Props) {
             </div>
           )}
         </div>
-        {project.site_url && <p className="mt-3 text-xs text-vm-muted">Se o preview não carregar, use o botão &ldquo;Visitar site&rdquo; para abrir o projeto em uma nova aba.</p>}
+        {project.site_url && (
+          <div className="mt-4 flex flex-col items-start justify-between gap-4 rounded-xl border border-vm-border bg-white p-5 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-sm font-semibold text-vm-ink">O preview não apareceu?</p>
+              <p className="mt-1 text-sm leading-relaxed text-vm-muted">Alguns sites ou navegadores podem impedir a visualização incorporada. Você pode acessar o projeto diretamente.</p>
+            </div>
+            <TrackedAnchor eventName="portfolio_external_click" eventMetadata={{ location: "portfolio_preview_fallback" }} eventStatus="production" href={project.site_url} target="_blank" rel="noopener noreferrer" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-vm-coral px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-vm-coral-deep">
+              Visitar site <ExternalLink size={15} />
+            </TrackedAnchor>
+          </div>
+        )}
         <div className="mt-10 flex flex-col items-start justify-between gap-5 rounded-2xl border border-vm-border bg-vm-sand/60 p-6 md:flex-row md:items-center md:p-8">
           <div>
             <h2 className="text-xl font-semibold tracking-tight text-vm-ink">Quer um site assim para o seu negócio?</h2>
