@@ -12,6 +12,7 @@ import { useReducedMotion } from "@/hooks/useReducedMotion"
 import type { PortfolioProject } from "@/types"
 import type { PublicSiteContent } from "@/lib/site-content"
 import { trackEvent } from "@/lib/track-event"
+import { getPortfolioStatus, PORTFOLIO_STATUS_LABELS } from "@/lib/portfolio-status"
 
 const ease = [0.22, 1, 0.36, 1] as const
 const DECK_INTERVAL = 5500
@@ -122,6 +123,7 @@ function HeroDeck({ projects, reduced }: { projects: PortfolioProject[]; reduced
           const l = layer(rel)
           const front = rel === 0
           const real = project.description.startsWith("Projeto real")
+          const status = getPortfolioStatus(project.slug)
           return (
             <a
               key={project.id}
@@ -137,7 +139,7 @@ function HeroDeck({ projects, reduced }: { projects: PortfolioProject[]; reduced
             >
               <div className="flex h-7 items-center gap-1.5 bg-[#2A2D33] px-3">
                 <span className="h-2 w-2 rounded-full bg-[#E5584B]" /><span className="h-2 w-2 rounded-full bg-[#E8B63B]" /><span className="h-2 w-2 rounded-full bg-[#4BB866]" />
-                <span className="ml-2 flex h-[18px] flex-1 items-center truncate rounded-full bg-[#1B1D22] px-2.5 text-[10px] text-[#9CA1A8]">{project.title} · {real ? "projeto real" : "modelo · demonstração"}</span>
+                <span className="ml-2 flex h-[18px] flex-1 items-center truncate rounded-full bg-[#1B1D22] px-2.5 text-[10px] text-[#9CA1A8]">{project.title} · {status === "pilot" ? PORTFOLIO_STATUS_LABELS.pilot : real ? "projeto real" : "modelo · demonstração"}</span>
               </div>
               <div className="relative aspect-[16/10] overflow-hidden bg-black">
                 <Image src={project.thumbnail || "/portfolio/magia-glass.jpg"} alt={project.title} fill sizes="(min-width: 1024px) 480px, 72vw" className="object-cover" />

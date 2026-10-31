@@ -13,6 +13,7 @@ import { Reveal } from "@/components/motion/Reveal"
 import { TitleBlock } from "@/components/TitleBlock"
 import { useReducedMotion } from "@/hooks/useReducedMotion"
 import { trackEvent } from "@/lib/track-event"
+import { getPortfolioStatus, PORTFOLIO_STATUS_LABELS } from "@/lib/portfolio-status"
 
 type Props = { projects: PortfolioProject[]; titleStyle?: TitleStyle }
 
@@ -41,6 +42,7 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
           {ordered.map((project, i) => {
             const real = isReal(project)
+            const status = getPortfolioStatus(project.slug)
             return (
               <motion.article
                 key={project.id}
@@ -60,9 +62,11 @@ export function PortfolioShowcase({ projects, titleStyle }: Props) {
                     {project.thumbnail ? <Image src={project.thumbnail} alt={project.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className={cn("object-cover transition-transform duration-700", reduced ? "" : "group-hover:scale-[1.03]", real ? "" : "saturate-[0.85]")} /> : <div className="absolute inset-0 flex items-center justify-center text-vm-muted text-sm">Preview</div>}
                     <div className="absolute inset-0 bg-gradient-to-t from-vm-ink/35 via-transparent to-transparent" />
                     <div className="absolute top-4 left-4"><span className="rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-[11px] font-medium text-vm-ink tracking-wide">{project.category}</span></div>
-                    {real
-                      ? <div className="absolute top-4 right-4 rounded-full bg-vm-coral px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">No ar</div>
-                      : <div className="absolute top-4 right-4 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em] text-vm-muted backdrop-blur-sm">Modelo · demonstração</div>}
+                    {status === "pilot"
+                      ? <div className="absolute top-4 right-4 rounded-full bg-amber-100 px-3 py-1 text-[10px] font-semibold tracking-wide text-amber-900">{PORTFOLIO_STATUS_LABELS.pilot}</div>
+                      : real
+                        ? <div className="absolute top-4 right-4 rounded-full bg-vm-coral px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">No ar</div>
+                        : <div className="absolute top-4 right-4 rounded-full bg-white/80 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.1em] text-vm-muted backdrop-blur-sm">Modelo · demonstração</div>}
                   </div>
                   <div className="flex items-start justify-between gap-3 p-5 md:p-6">
                     <div>
